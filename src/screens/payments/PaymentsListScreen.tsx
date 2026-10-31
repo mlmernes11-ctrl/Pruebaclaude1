@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
 import Screen from '../../components/Screen';
+import { PAYMENT_CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { formatCurrency, formatDate, formatPeriod } from '../../utils/format';
@@ -90,7 +91,9 @@ export default function PaymentsListScreen() {
                 </Text>
                 <Badge label={PAYMENT_STATUS_LABEL[item.status]} tone={PAYMENT_TONE[item.status]} />
               </View>
-              <Text style={styles.tenantText}>{tenant?.name ?? 'Inquilino'}</Text>
+              <Text style={styles.tenantText}>
+                {tenant?.name ?? 'Inquilino'} · {PAYMENT_CONCEPT_LABEL[item.payment.concept]}
+              </Text>
               <View style={styles.footerRow}>
                 <View>
                   <Text style={styles.periodText}>{formatPeriod(item.payment.period)}</Text>

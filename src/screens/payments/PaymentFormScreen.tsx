@@ -6,9 +6,10 @@ import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
-import { PAYMENT_METHOD_OPTIONS } from '../../constants';
+import { PAYMENT_CONCEPT_OPTIONS, PAYMENT_METHOD_OPTIONS } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
+import { PaymentConcept } from '../../types';
 import { todayISO } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
 
@@ -41,6 +42,7 @@ export default function PaymentFormScreen() {
   const existing = payments.find((p) => p.id === paymentId);
 
   const [contractId, setContractId] = useState(existing?.contractId ?? presetContractId ?? '');
+  const [concept, setConcept] = useState<PaymentConcept>(existing?.concept ?? 'alquiler');
   const [period, setPeriod] = useState(existing?.period ?? initialPeriod ?? '');
   const [dueDate, setDueDate] = useState(existing?.dueDate ?? initialDueDate ?? '');
   const [amount, setAmount] = useState(existing?.amount ? String(existing.amount) : initialAmount ?? '');
@@ -58,6 +60,30 @@ export default function PaymentFormScreen() {
       subtitle: tenant?.name,
     };
   });
+
+  const amountForConcept = (targetContractId: string, targetConcept: PaymentConcept) => {
+    const contract = contracts.find((c) => c.id === targetContractId);
+    if (!contract) return undefined;
+    if (targetConcept === 'alquiler') return contract.rentAmount;
+    const property = getPropertyById(contract.propertyId);
+    return targetConcept === 'expensas' ? property?.expensasAmount : property?.serviciosAmount;
+  };
+
+  const handleSelectContract = (id: string) => {
+    setContractId(id);
+    if (!existing) {
+      const suggested = amountForConcept(id, concept);
+      if (suggested !== undefined) setAmount(String(suggested));
+    }
+  };
+
+  const handleSelectConcept = (value: PaymentConcept) => {
+    setConcept(value);
+    if (!existing) {
+      const suggested = amountForConcept(contractId, value);
+      setAmount(suggested !== undefined ? String(suggested) : '');
+    }
+  };
 
   const handleSave = () => {
     if (!contractId) {
@@ -84,6 +110,7 @@ export default function PaymentFormScreen() {
 
     const payload = {
       contractId,
+      concept,
       period,
       dueDate,
       amount: parsedAmount,
@@ -123,9 +150,15 @@ export default function PaymentFormScreen() {
           placeholder="Selecciona un contrato"
           required
           selectedId={contractId}
-          onSelect={setContractId}
+          onSelect={handleSelectContract}
           emptyMessage="No hay contratos. Crea uno primero."
           options={contractOptions}
+        />
+        <OptionChips
+          label="Concepto"
+          options={PAYMENT_CONCEPT_OPTIONS}
+          value={concept}
+          onChange={handleSelectConcept}
         />
         <Text style={styles.hint}>Período en formato AAAA-MM, fechas en formato AAAA-MM-DD</Text>
         <FormField label="Período" value={period} onChangeText={setPeriod} placeholder="2024-05" required />

@@ -5,7 +5,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Screen from '../../components/Screen';
-import { CONTRACT_STATUS_LABEL } from '../../constants';
+import { CONTRACT_STATUS_LABEL, PAYMENT_CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 import {
@@ -75,10 +75,12 @@ export default function ContractDetailScreen() {
   };
 
   const handleAddPayment = () => {
-    const lastPeriod = payments.reduce<string | undefined>((max, p) => {
-      if (!max || p.period > max) return p.period;
-      return max;
-    }, undefined);
+    const lastPeriod = payments
+      .filter((p) => p.concept === 'alquiler')
+      .reduce<string | undefined>((max, p) => {
+        if (!max || p.period > max) return p.period;
+        return max;
+      }, undefined);
     const nextPeriod = lastPeriod ? addMonthsToPeriod(lastPeriod, 1) : currentPeriod();
     const dueDate = periodToDueDate(nextPeriod, contract.paymentDay);
 
@@ -137,7 +139,9 @@ export default function ContractDetailScreen() {
                 }
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.paymentPeriod}>{formatPeriod(payment.period)}</Text>
+                  <Text style={styles.paymentPeriod}>
+                    {formatPeriod(payment.period)} · {PAYMENT_CONCEPT_LABEL[payment.concept]}
+                  </Text>
                   <Text style={styles.paymentDue}>Vence: {formatDate(payment.dueDate)}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>

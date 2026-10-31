@@ -25,6 +25,12 @@ export default function PropertyFormScreen() {
   const [bathrooms, setBathrooms] = useState(existing?.bathrooms ? String(existing.bathrooms) : '');
   const [area, setArea] = useState(existing?.area ? String(existing.area) : '');
   const [rentAmount, setRentAmount] = useState(existing?.rentAmount ? String(existing.rentAmount) : '');
+  const [expensasAmount, setExpensasAmount] = useState(
+    existing?.expensasAmount ? String(existing.expensasAmount) : '',
+  );
+  const [serviciosAmount, setServiciosAmount] = useState(
+    existing?.serviciosAmount ? String(existing.serviciosAmount) : '',
+  );
   const [notes, setNotes] = useState(existing?.notes ?? '');
 
   const handleSave = () => {
@@ -37,6 +43,14 @@ export default function PropertyFormScreen() {
       Alert.alert('Monto inválido', 'Ingresa un monto de alquiler válido.');
       return;
     }
+    if (expensasAmount && Number.isNaN(Number(expensasAmount))) {
+      Alert.alert('Monto inválido', 'Ingresa un monto de expensas válido.');
+      return;
+    }
+    if (serviciosAmount && Number.isNaN(Number(serviciosAmount))) {
+      Alert.alert('Monto inválido', 'Ingresa un monto de servicios válido.');
+      return;
+    }
 
     const payload = {
       title: title.trim(),
@@ -47,6 +61,8 @@ export default function PropertyFormScreen() {
       bathrooms: bathrooms ? Number(bathrooms) : undefined,
       area: area ? Number(area) : undefined,
       rentAmount: parsedRent,
+      expensasAmount: expensasAmount ? Number(expensasAmount) : undefined,
+      serviciosAmount: serviciosAmount ? Number(serviciosAmount) : undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -72,6 +88,20 @@ export default function PropertyFormScreen() {
           placeholder="0"
           keyboardType="numeric"
           required
+        />
+        <FormField
+          label="Expensas mensuales (opcional)"
+          value={expensasAmount}
+          onChangeText={setExpensasAmount}
+          placeholder="0"
+          keyboardType="numeric"
+        />
+        <FormField
+          label="Servicios mensuales (opcional)"
+          value={serviciosAmount}
+          onChangeText={setServiciosAmount}
+          placeholder="0"
+          keyboardType="numeric"
         />
         <FormField label="Ambientes" value={rooms} onChangeText={setRooms} placeholder="Ej: 3" keyboardType="numeric" />
         <FormField label="Baños" value={bathrooms} onChangeText={setBathrooms} placeholder="Ej: 2" keyboardType="numeric" />

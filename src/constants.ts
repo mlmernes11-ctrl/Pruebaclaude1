@@ -1,4 +1,4 @@
-import { ContractStatus, PropertyStatus, PropertyType } from './types';
+import { ContractStatus, PaymentConcept, PropertyStatus, PropertyType } from './types';
 
 export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   apartamento: 'Apartamento',
@@ -39,3 +39,13 @@ export const PAYMENT_METHOD_OPTIONS = [
   'Tarjeta',
   'Otro',
 ];
+
+export const PAYMENT_CONCEPT_LABEL: Record<PaymentConcept, string> = {
+  alquiler: 'Alquiler',
+  expensas: 'Expensas',
+  servicios: 'Servicios',
+};
+
+export const PAYMENT_CONCEPT_OPTIONS = Object.entries(PAYMENT_CONCEPT_LABEL).map(
+  ([value, label]) => ({ value: value as PaymentConcept, label }),
+);

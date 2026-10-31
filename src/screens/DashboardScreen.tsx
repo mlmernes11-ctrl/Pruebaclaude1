@@ -4,6 +4,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
+import { PAYMENT_CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { formatCurrency, formatPeriod } from '../utils/format';
@@ -101,7 +102,8 @@ export default function DashboardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.paymentTitle}>{property?.title ?? 'Propiedad'}</Text>
                   <Text style={styles.paymentSubtitle}>
-                    {tenant?.name ?? 'Inquilino'} · {formatPeriod(payment.period)}
+                    {tenant?.name ?? 'Inquilino'} · {PAYMENT_CONCEPT_LABEL[payment.concept]} ·{' '}
+                    {formatPeriod(payment.period)}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>

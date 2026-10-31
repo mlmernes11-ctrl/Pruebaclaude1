@@ -17,6 +17,8 @@ export interface Property {
   bathrooms?: number;
   area?: number;
   rentAmount: number;
+  expensasAmount?: number;
+  serviciosAmount?: number;
   status: PropertyStatus;
   notes?: string;
   createdAt: string;
@@ -50,9 +52,12 @@ export interface Contract {
 
 export type PaymentStatus = 'pagado' | 'pendiente' | 'vencido';
 
+export type PaymentConcept = 'alquiler' | 'expensas' | 'servicios';
+
 export interface Payment {
   id: string;
   contractId: string;
+  concept: PaymentConcept;
   period: string;
   amount: number;
   dueDate: string;

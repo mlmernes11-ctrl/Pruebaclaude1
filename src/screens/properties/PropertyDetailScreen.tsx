@@ -78,6 +78,12 @@ export default function PropertyDetailScreen() {
           <Text style={styles.sectionTitle}>Detalles</Text>
           <DetailRow label="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} />
           <DetailRow label="Alquiler mensual" value={formatCurrency(property.rentAmount)} />
+          {property.expensasAmount ? (
+            <DetailRow label="Expensas mensuales" value={formatCurrency(property.expensasAmount)} />
+          ) : null}
+          {property.serviciosAmount ? (
+            <DetailRow label="Servicios mensuales" value={formatCurrency(property.serviciosAmount)} />
+          ) : null}
           {property.rooms ? <DetailRow label="Ambientes" value={String(property.rooms)} /> : null}
           {property.bathrooms ? <DetailRow label="Baños" value={String(property.bathrooms)} /> : null}
           {property.area ? <DetailRow label="Superficie" value={`${property.area} m²`} /> : null}

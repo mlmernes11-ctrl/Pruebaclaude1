@@ -97,7 +97,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as StoredData;
-          setData({ ...EMPTY_DATA, ...parsed });
+          setData({
+            ...EMPTY_DATA,
+            ...parsed,
+            payments: (parsed.payments ?? []).map((p) => ({
+              ...p,
+              concept: p.concept ?? 'alquiler',
+            })),
+          });
         }
       } catch (e) {
         console.warn('No se pudo cargar la información guardada', e);
