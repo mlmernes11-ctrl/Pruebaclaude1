@@ -3,7 +3,7 @@ import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContai
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../context/DataContext';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
@@ -35,6 +35,7 @@ const PropertiesStack = createNativeStackNavigator();
 const TenantsStack = createNativeStackNavigator();
 const ContractsStack = createNativeStackNavigator();
 const PaymentsStack = createNativeStackNavigator();
+const SettingsStack = createNativeStackNavigator();
 
 function useScreenOptions() {
   const { colors } = useTheme();
@@ -64,7 +65,6 @@ function DashboardStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
-      <DashboardStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Ajustes' }} />
     </DashboardStack.Navigator>
   );
 }
@@ -189,12 +189,27 @@ function PaymentsStackNavigator() {
   );
 }
 
+function SettingsStackNavigator() {
+  const screenOptions = useScreenOptions();
+  return (
+    <SettingsStack.Navigator screenOptions={screenOptions}>
+      <SettingsStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+      <SettingsStack.Screen
+        name="ExchangeRate"
+        component={ExchangeRateScreen}
+        options={{ title: 'Cotización del dólar' }}
+      />
+    </SettingsStack.Navigator>
+  );
+}
+
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   DashboardTab: 'home',
   PropertiesTab: 'business',
   TenantsTab: 'people',
   ContractsTab: 'document-text',
   PaymentsTab: 'cash',
+  SettingsTab: 'settings',
 };
 
 const navigationRef = createNavigationContainerRef();
@@ -265,7 +280,13 @@ export default function RootNavigator() {
             paddingTop: 4,
             paddingBottom: Math.max(insets.bottom, 6),
           },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          // Six tabs share the width: a compact label that may use the tab's side padding,
+          // so "Propiedades" fits on 360px-wide phones without being cut.
+          tabBarLabel: ({ color, children }) => (
+            <Text numberOfLines={1} style={[styles.tabLabel, { color }]}>
+              {children}
+            </Text>
+          ),
           tabBarIcon: ({ color }) => <Ionicons name={TAB_ICONS[route.name]} size={22} color={color} />,
         })}
       >
@@ -282,12 +303,24 @@ export default function RootNavigator() {
           options={{ title: 'Contratos' }}
         />
         <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Pagos' }} />
+        <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Ajustes' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    // Stretch plus negative margins lets the label use the tab's 5px side padding.
+    alignSelf: 'stretch',
+    marginHorizontal: -5,
+    // The web Text caps itself at 100% of the padded box; lift the cap so the margins count.
+    maxWidth: 80,
+    textAlign: 'center',
+  },
   loading: {
     flex: 1,
     alignItems: 'center',

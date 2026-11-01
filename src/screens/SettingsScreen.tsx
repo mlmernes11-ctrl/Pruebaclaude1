@@ -55,6 +55,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Ajustes</Text>
         <SectionHeader title="Apariencia" />
         <View style={styles.appearance} accessibilityRole="radiogroup">
           {APPEARANCE_OPTIONS.map((option) => {
@@ -113,7 +114,14 @@ export default function SettingsScreen() {
 const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxl * 2,
+  },
+  title: {
+    fontSize: fontSize.xxl,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
   section: {
     marginTop: spacing.xl,

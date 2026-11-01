@@ -110,18 +110,7 @@ export default function DashboardScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <Text style={styles.header}>Resumen</Text>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate('Settings')}
-            accessibilityRole="button"
-            accessibilityLabel="Ajustes"
-            hitSlop={8}
-          >
-            <Ionicons name="settings-outline" size={22} color={colors.text} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.header}>Inicio</Text>
         <Text style={styles.subheader}>Vista general de tu cartera de alquileres</Text>
 
         {isEmpty ? (
@@ -448,22 +437,8 @@ function StatCard({
 const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxl * 2,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.round,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   header: {
     fontSize: fontSize.xxl,
