@@ -1,14 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import DetailRow, { detailValueStyle } from '../../components/DetailRow';
 import { showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
-import { CONTRACT_STATUS_LABEL, CONCEPT_LABEL } from '../../constants';
-import { unallocatedAmount, useData } from '../../context/DataContext';
+import SectionHeader from '../../components/SectionHeader';
+import { CONCEPT_LABEL, CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
+import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 import {
   addToTotals,
@@ -18,14 +21,9 @@ import {
   formatPeriod,
   formatTotals,
 } from '../../utils/format';
-import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
-import { smartGoBack } from '../../utils/navigation';
-
-const CONTRACT_TONE = {
-  activo: 'success',
-  finalizado: 'neutral',
-  cancelado: 'danger',
-} as const;
+import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, unallocatedAmount } from '../../utils/ledger';
+import { openInTab, smartGoBack } from '../../utils/navigation';
+import { contractEndBadge } from '../../utils/propertySummary';
 
 export default function ContractDetailScreen() {
   const navigation = useNavigation<any>();
@@ -52,6 +50,7 @@ export default function ContractDetailScreen() {
   const property = getPropertyById(contract.propertyId);
   const tenant = getTenantById(contract.tenantId);
   const charges = chargeViewsForContract(contract.id);
+  const endBadge = contractEndBadge(contract);
   const credit = emptyTotals();
   paymentsForContract(contract.id).forEach((p) => addToTotals(credit, unallocatedAmount(p), p.currency));
 
@@ -68,26 +67,50 @@ export default function ContractDetailScreen() {
     });
   };
 
-  const openPayments = (screen: string, params: object) =>
-    navigation.navigate('PaymentsTab', { screen, params, initial: false });
+  const openPayments = (screen: string, params: object) => openInTab(navigation, 'PaymentsTab', screen, params);
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
-          <Badge label={CONTRACT_STATUS_LABEL[contract.status]} tone={CONTRACT_TONE[contract.status]} />
+          <Badge label={CONTRACT_STATUS_LABEL[contract.status]} tone={CONTRACT_STATUS_TONE[contract.status]} />
         </View>
         <Text style={styles.tenantText}>{tenant?.name ?? 'Inquilino'}</Text>
 
+        <Card style={[styles.card, styles.linksCard]}>
+          <LinkRow
+            icon="business-outline"
+            label="Propiedad"
+            value={property ? [property.title, property.address].join(' · ') : 'Propiedad eliminada'}
+            onPress={
+              property
+                ? () => openInTab(navigation, 'PropertiesTab', 'PropertyDetail', { propertyId: property.id })
+                : undefined
+            }
+          />
+          <View style={styles.linkDivider} />
+          <LinkRow
+            icon="person-outline"
+            label="Inquilino"
+            value={tenant ? [tenant.name, tenant.phone].filter(Boolean).join(' · ') : 'Inquilino eliminado'}
+            onPress={
+              tenant ? () => openInTab(navigation, 'TenantsTab', 'TenantDetail', { tenantId: tenant.id }) : undefined
+            }
+          />
+        </Card>
+
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Detalles del contrato</Text>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>Detalles del contrato</Text>
+            {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
+          </View>
           <DetailRow label="Inicio" value={formatDate(contract.startDate)} />
           <DetailRow label="Fin" value={formatDate(contract.endDate)} />
           <DetailRow
             label="Alquiler mensual"
             value={
-              <MoneyText amount={contract.rentAmount} currency={contract.currency} style={styles.detailValue} />
+              <MoneyText amount={contract.rentAmount} currency={contract.currency} style={detailValueStyle} />
             }
           />
           {contract.depositAmount ? (
@@ -97,14 +120,11 @@ export default function ContractDetailScreen() {
           {contract.notes ? <DetailRow label="Notas" value={contract.notes} /> : null}
         </Card>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Liquidaciones</Text>
-          <Button
-            label="+ Liquidación manual"
-            variant="ghost"
-            onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
-          />
-        </View>
+        <SectionHeader
+          title="Liquidaciones"
+          actionLabel="+ Liquidación manual"
+          onAction={() => openPayments('ChargeForm', { contractId: contract.id })}
+        />
         <Button
           label="Registrar pago"
           onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
@@ -155,19 +175,35 @@ export default function ContractDetailScreen() {
             style={styles.actionButton}
             onPress={() => navigation.navigate('ContractForm', { contractId: contract.id })}
           />
-          <Button label="Eliminar" variant="danger" style={styles.actionButton} onPress={handleDelete} />
+          <Button label="Eliminar" variant="dangerOutline" style={styles.actionButton} onPress={handleDelete} />
         </View>
       </ScrollView>
     </Screen>
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function LinkRow({
+  icon,
+  label,
+  value,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  onPress?: () => void;
+}) {
   return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      {typeof value === 'string' ? <Text style={styles.detailValue}>{value}</Text> : value}
-    </View>
+    <TouchableOpacity style={styles.linkRow} onPress={onPress} disabled={!onPress} accessibilityRole="button">
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <View style={styles.linkInfo}>
+        <Text style={styles.linkLabel}>{label}</Text>
+        <Text style={styles.linkValue} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
+      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
+    </TouchableOpacity>
   );
 }
 
@@ -201,32 +237,43 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.lg,
   },
-  sectionTitle: {
+  linksCard: {
+    paddingVertical: spacing.xs,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  linkInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  linkLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  linkValue: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  linkDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  cardTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  cardTitle: {
     fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-    flexShrink: 1,
-    textAlign: 'right',
   },
   emptyText: {
     color: colors.textMuted,

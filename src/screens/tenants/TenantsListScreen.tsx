@@ -4,10 +4,10 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
-import FAB from '../../components/FAB';
 import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { useData } from '../../context/DataContext';
+import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import { colors, fontSize, radius, spacing } from '../../theme';
 
 export default function TenantsListScreen() {
@@ -28,7 +28,7 @@ export default function TenantsListScreen() {
           <EmptyState
             icon="people-outline"
             title="Sin inquilinos"
-            message="Agrega tu primer inquilino para vincularlo a un contrato."
+            message="Agregá tu primer inquilino para vincularlo a un contrato."
           />
         }
         renderItem={({ item }) => {
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: FAB_CLEARANCE,
   },
   card: {
     marginBottom: spacing.md,

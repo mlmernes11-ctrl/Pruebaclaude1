@@ -25,6 +25,7 @@ import { pushBackHandler } from '../navigation/browserBack';
 import { colors, fontSize, radius, spacing } from '../theme';
 import { formatDate } from '../utils/format';
 import { FieldMatch, matchFields, SearchField, searchWords } from '../utils/search';
+import { compareTitles } from '../utils/text';
 import Badge, { BadgeTone } from './Badge';
 import HighlightText from './HighlightText';
 
@@ -64,8 +65,6 @@ interface SearchResult {
   record: SearchRecord;
   matches: FieldMatch[];
 }
-
-const byTitle = (a: string, b: string) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
 
 // Search bar for list screens: tapping it slides up a full-screen search over everything.
 export default function SearchLauncher({ scope }: { scope: SearchScope }) {
@@ -191,7 +190,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
       grouped[key].sort((a, b) => {
         const aTitle = a.matches.some((m) => a.record.titleFields.includes(m.index)) ? 0 : 1;
         const bTitle = b.matches.some((m) => b.record.titleFields.includes(m.index)) ? 0 : 1;
-        return aTitle - bTitle || byTitle(a.record.fields[0].value ?? '', b.record.fields[0].value ?? '');
+        return aTitle - bTitle || compareTitles(a.record.fields[0].value ?? '', b.record.fields[0].value ?? '');
       }),
     );
     return grouped;

@@ -14,7 +14,7 @@ import {
   useExchangeRate,
 } from '../context/ExchangeRateContext';
 import { colors, fontSize, spacing } from '../theme';
-import { formatDateTime, formatMoney } from '../utils/format';
+import { formatDateTime, formatMoney, parseAmount } from '../utils/format';
 
 const SOURCE_OPTIONS = (Object.keys(RATE_SOURCE_LABEL) as RateSource[]).map((value) => ({
   value,
@@ -39,8 +39,8 @@ export default function ExchangeRateScreen() {
   const [manualInput, setManualInput] = useState(manualRate ? String(manualRate) : '');
 
   const handleSaveManual = () => {
-    const value = Number(manualInput.replace(',', '.'));
-    if (Number.isNaN(value) || value <= 0) {
+    const value = parseAmount(manualInput);
+    if (!value) {
       showAlert('Cotización inválida', 'Ingresá cuántos pesos vale un dólar, por ejemplo 1250.');
       return;
     }
@@ -49,7 +49,7 @@ export default function ExchangeRateScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card style={styles.card}>
           <Text style={styles.label}>Cotización en uso ({RATE_SOURCE_LABEL[source]})</Text>
           <Text style={styles.rate}>{rate ? `US$ 1 = ${formatMoney(rate, 'ARS')}` : 'Sin cotización'}</Text>

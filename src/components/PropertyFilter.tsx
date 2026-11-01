@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useData } from '../context/DataContext';
 import { colors, fontSize, radius, spacing } from '../theme';
+import { compareTitles } from '../utils/text';
 
 const normalize = (text: string) =>
   text
@@ -43,7 +44,7 @@ export default function PropertyFilter({
             searchText: normalize([property.title, property.address, subtitle].join(' ')),
           };
         })
-        .sort((a, b) => a.title.localeCompare(b.title, 'es', { numeric: true, sensitivity: 'base' })),
+        .sort((a, b) => compareTitles(a.title, b.title)),
     [properties, contracts, getTenantById],
   );
 

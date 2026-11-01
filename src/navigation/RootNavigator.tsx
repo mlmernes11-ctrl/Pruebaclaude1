@@ -3,7 +3,9 @@ import { createNavigationContainerRef, NavigationContainer } from '@react-naviga
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useData } from '../context/DataContext';
 import { colors } from '../theme';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
 
@@ -206,6 +208,18 @@ function useBrowserBackButton() {
 
 export default function RootNavigator() {
   useBrowserBackButton();
+  const insets = useSafeAreaInsets();
+  const { loading } = useData();
+
+  // Saved data loads in a moment; showing screens before that would flash empty states.
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack}>
       <Tab.Navigator
@@ -214,10 +228,16 @@ export default function RootNavigator() {
           headerShown: false,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
-          ),
+          // Explicit height so labels are never clipped (the web build has no bottom inset).
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            height: 64 + insets.bottom,
+            paddingTop: 4,
+            paddingBottom: Math.max(insets.bottom, 6),
+          },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          tabBarIcon: ({ color }) => <Ionicons name={TAB_ICONS[route.name]} size={22} color={color} />,
         })}
       >
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
@@ -237,3 +257,12 @@ export default function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+});

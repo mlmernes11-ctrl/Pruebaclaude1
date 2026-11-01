@@ -22,6 +22,7 @@ import {
   formatDate,
   formatMoney,
   formatPeriod,
+  parseAmount,
   periodToDueDate,
 } from '../../utils/format';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
@@ -35,6 +36,7 @@ export default function ChargeFormScreen() {
 
   const {
     contracts,
+    chargeViews,
     getChargeView,
     getContractById,
     getPropertyById,
@@ -87,7 +89,7 @@ export default function ChargeFormScreen() {
       showAlert('Falta el contrato', 'Elegí a qué contrato corresponde la liquidación.');
       return;
     }
-    const parsedAmount = Number(amount.replace(',', '.'));
+    const parsedAmount = parseAmount(amount) ?? 0;
     if (!(parsedAmount > 0)) {
       showAlert('Monto inválido', 'Ingresá el monto de la liquidación.');
       return;
@@ -113,9 +115,31 @@ export default function ChargeFormScreen() {
       currency,
       notes: notes.trim() || undefined,
     };
-    if (charge) updateCharge(charge.id, payload);
-    else addCharge(payload);
-    smartGoBack(navigation, 'PaymentsList');
+    const save = () => {
+      if (charge) updateCharge(charge.id, payload);
+      else addCharge(payload);
+      smartGoBack(navigation, 'PaymentsList');
+    };
+
+    const duplicate = chargeViews.find(
+      (v) =>
+        v.charge.id !== charge?.id &&
+        v.charge.contractId === contractId &&
+        v.charge.concept === concept &&
+        v.charge.period === period,
+    );
+    if (duplicate) {
+      showConfirm({
+        title: 'Ya hay una liquidación igual',
+        message: `Este contrato ya tiene ${CONCEPT_LABEL[concept].toLowerCase()} de ${formatPeriod(
+          period,
+        )} por ${formatMoney(duplicate.charge.amount, duplicate.charge.currency)}. ¿Guardar otra igual?`,
+        confirmLabel: 'Guardar igual',
+        onConfirm: save,
+      });
+      return;
+    }
+    save();
   };
 
   const handleVoid = () => {
@@ -140,7 +164,7 @@ export default function ChargeFormScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {existing && charge ? (
           <Card style={styles.summary}>
             <View style={styles.summaryHeader}>
@@ -251,7 +275,7 @@ export default function ChargeFormScreen() {
 
         <Button label={charge ? 'Guardar cambios' : 'Crear liquidación'} onPress={handleSave} />
         {charge ? (
-          <Button label="Anular liquidación" variant="danger" onPress={handleVoid} style={styles.voidButton} />
+          <Button label="Anular liquidación" variant="dangerOutline" onPress={handleVoid} style={styles.voidButton} />
         ) : null}
       </ScrollView>
     </Screen>

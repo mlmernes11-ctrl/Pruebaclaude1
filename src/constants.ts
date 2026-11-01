@@ -8,7 +8,7 @@ export const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
 ];
 
 export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
-  apartamento: 'Apartamento',
+  apartamento: 'Departamento',
   casa: 'Casa',
   local: 'Local comercial',
   oficina: 'Oficina',

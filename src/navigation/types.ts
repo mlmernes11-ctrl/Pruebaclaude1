@@ -17,7 +17,7 @@ export type TenantsStackParamList = {
 
 export type ContractsStackParamList = {
   ContractsList: undefined;
-  ContractForm: { contractId?: string } | undefined;
+  ContractForm: { contractId?: string; propertyId?: string; tenantId?: string } | undefined;
   ContractDetail: { contractId: string };
 };
 

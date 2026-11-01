@@ -4,20 +4,27 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
-import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
 import { useData } from '../../context/DataContext';
+import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import { colors, fontSize, spacing } from '../../theme';
 import { formatDate } from '../../utils/format';
+import { contractEndBadge } from '../../utils/propertySummary';
+import { compareTitles } from '../../utils/text';
 
 export default function ContractsListScreen() {
   const { contracts, getPropertyById, getTenantById } = useData();
   const navigation = useNavigation<any>();
 
-  const sorted = [...contracts].sort((a, b) => (a.startDate < b.startDate ? 1 : -1));
+  // Active contracts first, then by carpeta.
+  const sorted = [...contracts].sort(
+    (a, b) =>
+      Number(b.status === 'activo') - Number(a.status === 'activo') ||
+      compareTitles(getPropertyById(a.propertyId)?.title ?? '', getPropertyById(b.propertyId)?.title ?? ''),
+  );
 
   return (
     <Screen>
@@ -33,12 +40,13 @@ export default function ContractsListScreen() {
           <EmptyState
             icon="document-text-outline"
             title="Sin contratos"
-            message="Crea un contrato para vincular una propiedad con un inquilino."
+            message="Creá un contrato para vincular una propiedad con un inquilino."
           />
         }
         renderItem={({ item }) => {
           const property = getPropertyById(item.propertyId);
           const tenant = getTenantById(item.tenantId);
+          const endBadge = contractEndBadge(item);
           return (
             <Card
               style={styles.card}
@@ -52,9 +60,12 @@ export default function ContractsListScreen() {
               </View>
               <Text style={styles.tenantText}>{tenant?.name ?? 'Inquilino'}</Text>
               <View style={styles.footerRow}>
-                <Text style={styles.dateText}>
-                  {formatDate(item.startDate)} - {formatDate(item.endDate)}
-                </Text>
+                <View style={styles.dates}>
+                  <Text style={styles.dateText}>
+                    {formatDate(item.startDate)} al {formatDate(item.endDate)}
+                  </Text>
+                  {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
+                </View>
                 <MoneyText amount={item.rentAmount} currency={item.currency} suffix="/mes" style={styles.rentText} />
               </View>
             </Card>
@@ -80,7 +91,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: FAB_CLEARANCE,
   },
   card: {
     marginBottom: spacing.md,
@@ -102,6 +113,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginBottom: spacing.sm,
+  },
+  dates: {
+    flexShrink: 1,
+    gap: 4,
   },
   footerRow: {
     flexDirection: 'row',

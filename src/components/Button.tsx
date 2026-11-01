@@ -2,7 +2,8 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { colors, fontSize, radius, spacing } from '../theme';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+// dangerOutline: destructive actions that should not be the most prominent button on screen.
+type Variant = 'primary' | 'secondary' | 'danger' | 'dangerOutline' | 'ghost';
 
 export default function Button({
   label,
@@ -25,6 +26,7 @@ export default function Button({
       activeOpacity={0.75}
       disabled={disabled || loading}
       onPress={onPress}
+      accessibilityRole="button"
       style={[
         styles.base,
         { backgroundColor: variantStyle.bg, borderColor: variantStyle.border },
@@ -45,6 +47,7 @@ const VARIANT_STYLES: Record<Variant, { bg: string; fg: string; border: string }
   primary: { bg: colors.primary, fg: colors.white, border: colors.primary },
   secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary },
   danger: { bg: colors.danger, fg: colors.white, border: colors.danger },
+  dangerOutline: { bg: colors.surface, fg: colors.danger, border: colors.danger },
   ghost: { bg: 'transparent', fg: colors.textMuted, border: 'transparent' },
 };
 

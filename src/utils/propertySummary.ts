@@ -1,6 +1,7 @@
 import { Contract, MoneyTotals, Property, Tenant } from '../types';
 import { addToTotals, emptyTotals, formatDate, parseLocalDate, startOfToday } from './format';
 import { ChargeView } from './ledger';
+import { plural } from './text';
 
 // How the rent collection of a property stands; drives its color on the dashboard.
 export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato' | 'mantenimiento';
@@ -46,8 +47,17 @@ export interface PropertySummary {
   notes: string[];
 }
 
-function plural(count: number, singular: string, pluralForm: string) {
-  return `${count} ${count === 1 ? singular : pluralForm}`;
+export function daysUntil(iso: string): number {
+  return Math.round((parseLocalDate(iso).getTime() - startOfToday().getTime()) / 86400000);
+}
+
+// Badge for active contracts that already ended or end within CONTRACT_ENDING_SOON_DAYS.
+export function contractEndBadge(contract: Contract): { label: string; tone: 'warning' | 'danger' } | undefined {
+  if (contract.status !== 'activo') return undefined;
+  const days = daysUntil(contract.endDate);
+  if (days < 0) return { label: 'Vencido', tone: 'danger' };
+  if (days > CONTRACT_ENDING_SOON_DAYS) return undefined;
+  return { label: days === 0 ? 'Vence hoy' : `Vence en ${plural(days, 'día', 'días')}`, tone: 'warning' };
 }
 
 function bucket(): PaymentBucket {
@@ -85,11 +95,7 @@ export function summarizeProperty(
       addToTotals(target.totals, view.balance, view.charge.currency);
     });
 
-  const daysToContractEnd = activeContract
-    ? Math.round(
-        (parseLocalDate(activeContract.endDate).getTime() - startOfToday().getTime()) / 86400000,
-      )
-    : undefined;
+  const daysToContractEnd = activeContract ? daysUntil(activeContract.endDate) : undefined;
 
   let collection: CollectionState = 'al-dia';
   if (!activeContract) {

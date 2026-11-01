@@ -5,30 +5,23 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import DetailRow, { detailValueStyle } from '../../components/DetailRow';
 import { showAlert, showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
+import SectionHeader from '../../components/SectionHeader';
 import {
   CONTRACT_STATUS_LABEL,
+  CONTRACT_STATUS_TONE,
   PROPERTY_STATUS_LABEL,
+  PROPERTY_STATUS_TONE,
   PROPERTY_TYPE_LABEL,
 } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatTotals } from '../../utils/format';
-import { PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
-
-const STATUS_TONE = {
-  disponible: 'info',
-  alquilada: 'success',
-  mantenimiento: 'neutral',
-} as const;
-
-const CONTRACT_TONE = {
-  activo: 'success',
-  finalizado: 'neutral',
-  cancelado: 'danger',
-} as const;
+import { openInTab } from '../../utils/navigation';
+import { contractEndBadge, PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
 
 export default function PropertyDetailScreen() {
   const navigation = useNavigation<any>();
@@ -59,7 +52,7 @@ export default function PropertyDetailScreen() {
   const handleDelete = () => {
     showConfirm({
       title: 'Eliminar propiedad',
-      message: `¿Seguro que deseas eliminar "${property.title}"?`,
+      message: `¿Seguro que querés eliminar "${property.title}"?`,
       confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
@@ -78,15 +71,17 @@ export default function PropertyDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{property.title}</Text>
-          <Badge label={PROPERTY_STATUS_LABEL[property.status]} tone={STATUS_TONE[property.status]} />
+          <Badge label={PROPERTY_STATUS_LABEL[property.status]} tone={PROPERTY_STATUS_TONE[property.status]} />
         </View>
         <View style={styles.addressRow}>
           <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-          <Text style={styles.address}>{property.neighborhood ? `${property.address} · ${property.neighborhood}` : property.address}</Text>
+          <Text style={styles.address}>
+            {property.neighborhood ? `${property.address} · ${property.neighborhood}` : property.address}
+          </Text>
         </View>
 
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Detalles</Text>
+          <Text style={styles.cardTitle}>Detalles</Text>
           <DetailRow label="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} />
           <DetailRow
             label="Alquiler mensual"
@@ -94,7 +89,7 @@ export default function PropertyDetailScreen() {
               <MoneyText
                 amount={property.rentAmount}
                 currency={property.rentCurrency}
-                style={styles.detailValue}
+                style={detailValueStyle}
               />
             }
           />
@@ -110,7 +105,7 @@ export default function PropertyDetailScreen() {
           {property.notes ? <DetailRow label="Notas" value={property.notes} /> : null}
         </Card>
 
-        <Text style={styles.sectionTitle}>Pagos</Text>
+        <SectionHeader title="Pagos" />
         <Card style={styles.card}>
           <View style={styles.paymentStats}>
             <PaymentStat label="Vencidas" bucket={summary.overdue} color={colors.danger} />
@@ -121,11 +116,7 @@ export default function PropertyDetailScreen() {
             <Button
               label="Registrar pago"
               onPress={() =>
-                navigation.navigate('PaymentsTab', {
-                  screen: 'PaymentForm',
-                  params: { contractId: summary.activeContract!.id },
-                  initial: false,
-                })
+                openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: summary.activeContract!.id })
               }
               style={styles.collectButton}
             />
@@ -137,19 +128,11 @@ export default function PropertyDetailScreen() {
           />
         </Card>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Contratos</Text>
-          <Button
-            label="+ Nuevo contrato"
-            variant="ghost"
-            onPress={() =>
-              navigation.navigate('ContractsTab', {
-                screen: 'ContractForm',
-                params: { propertyId: property.id },
-              })
-            }
-          />
-        </View>
+        <SectionHeader
+          title="Contratos"
+          actionLabel="+ Nuevo contrato"
+          onAction={() => openInTab(navigation, 'ContractsTab', 'ContractForm', { propertyId: property.id })}
+        />
         {contracts.length === 0 ? (
           <Card>
             <Text style={styles.emptyText}>Esta propiedad no tiene contratos.</Text>
@@ -157,27 +140,26 @@ export default function PropertyDetailScreen() {
         ) : (
           contracts.map((contract) => {
             const tenant = getTenantById(contract.tenantId);
+            const endBadge = contractEndBadge(contract);
             return (
               <Card
                 key={contract.id}
                 style={styles.contractCard}
-                onPress={() =>
-                  navigation.navigate('ContractsTab', {
-                    screen: 'ContractDetail',
-                    params: { contractId: contract.id },
-                  })
-                }
+                onPress={() => openInTab(navigation, 'ContractsTab', 'ContractDetail', { contractId: contract.id })}
               >
                 <View style={styles.cardHeader}>
                   <Text style={styles.contractTenant}>{tenant?.name ?? 'Inquilino'}</Text>
                   <Badge
                     label={CONTRACT_STATUS_LABEL[contract.status]}
-                    tone={CONTRACT_TONE[contract.status]}
+                    tone={CONTRACT_STATUS_TONE[contract.status]}
                   />
                 </View>
-                <Text style={styles.contractDates}>
-                  {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
-                </Text>
+                <View style={styles.contractFooter}>
+                  <Text style={styles.contractDates}>
+                    {formatDate(contract.startDate)} al {formatDate(contract.endDate)}
+                  </Text>
+                  {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
+                </View>
               </Card>
             );
           })
@@ -190,19 +172,10 @@ export default function PropertyDetailScreen() {
             style={styles.actionButton}
             onPress={() => navigation.navigate('PropertyForm', { propertyId: property.id })}
           />
-          <Button label="Eliminar" variant="danger" style={styles.actionButton} onPress={handleDelete} />
+          <Button label="Eliminar" variant="dangerOutline" style={styles.actionButton} onPress={handleDelete} />
         </View>
       </ScrollView>
     </Screen>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      {typeof value === 'string' ? <Text style={styles.detailValue}>{value}</Text> : value}
-    </View>
   );
 }
 
@@ -261,30 +234,11 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.lg,
   },
-  sectionTitle: {
+  cardTitle: {
     fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.sm,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
   },
   emptyText: {
     color: colors.textMuted,
@@ -302,6 +256,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '700',
     color: colors.text,
+  },
+  contractFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   contractDates: {
     fontSize: fontSize.xs,

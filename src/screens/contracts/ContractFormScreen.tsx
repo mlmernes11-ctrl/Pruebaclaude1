@@ -2,7 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import DateField from '../../components/DateField';
-import { showAlert } from '../../components/DialogHost';
+import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -12,7 +12,8 @@ import { CONTRACT_STATUS_OPTIONS, CURRENCY_OPTIONS, DEFAULT_RENT_CURRENCY } from
 import { useData } from '../../context/DataContext';
 import { spacing } from '../../theme';
 import { ContractStatus, Currency } from '../../types';
-import { CURRENCY_SYMBOL, todayISO } from '../../utils/format';
+import { CURRENCY_SYMBOL, parseAmount, todayISO } from '../../utils/format';
+import { compareTitles } from '../../utils/text';
 import { smartGoBack } from '../../utils/navigation';
 
 function isValidDate(value: string): boolean {
@@ -26,7 +27,7 @@ export default function ContractFormScreen() {
   const presetPropertyId = route.params?.propertyId as string | undefined;
   const presetTenantId = route.params?.tenantId as string | undefined;
 
-  const { getContractById, addContract, updateContract, properties, tenants, getPropertyById } =
+  const { getContractById, addContract, updateContract, properties, tenants, contracts, getPropertyById } =
     useData();
   const existing = getContractById(contractId);
 
@@ -61,7 +62,7 @@ export default function ContractFormScreen() {
 
   const handleSave = () => {
     if (!propertyId || !tenantId) {
-      showAlert('Faltan datos', 'Selecciona la propiedad y el inquilino.');
+      showAlert('Faltan datos', 'Elegí la propiedad y el inquilino.');
       return;
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
@@ -72,13 +73,18 @@ export default function ContractFormScreen() {
       showAlert('Fechas inválidas', 'La fecha de fin debe ser posterior a la de inicio.');
       return;
     }
-    const parsedRent = Number(rentAmount);
-    if (Number.isNaN(parsedRent) || parsedRent <= 0) {
-      showAlert('Monto inválido', 'Ingresa un monto de alquiler válido.');
+    const parsedRent = parseAmount(rentAmount);
+    if (!parsedRent) {
+      showAlert('Monto inválido', 'Ingresá un monto de alquiler válido, por ejemplo 1.500.000.');
+      return;
+    }
+    const parsedDeposit = depositAmount.trim() ? parseAmount(depositAmount) : undefined;
+    if (depositAmount.trim() && parsedDeposit === undefined) {
+      showAlert('Monto inválido', 'Ingresá un depósito válido o dejalo vacío.');
       return;
     }
     const parsedDay = Number(paymentDay);
-    if (Number.isNaN(parsedDay) || parsedDay < 1 || parsedDay > 28) {
+    if (!Number.isInteger(parsedDay) || parsedDay < 1 || parsedDay > 28) {
       showAlert('Día inválido', 'El día de pago debe estar entre 1 y 28.');
       return;
     }
@@ -90,40 +96,65 @@ export default function ContractFormScreen() {
       endDate,
       rentAmount: parsedRent,
       currency,
-      depositAmount: depositAmount ? Number(depositAmount) : undefined,
+      depositAmount: parsedDeposit || undefined,
       paymentDay: parsedDay,
       status,
       notes: notes.trim() || undefined,
     };
 
-    if (existing) {
-      updateContract(existing.id, payload);
-    } else {
-      addContract(payload);
+    const save = () => {
+      if (existing) {
+        updateContract(existing.id, payload);
+      } else {
+        addContract(payload);
+      }
+      smartGoBack(navigation, 'ContractsList');
+    };
+
+    // Two active contracts on one property would bill it twice.
+    const otherActive = contracts.find(
+      (c) => c.id !== existing?.id && c.propertyId === propertyId && c.status === 'activo',
+    );
+    if (status === 'activo' && otherActive) {
+      showConfirm({
+        title: 'La propiedad ya tiene un contrato activo',
+        message:
+          'Si los dos quedan activos, se van a generar dos liquidaciones por mes. Si el anterior terminó, marcalo como finalizado. ¿Guardar igual?',
+        confirmLabel: 'Guardar igual',
+        onConfirm: save,
+      });
+      return;
     }
-    smartGoBack(navigation, 'ContractsList');
+    save();
   };
+
+  const propertyOptions = [...properties]
+    .sort((a, b) => compareTitles(a.title, b.title))
+    .map((p) => ({ id: p.id, label: p.title, subtitle: [p.address, p.neighborhood].filter(Boolean).join(' · ') }));
+  const tenantOptions = [...tenants]
+    .sort((a, b) => compareTitles(a.name, b.name))
+    .map((t) => ({ id: t.id, label: t.name, subtitle: t.phone }));
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <SelectField
           label="Propiedad"
-          placeholder="Selecciona una propiedad"
+          placeholder="Elegí una propiedad"
           required
           selectedId={propertyId}
           onSelect={handleSelectProperty}
-          emptyMessage="No hay propiedades. Crea una primero."
-          options={properties.map((p) => ({ id: p.id, label: p.title, subtitle: p.address }))}
+          emptyMessage="No hay propiedades. Creá una primero."
+          options={propertyOptions}
         />
         <SelectField
           label="Inquilino"
-          placeholder="Selecciona un inquilino"
+          placeholder="Elegí un inquilino"
           required
           selectedId={tenantId}
           onSelect={setTenantId}
-          emptyMessage="No hay inquilinos. Crea uno primero."
-          options={tenants.map((t) => ({ id: t.id, label: t.name, subtitle: t.phone }))}
+          emptyMessage="No hay inquilinos. Creá uno primero."
+          options={tenantOptions}
         />
         <DateField label="Fecha de inicio" value={startDate} onChange={setStartDate} required />
         <DateField label="Fecha de fin" value={endDate} onChange={setEndDate} required />
@@ -148,7 +179,7 @@ export default function ContractFormScreen() {
           value={paymentDay}
           onChangeText={setPaymentDay}
           placeholder="1-28"
-          keyboardType="numeric"
+          keyboardType="number-pad"
           required
         />
         <OptionChips label="Estado" options={CONTRACT_STATUS_OPTIONS} value={status} onChange={setStatus} />

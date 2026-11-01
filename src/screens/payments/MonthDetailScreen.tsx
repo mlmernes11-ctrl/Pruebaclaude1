@@ -13,6 +13,7 @@ import { colors, fontSize, spacing } from '../../theme';
 import { MoneyTotals } from '../../types';
 import { describeTotals, formatDate, formatMoney } from '../../utils/format';
 import { buildPeriodRow } from '../../utils/history';
+import { compareTitles } from '../../utils/text';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
 
 export default function MonthDetailScreen() {
@@ -36,7 +37,7 @@ export default function MonthDetailScreen() {
         tenantName: getTenantById(contract?.tenantId)?.name ?? 'Inquilino',
       };
     })
-    .sort((a, b) => a.propertyTitle.localeCompare(b.propertyTitle, 'es', { numeric: true, sensitivity: 'base' }));
+    .sort((a, b) => compareTitles(a.propertyTitle, b.propertyTitle));
   const row = buildPeriodRow(
     views.map((v) => v.view),
     period,

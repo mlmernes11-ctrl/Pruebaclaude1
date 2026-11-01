@@ -7,7 +7,8 @@ import { showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import { CONCEPT_LABEL } from '../../constants';
-import { unallocatedAmount, useData } from '../../context/DataContext';
+import { useData } from '../../context/DataContext';
+import { unallocatedAmount } from '../../utils/ledger';
 import { colors, fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
@@ -96,7 +97,7 @@ export default function PaymentDetailScreen() {
           ) : null}
         </Card>
 
-        <Button label="Anular pago" variant="danger" onPress={handleDelete} />
+        <Button label="Anular pago" variant="dangerOutline" onPress={handleDelete} />
       </ScrollView>
     </Screen>
   );

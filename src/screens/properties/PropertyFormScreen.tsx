@@ -15,7 +15,7 @@ import {
 import { useData } from '../../context/DataContext';
 import { Currency, PropertyStatus, PropertyType } from '../../types';
 import { spacing } from '../../theme';
-import { CURRENCY_SYMBOL } from '../../utils/format';
+import { CURRENCY_SYMBOL, parseAmount } from '../../utils/format';
 
 export default function PropertyFormScreen() {
   const navigation = useNavigation<any>();
@@ -49,19 +49,22 @@ export default function PropertyFormScreen() {
       showAlert('Faltan datos', 'Completá el nombre, la dirección y el monto de alquiler.');
       return;
     }
-    const parsedRent = Number(rentAmount);
-    if (Number.isNaN(parsedRent) || parsedRent <= 0) {
-      showAlert('Monto inválido', 'Ingresa un monto de alquiler válido.');
+    const parsedRent = parseAmount(rentAmount);
+    if (!parsedRent) {
+      showAlert('Monto inválido', 'Ingresá un monto de alquiler válido, por ejemplo 1.500.000.');
       return;
     }
-    if (expensasAmount && Number.isNaN(Number(expensasAmount))) {
-      showAlert('Monto inválido', 'Ingresa un monto de expensas válido.');
+    const parsedExpensas = expensasAmount.trim() ? parseAmount(expensasAmount) : undefined;
+    if (expensasAmount.trim() && parsedExpensas === undefined) {
+      showAlert('Monto inválido', 'Ingresá un monto de expensas válido.');
       return;
     }
-    if (serviciosAmount && Number.isNaN(Number(serviciosAmount))) {
-      showAlert('Monto inválido', 'Ingresa un monto de servicios válido.');
+    const parsedServicios = serviciosAmount.trim() ? parseAmount(serviciosAmount) : undefined;
+    if (serviciosAmount.trim() && parsedServicios === undefined) {
+      showAlert('Monto inválido', 'Ingresá un monto de servicios válido.');
       return;
     }
+    const parsedArea = area.trim() ? parseAmount(area) : undefined;
 
     const payload = {
       title: title.trim(),
@@ -69,13 +72,13 @@ export default function PropertyFormScreen() {
       neighborhood: neighborhood.trim() || undefined,
       type,
       status,
-      rooms: rooms ? Number(rooms) : undefined,
-      bathrooms: bathrooms ? Number(bathrooms) : undefined,
-      area: area ? Number(area) : undefined,
+      rooms: Number.parseInt(rooms, 10) || undefined,
+      bathrooms: Number.parseInt(bathrooms, 10) || undefined,
+      area: parsedArea || undefined,
       rentAmount: parsedRent,
       rentCurrency,
-      expensasAmount: expensasAmount ? Number(expensasAmount) : undefined,
-      serviciosAmount: serviciosAmount ? Number(serviciosAmount) : undefined,
+      expensasAmount: parsedExpensas || undefined,
+      serviciosAmount: parsedServicios || undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -89,7 +92,7 @@ export default function PropertyFormScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <FormField label="Nombre" value={title} onChangeText={setTitle} placeholder="Ej: Carpeta 102" required />
         <FormField label="Dirección" value={address} onChangeText={setAddress} placeholder="Calle, número y piso" required />
         <FormField label="Barrio" value={neighborhood} onChangeText={setNeighborhood} placeholder="Ej: Belgrano" />
@@ -123,8 +126,8 @@ export default function PropertyFormScreen() {
           placeholder="0"
           keyboardType="numeric"
         />
-        <FormField label="Ambientes" value={rooms} onChangeText={setRooms} placeholder="Ej: 3" keyboardType="numeric" />
-        <FormField label="Baños" value={bathrooms} onChangeText={setBathrooms} placeholder="Ej: 2" keyboardType="numeric" />
+        <FormField label="Ambientes" value={rooms} onChangeText={setRooms} placeholder="Ej: 3" keyboardType="number-pad" />
+        <FormField label="Baños" value={bathrooms} onChangeText={setBathrooms} placeholder="Ej: 2" keyboardType="number-pad" />
         <FormField label="Superficie (m²)" value={area} onChangeText={setArea} placeholder="Ej: 65" keyboardType="numeric" />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />
         <Button label={existing ? 'Guardar cambios' : 'Crear propiedad'} onPress={handleSave} />

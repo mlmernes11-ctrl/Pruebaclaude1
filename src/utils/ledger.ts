@@ -104,3 +104,52 @@ export function allocateAmount(
 
   return { allocations, unallocated: remaining > EPSILON ? remaining : 0 };
 }
+
+export function unallocatedAmount(payment: Payment): number {
+  const allocated = payment.allocations.reduce((sum, a) => sum + a.amount, 0);
+  return Math.max(0, roundMoney(payment.amount - allocated));
+}
+
+// Money paid in advance ("a favor") covers the next charges of the same contract, concept and
+// currency as soon as they exist. Returns undefined when nothing changes.
+export function applyCredits(payments: Payment[], charges: Charge[]): Payment[] | undefined {
+  if (!payments.some((p) => unallocatedAmount(p) > EPSILON)) return undefined;
+  const ledger = buildLedger(payments);
+  const balances = new Map<string, number>();
+  const outstanding = sortOldestFirst(
+    charges.filter((c) => !c.voided).map((c) => viewCharge(c, ledger)),
+  ).filter((view) => {
+    balances.set(view.charge.id, view.balance);
+    return isOutstanding(view);
+  });
+  if (!outstanding.length) return undefined;
+
+  const updated = new Map<string, Payment>();
+  [...payments]
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    .forEach((payment) => {
+      let credit = unallocatedAmount(payment);
+      if (credit <= EPSILON) return;
+      const extra: PaymentAllocation[] = [];
+      for (const view of outstanding) {
+        if (credit <= EPSILON) break;
+        const { charge } = view;
+        const balance = balances.get(charge.id) ?? 0;
+        if (
+          balance <= EPSILON ||
+          charge.contractId !== payment.contractId ||
+          charge.concept !== payment.concept ||
+          charge.currency !== payment.currency
+        ) {
+          continue;
+        }
+        const applied = roundMoney(Math.min(balance, credit));
+        extra.push({ chargeId: charge.id, amount: applied });
+        balances.set(charge.id, roundMoney(balance - applied));
+        credit = roundMoney(credit - applied);
+      }
+      if (extra.length) updated.set(payment.id, { ...payment, allocations: [...payment.allocations, ...extra] });
+    });
+
+  return updated.size ? payments.map((p) => updated.get(p.id) ?? p) : undefined;
+}

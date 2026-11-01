@@ -30,9 +30,8 @@ import {
   sortByCollection,
   summarizeProperty,
 } from '../utils/propertySummary';
+import { compareTitles, plural } from '../utils/text';
 
-const countLiquidaciones = (n: number) => `${n} ${n === 1 ? 'liquidación' : 'liquidaciones'}`;
-const countPagos = (n: number) => `${n} ${n === 1 ? 'pago' : 'pagos'}`;
 
 type PropertySort = 'estado' | 'nombre' | 'barrio';
 
@@ -43,7 +42,7 @@ const PROPERTY_SORT_OPTIONS: SortOption<PropertySort>[] = [
 ];
 
 const byTitle = (a: PropertySummary, b: PropertySummary) =>
-  a.property.title.localeCompare(b.property.title, 'es', { numeric: true, sensitivity: 'base' });
+  compareTitles(a.property.title, b.property.title);
 
 // Properties without a neighborhood go last when grouping by barrio.
 const NO_NEIGHBORHOOD = 'Sin barrio';
@@ -59,7 +58,7 @@ function sortSummaries(summaries: PropertySummary[], sort: PropertySort): Proper
       if (na !== nb) {
         if (na === NO_NEIGHBORHOOD) return 1;
         if (nb === NO_NEIGHBORHOOD) return -1;
-        return na.localeCompare(nb, 'es', { sensitivity: 'base' });
+        return compareTitles(na, nb);
       }
       return byTitle(a, b);
     });
@@ -224,7 +223,7 @@ export default function DashboardScreen() {
           {overdue.detail ? <Text style={styles.incomeDetail}>{overdue.detail}</Text> : null}
           <Text style={styles.incomeItemText}>
             {stats.overdueCount > 0
-              ? `${countLiquidaciones(stats.overdueCount)} vencidas sin pagar · tocá para ver el detalle`
+              ? `${plural(stats.overdueCount, 'liquidación vencida', 'liquidaciones vencidas')} sin pagar · tocá para ver el detalle`
               : 'No hay liquidaciones vencidas.'}
           </Text>
         </Card>
@@ -234,7 +233,7 @@ export default function DashboardScreen() {
             icon="time-outline"
             label="Por vencer"
             value={pending.main}
-            sublabel={[countLiquidaciones(stats.pendingCount), pending.detail].filter(Boolean).join(' · ')}
+            sublabel={[plural(stats.pendingCount, 'liquidación', 'liquidaciones'), pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
             onPress={() => openPayments({ view: 'liquidaciones', filter: 'pendiente' })}
           />
@@ -242,7 +241,7 @@ export default function DashboardScreen() {
             icon="checkmark-circle-outline"
             label="Pagado este mes"
             value={collected.main}
-            sublabel={[countPagos(collectedCount), collected.detail].filter(Boolean).join(' · ')}
+            sublabel={[plural(collectedCount, 'pago', 'pagos'), collected.detail].filter(Boolean).join(' · ')}
             tone={colors.success}
             onPress={() => openPayments({ view: 'pagos', month: 'este' })}
           />

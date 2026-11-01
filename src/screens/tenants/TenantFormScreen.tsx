@@ -23,7 +23,7 @@ export default function TenantFormScreen() {
 
   const handleSave = () => {
     if (!name.trim()) {
-      showAlert('Falta el nombre', 'Ingresa el nombre del inquilino.');
+      showAlert('Falta el nombre', 'Ingresá el nombre del inquilino.');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function TenantFormScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <FormField label="Nombre completo" value={name} onChangeText={setName} placeholder="Ej: Ana Gómez" required />
         <FormField label="Documento" value={document} onChangeText={setDocument} placeholder="DNI / Pasaporte" />
         <FormField label="Teléfono" value={phone} onChangeText={setPhone} placeholder="Número de contacto" keyboardType="phone-pad" />

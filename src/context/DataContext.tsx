@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import {
   Charge,
   ChargeConcept,
@@ -12,12 +13,14 @@ import {
   Tenant,
 } from '../types';
 import { buildMissingCharges, syncUnpaidAutoCharges } from '../utils/chargeGeneration';
-import { addToTotals, currentPeriod, emptyTotals } from '../utils/format';
+import { addToTotals, currentPeriod, emptyTotals, todayISO } from '../utils/format';
 import { generateId } from '../utils/id';
-import { buildLedger, ChargeView, viewCharge } from '../utils/ledger';
+import { applyCredits, buildLedger, ChargeView, viewCharge } from '../utils/ledger';
 import { buildSampleData } from '../utils/sampleData';
 
 const STORAGE_KEY = 'gestion_alquileres_v1';
+// Unreadable saved data is copied here before anything new overwrites it.
+const BACKUP_KEY = 'gestion_alquileres_v1_respaldo';
 
 export interface StoredData {
   properties: Property[];
@@ -139,11 +142,6 @@ function normalizeStoredData(parsed: Record<string, unknown>): StoredData {
   return { ...base, charges, payments };
 }
 
-export function unallocatedAmount(payment: Payment): number {
-  const allocated = payment.allocations.reduce((sum, a) => sum + a.amount, 0);
-  return Math.max(0, Math.round((payment.amount - allocated) * 100) / 100);
-}
-
 interface DashboardStats {
   totalProperties: number;
   availableProperties: number;
@@ -159,6 +157,8 @@ interface DashboardStats {
 
 interface DataContextValue extends StoredData {
   loading: boolean;
+  // Today's date; changes at midnight or when the app comes back, so statuses stay current.
+  today: string;
   stats: DashboardStats;
   chargeViews: ChargeView[];
   addProperty: (data: Omit<Property, 'id' | 'createdAt'>) => Property;
@@ -198,18 +198,34 @@ const byDueDateDesc = (a: ChargeView, b: ChargeView) =>
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<StoredData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
+  const [today, setToday] = useState(todayISO);
 
   useEffect(() => {
     (async () => {
+      let raw: string | null = null;
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) setData(normalizeStoredData(JSON.parse(raw)));
       } catch (e) {
         console.warn('No se pudo cargar la información guardada', e);
+        if (raw) await AsyncStorage.setItem(BACKUP_KEY, raw).catch(() => undefined);
       } finally {
         setLoading(false);
       }
     })();
+  }, []);
+
+  // An app left open overnight (or reopened days later) recalculates due dates and new months.
+  useEffect(() => {
+    const refresh = () => setToday(todayISO());
+    const timer = setInterval(refresh, 60_000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -227,13 +243,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       charges: [...prev.charges, ...buildMissingCharges(prev.contracts, prev.properties, prev.charges)],
     }));
-  }, [loading, data.contracts, data.properties, data.charges]);
+  }, [loading, today, data.contracts, data.properties, data.charges]);
+
+  // Money left in favor of a tenant pays their next charges automatically.
+  useEffect(() => {
+    if (loading || !applyCredits(data.payments, data.charges)) return;
+    setData((prev) => ({ ...prev, payments: applyCredits(prev.payments, prev.charges) ?? prev.payments }));
+  }, [loading, data.payments, data.charges]);
 
   const ledger = useMemo(() => buildLedger(data.payments), [data.payments]);
 
   const chargeViews = useMemo(
     () => data.charges.filter((c) => !c.voided).map((c) => viewCharge(c, ledger)),
-    [data.charges, ledger],
+    // today is a dependency so overdue statuses refresh when the date changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data.charges, ledger, today],
   );
 
   const addProperty = useCallback<DataContextValue['addProperty']>((values) => {
@@ -263,7 +287,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteProperty = useCallback<DataContextValue['deleteProperty']>(
     (id) => {
       if (data.contracts.some((c) => c.propertyId === id)) {
-        return { ok: false, reason: 'Esta propiedad tiene contratos asociados. Elimínalos primero.' };
+        return { ok: false, reason: 'Esta propiedad tiene contratos asociados. Eliminalos primero.' };
       }
       setData((prev) => ({ ...prev, properties: prev.properties.filter((p) => p.id !== id) }));
       return { ok: true };
@@ -287,7 +311,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteTenant = useCallback<DataContextValue['deleteTenant']>(
     (id) => {
       if (data.contracts.some((c) => c.tenantId === id)) {
-        return { ok: false, reason: 'Este inquilino tiene contratos asociados. Elimínalos primero.' };
+        return { ok: false, reason: 'Este inquilino tiene contratos asociados. Eliminalos primero.' };
       }
       setData((prev) => ({ ...prev, tenants: prev.tenants.filter((t) => t.id !== id) }));
       return { ok: true };
@@ -442,7 +466,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const stats = useMemo<DashboardStats>(() => {
     const activeContracts = data.contracts.filter((c) => c.status === 'activo');
-    const thisPeriod = currentPeriod();
+    const thisPeriod = today.slice(0, 7);
 
     let pendingCount = 0;
     const pendingAmount = emptyTotals();
@@ -475,11 +499,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       overdueAmount,
       collectedThisMonth,
     };
-  }, [data.properties, data.contracts, data.payments, chargeViews]);
+  }, [data.properties, data.contracts, data.payments, chargeViews, today]);
 
   const value: DataContextValue = {
     ...data,
     loading,
+    today,
     stats,
     chargeViews,
     addProperty,

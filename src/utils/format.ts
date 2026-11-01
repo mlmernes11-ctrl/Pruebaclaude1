@@ -17,6 +17,18 @@ export function formatMoney(amount: number, currency: Currency = 'ARS'): string 
   return `${CURRENCY_SYMBOL[currency]} ${number}`;
 }
 
+// Reads amounts the way they are written in Argentina: "1.500.000", "1500,50" or "1500.50".
+export function parseAmount(input: string): number | undefined {
+  const clean = input.replace(/US\$|\$|\s/gi, '');
+  if (!clean) return undefined;
+  let normalized = clean;
+  if (clean.includes(',')) normalized = clean.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(clean)) normalized = clean.replace(/\./g, '');
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return undefined;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : undefined;
+}
+
 export function emptyTotals(): MoneyTotals {
   return { USD: 0, ARS: 0 };
 }
@@ -53,7 +65,7 @@ export function formatDate(iso?: string): string {
   if (!iso) return '-';
   const d = iso.length === 10 ? parseLocalDate(iso) : new Date(iso);
   if (Number.isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('es-ES', {
+  return d.toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

@@ -5,20 +5,19 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
-import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { PROPERTY_STATUS_LABEL, PROPERTY_STATUS_TONE, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
+import { compareTitles } from '../../utils/text';
+import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import { colors, fontSize, spacing } from '../../theme';
 
 export default function PropertiesListScreen() {
   const { properties } = useData();
   const navigation = useNavigation<any>();
-  const sorted = [...properties].sort((a, b) =>
-    a.title.localeCompare(b.title, 'es', { numeric: true, sensitivity: 'base' }),
-  );
+  const sorted = [...properties].sort((a, b) => compareTitles(a.title, b.title));
 
   return (
     <Screen>
@@ -34,7 +33,7 @@ export default function PropertiesListScreen() {
           <EmptyState
             icon="business-outline"
             title="Sin propiedades"
-            message="Agrega tu primera propiedad para comenzar a gestionar alquileres."
+            message="Agregá tu primera propiedad para empezar a gestionar alquileres."
           />
         }
         renderItem={({ item }) => (
@@ -80,7 +79,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: FAB_CLEARANCE,
   },
   card: {
     marginBottom: spacing.md,

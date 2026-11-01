@@ -4,14 +4,14 @@ import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from '
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
-import FAB from '../../components/FAB';
+import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import PropertyFilter from '../../components/PropertyFilter';
 import SortMenu, { SortOption } from '../../components/SortMenu';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
-import { unallocatedAmount, useData } from '../../context/DataContext';
+import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals } from '../../types';
@@ -25,7 +25,8 @@ import {
   formatMoney,
   formatPeriod,
 } from '../../utils/format';
-import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, ChargeView } from '../../utils/ledger';
+import { compareTitles, plural } from '../../utils/text';
+import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, ChargeView, unallocatedAmount } from '../../utils/ledger';
 
 type View_ = 'pagos' | 'liquidaciones' | 'historial';
 
@@ -65,7 +66,6 @@ const STATUS_SUMMARY: { status: ChargeStatus; label: string; color: string }[] =
 ];
 
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 // What a liquidación counts for in totals: the outstanding part, or the full amount once paid.
 const chargeValue = (view: ChargeView) => (view.status === 'pagado' ? view.charge.amount : view.balance);
@@ -125,10 +125,7 @@ export default function PaymentsListScreen() {
   };
 
   const compareProperties = (contractA: string, contractB: string) =>
-    describeContract(contractA).property.localeCompare(describeContract(contractB).property, 'es', {
-      numeric: true,
-      sensitivity: 'base',
-    });
+    compareTitles(describeContract(contractA).property, describeContract(contractB).property);
 
   const statusCharges = filter === 'todos' ? chargeViews : chargeViews.filter((v) => v.status === filter);
   const visibleCharges = [...statusCharges].sort((a, b) => {
@@ -533,7 +530,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,
-    paddingBottom: spacing.xxl * 3,
+    paddingBottom: FAB_CLEARANCE,
   },
   card: {
     marginBottom: spacing.md,

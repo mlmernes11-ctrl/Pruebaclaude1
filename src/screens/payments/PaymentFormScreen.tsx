@@ -17,7 +17,14 @@ import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept, Currency } from '../../types';
 import { CHARGE_CONCEPTS } from '../../utils/chargeGeneration';
-import { CURRENCY_SYMBOL, currentPeriod, formatMoney, formatPeriod, todayISO } from '../../utils/format';
+import {
+  CURRENCY_SYMBOL,
+  currentPeriod,
+  formatMoney,
+  formatPeriod,
+  parseAmount,
+  todayISO,
+} from '../../utils/format';
 import {
   allocateAmount,
   CHARGE_STATUS_LABEL,
@@ -113,11 +120,11 @@ export default function PaymentFormScreen() {
     if (value === 'otro') setAmount('');
   };
 
-  const parsedAmount = Number(amount.replace(',', '.'));
+  const parsedAmount = parseAmount(amount) ?? 0;
   const priority = option === 'cuota' && reference ? [reference] : outstanding;
   const preview =
     parsedAmount > 0 ? allocateAmount(parsedAmount, priority, outstanding) : undefined;
-  const parsedRate = Number(exchangeRateInput.replace(',', '.'));
+  const parsedRate = parseAmount(exchangeRateInput) ?? 0;
 
   const conceptOptions = CHARGE_CONCEPTS.map((value) => {
     const count = contractId ? debtFor(contractId, value).outstanding.length : 0;
