@@ -63,7 +63,7 @@ export default function DashboardScreen() {
       >
         <LargeTitleHeader
           title="Inicio"
-          caption={rate ? `Dólar ${RATE_SOURCE_LABEL[source].toLowerCase()} ${formatMoney(rate, 'ARS')}` : 'Sin cotización'}
+          caption={rate ? `Dólar ${RATE_SOURCE_LABEL[source].toLowerCase()} ${formatMoney(rate, 'ARS')}` : 'Cargar cotización ›'}
           onCaptionPress={() => navigation.navigate('ExchangeRate')}
         />
 
