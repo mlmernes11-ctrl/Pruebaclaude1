@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { showConfirm } from '../components/DialogHost';
@@ -23,6 +23,7 @@ import { isOutstanding, sortOldestFirst } from '../utils/ledger';
 import {
   COLLECTION_LABEL,
   COLLECTION_ORDER,
+  collectionCountLabel,
   CollectionState,
   PropertySummary,
   sortByCollection,
@@ -64,6 +65,10 @@ export default function DashboardScreen() {
   const summaries = sortByCollection(
     properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants)),
   );
+  const [collectionFilter, setCollectionFilter] = useState<CollectionState | null>(null);
+  const visibleSummaries = collectionFilter
+    ? summaries.filter((s) => s.collection === collectionFilter)
+    : summaries;
 
   const upcomingCharges = sortOldestFirst(chargeViews.filter(isOutstanding)).slice(0, 5);
 
@@ -101,7 +106,7 @@ export default function DashboardScreen() {
           <Card style={styles.welcomeCard}>
             <Text style={styles.welcomeTitle}>¿Querés probar la app rápido?</Text>
             <Text style={styles.welcomeText}>
-              Cargá 5 propiedades, 4 inquilinos, contratos y pagos de ejemplo para recorrer todas las
+              Cargá 8 propiedades, 7 inquilinos, contratos y pagos de ejemplo para recorrer todas las
               pantallas sin cargar nada a mano.
             </Text>
             <Button label="Cargar datos de ejemplo" onPress={handleLoadSamples} />
@@ -196,20 +201,41 @@ export default function DashboardScreen() {
           <>
             <Text style={styles.sectionTitle}>Estado por propiedad</Text>
             <View style={styles.legend}>
+              <TouchableOpacity
+                onPress={() => setCollectionFilter(null)}
+                style={[styles.legendItem, styles.legendAll, !collectionFilter && styles.legendAllActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: !collectionFilter }}
+              >
+                <Text style={[styles.legendText, !collectionFilter && styles.legendAllTextActive]}>
+                  Todas · {summaries.length}
+                </Text>
+              </TouchableOpacity>
               {COLLECTION_ORDER.map((state) => {
                 const count = summaries.filter((s) => s.collection === state).length;
                 if (!count) return null;
+                const palette = COLLECTION_COLORS[state];
+                const active = collectionFilter === state;
                 return (
-                  <View key={state} style={[styles.legendItem, { backgroundColor: COLLECTION_COLORS[state].chip }]}>
-                    <View style={[styles.legendDot, { backgroundColor: COLLECTION_COLORS[state].strong }]} />
-                    <Text style={[styles.legendText, { color: COLLECTION_COLORS[state].text }]}>
-                      {count} {COLLECTION_LABEL[state].toLowerCase()}
+                  <TouchableOpacity
+                    key={state}
+                    onPress={() => setCollectionFilter(active ? null : state)}
+                    style={[
+                      styles.legendItem,
+                      { backgroundColor: palette.chip, borderColor: active ? palette.strong : 'transparent' },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <View style={[styles.legendDot, { backgroundColor: palette.strong }]} />
+                    <Text style={[styles.legendText, { color: palette.text }]}>
+                      {collectionCountLabel(state, count)}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
-            {summaries.map((summary) => (
+            {visibleSummaries.map((summary) => (
               <PropertyStatusCard
                 key={summary.property.id}
                 summary={summary}
@@ -580,9 +606,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
     borderRadius: radius.round,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  legendAll: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  legendAllActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  legendAllTextActive: {
+    color: colors.white,
   },
   legendDot: {
     width: 8,
@@ -592,6 +631,7 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: fontSize.xs,
     fontWeight: '700',
+    color: colors.text,
   },
   propertyCard: {
     marginBottom: spacing.sm,

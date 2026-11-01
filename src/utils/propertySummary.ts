@@ -21,6 +21,11 @@ export const COLLECTION_LABEL: Record<CollectionState, string> = {
   mantenimiento: 'En mantenimiento',
 };
 
+export function collectionCountLabel(state: CollectionState, count: number): string {
+  if (state === 'por-vencer') return `${count} ${count === 1 ? 'pago por vencer' : 'pagos por vencer'}`;
+  return `${count} ${COLLECTION_LABEL[state].toLowerCase()}`;
+}
+
 export const CONTRACT_ENDING_SOON_DAYS = 60;
 
 export interface PaymentBucket {

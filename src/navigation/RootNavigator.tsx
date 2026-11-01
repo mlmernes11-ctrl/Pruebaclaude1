@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { colors } from '../theme';
 
 import DashboardScreen from '../screens/DashboardScreen';
@@ -168,10 +169,40 @@ const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   PaymentsTab: 'cash',
 };
 
+const navigationRef = createNavigationContainerRef();
+
+// On the web the browser's back button would leave the app. One extra history entry is kept
+// while there is somewhere to go back to, and each back press is turned into an in-app back.
+let browserBackArmed = false;
+
+function armBrowserBack() {
+  if (Platform.OS !== 'web' || browserBackArmed || !navigationRef.canGoBack()) return;
+  try {
+    window.history.pushState({ appBack: true }, '');
+    browserBackArmed = true;
+  } catch {
+    // History may be unavailable in some embedded views; the in-app back still works.
+  }
+}
+
+function useBrowserBackButton() {
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onPopState = () => {
+      browserBackArmed = false;
+      if (navigationRef.isReady() && navigationRef.canGoBack()) navigationRef.goBack();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+}
+
 export default function RootNavigator() {
+  useBrowserBackButton();
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack}>
       <Tab.Navigator
+        backBehavior="history"
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarActiveTintColor: colors.primary,

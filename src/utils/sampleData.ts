@@ -81,6 +81,41 @@ export function buildSampleData(): SampleData {
     status: 'mantenimiento',
     notes: 'Pintura y arreglo de aire acondicionado antes de volver a publicar.',
   });
+  const villaCrespo = property({
+    title: 'PH Villa Crespo',
+    address: 'Thames 980, CABA',
+    type: 'casa',
+    rooms: 3,
+    bathrooms: 1,
+    area: 75,
+    rentAmount: 700,
+    rentCurrency: 'USD',
+    serviciosAmount: 30000,
+    status: 'alquilada',
+  });
+  const belgrano = property({
+    title: 'Depto Belgrano 5C',
+    address: 'Av. Cabildo 2340 5°C, CABA',
+    type: 'apartamento',
+    rooms: 3,
+    bathrooms: 2,
+    area: 70,
+    rentAmount: 650,
+    rentCurrency: 'USD',
+    expensasAmount: 120000,
+    status: 'alquilada',
+  });
+  const sanTelmo = property({
+    title: 'Local San Telmo',
+    address: 'Defensa 1050, CABA',
+    type: 'local',
+    bathrooms: 1,
+    area: 45,
+    rentAmount: 1200000,
+    rentCurrency: 'ARS',
+    expensasAmount: 50000,
+    status: 'alquilada',
+  });
 
   const tenant = (values: Omit<Tenant, 'id' | 'createdAt'>): Tenant => ({
     ...values,
@@ -110,6 +145,23 @@ export function buildSampleData(): SampleData {
     name: 'Sofía Ruiz',
     document: 'DNI 38.112.233',
     phone: '11 2222-3456',
+  });
+  const valentina = tenant({
+    name: 'Valentina Sosa',
+    document: 'DNI 40.223.344',
+    phone: '11 6666-7788',
+    email: 'valentina.sosa@example.com',
+  });
+  const diego = tenant({
+    name: 'Diego Herrera',
+    document: 'DNI 31.445.566',
+    phone: '11 7777-8899',
+  });
+  const estudioRuiz = tenant({
+    name: 'Estudio Ruiz & Asociados',
+    document: 'CUIT 30-70987654-3',
+    phone: '11 4321-0000',
+    notes: 'Contacto: Mariana Ruiz.',
   });
 
   const contract = (values: Omit<Contract, 'id' | 'createdAt'>): Contract => ({
@@ -161,6 +213,40 @@ export function buildSampleData(): SampleData {
     currency: 'USD',
     paymentDay: 5,
     status: 'finalizado',
+  });
+  const contractVillaCrespo = contract({
+    propertyId: villaCrespo.id,
+    tenantId: valentina.id,
+    startDate: monthStart(-10),
+    endDate: monthStart(14),
+    rentAmount: villaCrespo.rentAmount,
+    currency: villaCrespo.rentCurrency,
+    depositAmount: villaCrespo.rentAmount,
+    paymentDay: 10,
+    status: 'activo',
+  });
+  // Ends next month, so the dashboard also shows a contract about to expire.
+  const contractBelgrano = contract({
+    propertyId: belgrano.id,
+    tenantId: diego.id,
+    startDate: monthStart(-23),
+    endDate: monthStart(1),
+    rentAmount: belgrano.rentAmount,
+    currency: belgrano.rentCurrency,
+    depositAmount: belgrano.rentAmount,
+    paymentDay: 5,
+    status: 'activo',
+  });
+  const contractSanTelmo = contract({
+    propertyId: sanTelmo.id,
+    tenantId: estudioRuiz.id,
+    startDate: monthStart(-6),
+    endDate: monthStart(30),
+    rentAmount: sanTelmo.rentAmount,
+    currency: sanTelmo.rentCurrency,
+    depositAmount: sanTelmo.rentAmount,
+    paymentDay: 1,
+    status: 'activo',
   });
 
   const charges: Charge[] = [];
@@ -223,10 +309,35 @@ export function buildSampleData(): SampleData {
   addCharge(contractUrquiza, 'alquiler', urquiza.rentAmount, 0);
   addCharge(contractUrquiza, 'servicios', urquiza.serviciosAmount!, 0);
 
+  // Villa Crespo is fully paid, San Telmo only has next month pending, Belgrano owes expensas
+  // and this month's rent.
+  for (const offset of [-2, -1, 0]) {
+    addCharge(contractVillaCrespo, 'alquiler', villaCrespo.rentAmount, offset, 'full');
+    addCharge(contractVillaCrespo, 'servicios', villaCrespo.serviciosAmount!, offset, 'full');
+    addCharge(contractSanTelmo, 'alquiler', sanTelmo.rentAmount, offset, 'full');
+    addCharge(contractSanTelmo, 'expensas', sanTelmo.expensasAmount!, offset, 'full');
+  }
+  addCharge(contractSanTelmo, 'alquiler', sanTelmo.rentAmount, 1);
+
+  addCharge(contractBelgrano, 'alquiler', belgrano.rentAmount, -2, 'full');
+  addCharge(contractBelgrano, 'expensas', belgrano.expensasAmount!, -2, 'full');
+  addCharge(contractBelgrano, 'alquiler', belgrano.rentAmount, -1, 'full');
+  addCharge(contractBelgrano, 'expensas', belgrano.expensasAmount!, -1);
+  addCharge(contractBelgrano, 'alquiler', belgrano.rentAmount, 0);
+  addCharge(contractBelgrano, 'expensas', belgrano.expensasAmount!, 0);
+
   return {
-    properties: [palermo, urquiza, cabildo, caballito, microcentro],
-    tenants: [lucia, martin, espiga, sofia],
-    contracts: [contractPalermo, contractUrquiza, contractCabildo, contractCaballito],
+    properties: [palermo, urquiza, cabildo, villaCrespo, belgrano, sanTelmo, caballito, microcentro],
+    tenants: [lucia, martin, espiga, valentina, diego, estudioRuiz, sofia],
+    contracts: [
+      contractPalermo,
+      contractUrquiza,
+      contractCabildo,
+      contractVillaCrespo,
+      contractBelgrano,
+      contractSanTelmo,
+      contractCaballito,
+    ],
     charges,
     payments,
   };
