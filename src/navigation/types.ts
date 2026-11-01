@@ -22,7 +22,9 @@ export type ContractsStackParamList = {
 };
 
 export type PaymentsStackParamList = {
-  PaymentsList: { view?: 'pagos' | 'liquidaciones' | 'historial'; filter?: string; month?: string } | undefined;
+  PaymentsList:
+    | { view?: 'pagos' | 'liquidaciones' | 'historial'; filter?: string; month?: string; propertyId?: string }
+    | undefined;
   PaymentForm: { contractId?: string; concept?: ChargeConcept; chargeId?: string } | undefined;
   PaymentDetail: { paymentId: string };
   ChargeForm: { chargeId?: string; contractId?: string } | undefined;

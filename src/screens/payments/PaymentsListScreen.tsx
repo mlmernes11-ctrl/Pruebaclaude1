@@ -7,6 +7,7 @@ import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
+import PropertyFilter from '../../components/PropertyFilter';
 import SortMenu, { SortOption } from '../../components/SortMenu';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
@@ -70,7 +71,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const chargeValue = (view: ChargeView) => (view.status === 'pagado' ? view.charge.amount : view.balance);
 
 export default function PaymentsListScreen() {
-  const { chargeViews, payments, charges, getContractById, getPropertyById, getTenantById } = useData();
+  const { chargeViews: allChargeViews, payments: allPayments, charges, contracts, getContractById, getPropertyById, getTenantById } =
+    useData();
   const { toPesos, rate } = useExchangeRate();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -79,6 +81,21 @@ export default function PaymentsListScreen() {
   const [month, setMonth] = useState<MonthFilter>('todos');
   const [sort, setSort] = useState<SortValue>('reciente');
   const [year, setYear] = useState(() => new Date().getFullYear());
+  const [propertyId, setPropertyId] = useState<string | undefined>();
+
+  // Everything on this screen (lists, totals and history) follows the property filter.
+  const propertyContracts = useMemo(
+    () => (propertyId ? new Set(contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id)) : undefined),
+    [contracts, propertyId],
+  );
+  const chargeViews = useMemo(
+    () => (propertyContracts ? allChargeViews.filter((v) => propertyContracts.has(v.charge.contractId)) : allChargeViews),
+    [allChargeViews, propertyContracts],
+  );
+  const payments = useMemo(
+    () => (propertyContracts ? allPayments.filter((p) => propertyContracts.has(p.contractId)) : allPayments),
+    [allPayments, propertyContracts],
+  );
 
   // The dashboard opens this screen already filtered (e.g. "Dinero en mora").
   useEffect(() => {
@@ -87,6 +104,7 @@ export default function PaymentsListScreen() {
     if (params.view) setView(params.view);
     if (params.filter) setFilter(params.filter);
     if (params.month) setMonth(params.month);
+    setPropertyId(params.propertyId);
   }, [route.params]);
 
   const describeContract = (contractId: string) => {
@@ -220,13 +238,15 @@ export default function PaymentsListScreen() {
         ))}
       </View>
 
+      <PropertyFilter value={propertyId} onChange={setPropertyId} />
+
       {view === 'historial' ? (
         <ScrollView contentContainerStyle={styles.listContent}>
           <YearHistory
             views={chargeViews}
             year={year}
             onChangeYear={setYear}
-            onPressMonth={(period) => navigation.navigate('MonthDetail', { period })}
+            onPressMonth={(period) => navigation.navigate('MonthDetail', { period, propertyId })}
           />
         </ScrollView>
       ) : view === 'liquidaciones' ? (
@@ -369,7 +389,14 @@ export default function PaymentsListScreen() {
           />
         </>
       )}
-      <FAB onPress={() => navigation.navigate('PaymentForm')} />
+      <FAB
+        onPress={() => {
+          const active = propertyId
+            ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo')
+            : undefined;
+          navigation.navigate('PaymentForm', active ? { contractId: active.id } : undefined);
+        }}
+      />
     </Screen>
   );
 }
