@@ -13,9 +13,9 @@ import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 
 const STATUS_TONE = {
-  disponible: 'primary',
+  disponible: 'info',
   alquilada: 'success',
-  mantenimiento: 'warning',
+  mantenimiento: 'neutral',
 } as const;
 
 export default function PropertiesListScreen() {

@@ -13,6 +13,8 @@ export const colors = {
   warningMuted: '#FEF3C7',
   danger: '#DC2626',
   dangerMuted: '#FEE2E2',
+  info: '#0284C7',
+  infoMuted: '#E0F2FE',
   neutralMuted: '#E2E8F0',
   neutralTint: '#F1F5F9',
   white: '#FFFFFF',

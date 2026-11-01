@@ -3,15 +3,22 @@ import { addToTotals, emptyTotals, formatDate, parseLocalDate, startOfToday } fr
 import { ChargeView } from './ledger';
 
 // How the rent collection of a property stands; drives its color on the dashboard.
-export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato';
+export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato' | 'mantenimiento';
 
-export const COLLECTION_ORDER: CollectionState[] = ['deuda', 'por-vencer', 'al-dia', 'sin-contrato'];
+export const COLLECTION_ORDER: CollectionState[] = [
+  'deuda',
+  'por-vencer',
+  'al-dia',
+  'sin-contrato',
+  'mantenimiento',
+];
 
 export const COLLECTION_LABEL: Record<CollectionState, string> = {
   deuda: 'Con deuda',
   'por-vencer': 'Pago por vencer',
   'al-dia': 'Al día',
   'sin-contrato': 'Sin contrato',
+  mantenimiento: 'En mantenimiento',
 };
 
 export const CONTRACT_ENDING_SOON_DAYS = 60;
@@ -80,14 +87,14 @@ export function summarizeProperty(
     : undefined;
 
   let collection: CollectionState = 'al-dia';
-  if (!activeContract) collection = 'sin-contrato';
-  else if (overdue.count) collection = 'deuda';
+  if (!activeContract) {
+    collection = property.status === 'mantenimiento' ? 'mantenimiento' : 'sin-contrato';
+  } else if (overdue.count) collection = 'deuda';
   else if (pending.count) collection = 'por-vencer';
 
   const notes: string[] = [];
-  if (!activeContract) {
-    notes.push(property.status === 'mantenimiento' ? 'En mantenimiento' : 'Disponible para alquilar');
-  }
+  if (collection === 'sin-contrato') notes.push('Disponible para alquilar');
+  if (collection === 'mantenimiento') notes.push(property.notes ?? 'No disponible por ahora');
   if (overdue.count) notes.push(plural(overdue.count, 'cuota vencida', 'cuotas vencidas'));
   if (pending.count && nextDueDate) {
     notes.push(

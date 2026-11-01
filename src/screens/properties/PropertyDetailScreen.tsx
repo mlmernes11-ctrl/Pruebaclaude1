@@ -19,9 +19,9 @@ import { formatDate, formatMoney, formatTotals } from '../../utils/format';
 import { PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
 
 const STATUS_TONE = {
-  disponible: 'primary',
+  disponible: 'info',
   alquilada: 'success',
-  mantenimiento: 'warning',
+  mantenimiento: 'neutral',
 } as const;
 
 const CONTRACT_TONE = {

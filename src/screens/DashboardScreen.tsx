@@ -159,13 +159,13 @@ export default function DashboardScreen() {
               </Text>
             </View>
             <View style={styles.incomeItem}>
-              <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+              <View style={[styles.dot, { backgroundColor: colors.info }]} />
               <Text style={styles.incomeItemText}>
                 {stats.availableProperties} disponibles
               </Text>
             </View>
             <View style={styles.incomeItem}>
-              <View style={[styles.dot, { backgroundColor: colors.warning }]} />
+              <View style={[styles.dot, { backgroundColor: colors.textMuted }]} />
               <Text style={styles.incomeItemText}>
                 {stats.maintenanceProperties} en mantenimiento
               </Text>
@@ -308,7 +308,8 @@ const COLLECTION_COLORS: Record<
     text: colors.warning,
   },
   'al-dia': { strong: colors.success, tint: colors.successMuted, chip: colors.successMuted, text: colors.success },
-  'sin-contrato': {
+  'sin-contrato': { strong: colors.info, tint: colors.infoMuted, chip: colors.infoMuted, text: colors.info },
+  mantenimiento: {
     strong: colors.textMuted,
     tint: colors.neutralTint,
     chip: colors.neutralMuted,
