@@ -16,6 +16,7 @@ export interface Property {
   id: string;
   title: string;
   address: string;
+  neighborhood?: string;
   type: PropertyType;
   rooms?: number;
   bathrooms?: number;

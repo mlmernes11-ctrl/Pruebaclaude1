@@ -57,7 +57,7 @@ export default function PropertiesListScreen() {
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={14} color={colors.textMuted} />
               <Text style={styles.address} numberOfLines={1}>
-                {item.address}
+                {item.neighborhood ? `${item.address} · ${item.neighborhood}` : item.address}
               </Text>
             </View>
             <View style={styles.footerRow}>

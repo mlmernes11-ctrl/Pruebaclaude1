@@ -104,3 +104,14 @@ export function startOfToday(): Date {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
+// Mixed-currency totals are shown in pesos when there is a rate, with the breakdown underneath.
+export function describeTotals(
+  totals: MoneyTotals,
+  rate?: number,
+): { main: string; detail?: string } {
+  const pesos = totalsInPesos(totals, rate);
+  if (!totals.USD) return { main: formatMoney(totals.ARS, 'ARS') };
+  if (pesos === undefined) return { main: formatTotals(totals) };
+  return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
+}

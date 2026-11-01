@@ -7,17 +7,18 @@ import Card from '../components/Card';
 import { showConfirm } from '../components/DialogHost';
 import MoneyText from '../components/MoneyText';
 import Screen from '../components/Screen';
+import SortMenu, { SortOption } from '../components/SortMenu';
 import { CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../theme';
-import { MoneyTotals } from '../types';
 import {
+  currentPeriod,
+  describeTotals,
   formatDateTime,
   formatMoney,
   formatPeriod,
   formatTotals,
-  totalsInPesos,
 } from '../utils/format';
 import { isOutstanding, sortOldestFirst } from '../utils/ledger';
 import {
@@ -30,15 +31,41 @@ import {
   summarizeProperty,
 } from '../utils/propertySummary';
 
-// Mixed-currency totals are shown in pesos when there is a rate, with the breakdown underneath.
-function describeTotals(totals: MoneyTotals, rate?: number) {
-  const pesos = totalsInPesos(totals, rate);
-  if (!totals.USD) return { main: formatMoney(totals.ARS, 'ARS'), detail: undefined };
-  if (pesos === undefined) return { main: formatTotals(totals), detail: undefined };
-  return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
-}
-
 const countLiquidaciones = (n: number) => `${n} ${n === 1 ? 'liquidación' : 'liquidaciones'}`;
+const countPagos = (n: number) => `${n} ${n === 1 ? 'pago' : 'pagos'}`;
+
+type PropertySort = 'estado' | 'nombre' | 'barrio';
+
+const PROPERTY_SORT_OPTIONS: SortOption<PropertySort>[] = [
+  { value: 'estado', label: 'Estado' },
+  { value: 'nombre', label: 'Nombre' },
+  { value: 'barrio', label: 'Barrio' },
+];
+
+const byTitle = (a: PropertySummary, b: PropertySummary) =>
+  a.property.title.localeCompare(b.property.title, 'es', { numeric: true, sensitivity: 'base' });
+
+// Properties without a neighborhood go last when grouping by barrio.
+const NO_NEIGHBORHOOD = 'Sin barrio';
+const neighborhoodOf = (summary: PropertySummary) => summary.property.neighborhood?.trim() || NO_NEIGHBORHOOD;
+
+function sortSummaries(summaries: PropertySummary[], sort: PropertySort): PropertySummary[] {
+  const sorted = [...summaries];
+  if (sort === 'nombre') return sorted.sort(byTitle);
+  if (sort === 'barrio') {
+    return sorted.sort((a, b) => {
+      const na = neighborhoodOf(a);
+      const nb = neighborhoodOf(b);
+      if (na !== nb) {
+        if (na === NO_NEIGHBORHOOD) return 1;
+        if (nb === NO_NEIGHBORHOOD) return -1;
+        return na.localeCompare(nb, 'es', { sensitivity: 'base' });
+      }
+      return byTitle(a, b);
+    });
+  }
+  return sortByCollection(sorted.sort(byTitle));
+}
 
 export default function DashboardScreen() {
   const {
@@ -59,16 +86,23 @@ export default function DashboardScreen() {
   const isEmpty =
     properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
 
-  const income = describeTotals(stats.monthlyExpectedIncome, rate);
   const pending = describeTotals(stats.pendingAmount, rate);
   const overdue = describeTotals(stats.overdueAmount, rate);
-  const summaries = sortByCollection(
-    properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants)),
-  );
+  const collected = describeTotals(stats.collectedThisMonth, rate);
+  const collectedCount = payments.filter((p) => p.date.slice(0, 7) === currentPeriod()).length;
+
+  const [propertySort, setPropertySort] = useState<PropertySort>('estado');
   const [collectionFilter, setCollectionFilter] = useState<CollectionState | null>(null);
+  const summaries = sortSummaries(
+    properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants)),
+    propertySort,
+  );
   const visibleSummaries = collectionFilter
     ? summaries.filter((s) => s.collection === collectionFilter)
     : summaries;
+
+  const openPayments = (params: object) =>
+    navigation.navigate('PaymentsTab', { screen: 'PaymentsList', params });
 
   const upcomingCharges = sortOldestFirst(chargeViews.filter(isOutstanding)).slice(0, 5);
 
@@ -152,54 +186,74 @@ export default function DashboardScreen() {
           />
         </View>
 
-        <Card style={styles.incomeCard}>
-          <Text style={styles.incomeLabel}>Ingreso mensual esperado</Text>
-          <Text style={styles.incomeValue}>{income.main}</Text>
-          {income.detail ? <Text style={styles.incomeDetail}>{income.detail}</Text> : null}
-          <View style={styles.incomeRow}>
-            <View style={styles.incomeItem}>
-              <View style={[styles.dot, { backgroundColor: colors.success }]} />
-              <Text style={styles.incomeItemText}>
-                {stats.rentedProperties} {stats.rentedProperties === 1 ? 'alquilada' : 'alquiladas'}
-              </Text>
-            </View>
-            <View style={styles.incomeItem}>
-              <View style={[styles.dot, { backgroundColor: colors.info }]} />
-              <Text style={styles.incomeItemText}>
-                {stats.availableProperties} {stats.availableProperties === 1 ? 'disponible' : 'disponibles'}
-              </Text>
-            </View>
-            <View style={styles.incomeItem}>
-              <View style={[styles.dot, { backgroundColor: colors.textMuted }]} />
-              <Text style={styles.incomeItemText}>
-                {stats.maintenanceProperties} en mantenimiento
-              </Text>
-            </View>
+        <View style={styles.occupancyRow}>
+          <View style={styles.incomeItem}>
+            <View style={[styles.dot, { backgroundColor: colors.success }]} />
+            <Text style={styles.incomeItemText}>
+              {stats.rentedProperties} {stats.rentedProperties === 1 ? 'alquilada' : 'alquiladas'}
+            </Text>
           </View>
+          <View style={styles.incomeItem}>
+            <View style={[styles.dot, { backgroundColor: colors.info }]} />
+            <Text style={styles.incomeItemText}>
+              {stats.availableProperties} {stats.availableProperties === 1 ? 'disponible' : 'disponibles'}
+            </Text>
+          </View>
+          <View style={styles.incomeItem}>
+            <View style={[styles.dot, { backgroundColor: colors.textMuted }]} />
+            <Text style={styles.incomeItemText}>{stats.maintenanceProperties} en mantenimiento</Text>
+          </View>
+        </View>
+
+        <Card
+          style={[styles.incomeCard, stats.overdueCount > 0 && styles.moraCardActive]}
+          onPress={() => openPayments({ view: 'liquidaciones', filter: 'vencido' })}
+        >
+          <View style={styles.moraHeader}>
+            <Ionicons
+              name="alert-circle-outline"
+              size={18}
+              color={stats.overdueCount > 0 ? colors.danger : colors.textMuted}
+            />
+            <Text style={styles.incomeLabel}>Dinero en mora</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={[styles.incomeValue, stats.overdueCount > 0 && styles.moraValueActive]}>
+            {overdue.main}
+          </Text>
+          {overdue.detail ? <Text style={styles.incomeDetail}>{overdue.detail}</Text> : null}
+          <Text style={styles.incomeItemText}>
+            {stats.overdueCount > 0
+              ? `${countLiquidaciones(stats.overdueCount)} vencidas sin pagar · tocá para ver el detalle`
+              : 'No hay liquidaciones vencidas.'}
+          </Text>
         </Card>
 
         <View style={styles.grid}>
           <StatCard
             icon="time-outline"
-            label="Liquidaciones por vencer"
+            label="Por vencer"
             value={pending.main}
             sublabel={[countLiquidaciones(stats.pendingCount), pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
-            onPress={() => navigation.navigate('PaymentsTab')}
+            onPress={() => openPayments({ view: 'liquidaciones', filter: 'pendiente' })}
           />
           <StatCard
-            icon="alert-circle-outline"
-            label="Liquidaciones vencidas"
-            value={overdue.main}
-            sublabel={[countLiquidaciones(stats.overdueCount), overdue.detail].filter(Boolean).join(' · ')}
-            tone={colors.danger}
-            onPress={() => navigation.navigate('PaymentsTab')}
+            icon="checkmark-circle-outline"
+            label="Pagado este mes"
+            value={collected.main}
+            sublabel={[countPagos(collectedCount), collected.detail].filter(Boolean).join(' · ')}
+            tone={colors.success}
+            onPress={() => openPayments({ view: 'pagos', month: 'este' })}
           />
         </View>
 
         {summaries.length ? (
           <>
-            <Text style={styles.sectionTitle}>Estado por propiedad</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, styles.sectionTitleInline]}>Estado por propiedad</Text>
+              <SortMenu options={PROPERTY_SORT_OPTIONS} value={propertySort} onChange={setPropertySort} />
+            </View>
             <View style={styles.legend}>
               <TouchableOpacity
                 onPress={() => setCollectionFilter(null)}
@@ -235,19 +289,26 @@ export default function DashboardScreen() {
                 );
               })}
             </View>
-            {visibleSummaries.map((summary) => (
-              <PropertyStatusCard
-                key={summary.property.id}
-                summary={summary}
-                onPress={() =>
-                  navigation.navigate('PropertiesTab', {
-                    screen: 'PropertyDetail',
-                    params: { propertyId: summary.property.id },
-                    initial: false,
-                  })
-                }
-              />
-            ))}
+            {visibleSummaries.map((summary, index) => {
+              const showGroup =
+                propertySort === 'barrio' &&
+                (index === 0 || neighborhoodOf(visibleSummaries[index - 1]) !== neighborhoodOf(summary));
+              return (
+                <View key={summary.property.id}>
+                  {showGroup ? <Text style={styles.groupTitle}>{neighborhoodOf(summary)}</Text> : null}
+                  <PropertyStatusCard
+                    summary={summary}
+                    onPress={() =>
+                      navigation.navigate('PropertiesTab', {
+                        screen: 'PropertyDetail',
+                        params: { propertyId: summary.property.id },
+                        initial: false,
+                      })
+                    }
+                  />
+                </View>
+              );
+            })}
           </>
         ) : null}
 
@@ -361,7 +422,7 @@ function PropertyStatusCard({ summary, onPress }: { summary: PropertySummary; on
             {property.title}
           </Text>
           <Text style={styles.propertyTenant} numberOfLines={1}>
-            {tenant ? tenant.name : 'Sin inquilino'}
+            {[property.neighborhood, tenant ? tenant.name : 'Sin inquilino'].filter(Boolean).join(' · ')}
           </Text>
         </View>
         <View style={[styles.statusPill, { backgroundColor: palette.strong }]}>
@@ -466,7 +527,27 @@ const styles = StyleSheet.create({
   incomeCard: {
     marginBottom: spacing.md,
   },
+  moraCardActive: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerMuted,
+  },
+  moraHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  moraValueActive: {
+    color: colors.danger,
+  },
+  occupancyRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
   incomeLabel: {
+    flex: 1,
     fontSize: fontSize.sm,
     color: colors.textMuted,
   },
@@ -476,11 +557,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 4,
     marginBottom: spacing.md,
-  },
-  incomeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
   },
   incomeItem: {
     flexDirection: 'row',
@@ -501,6 +577,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  sectionTitleInline: {
+    marginTop: 0,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  groupTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   paymentRow: {

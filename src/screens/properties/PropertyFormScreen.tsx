@@ -26,6 +26,7 @@ export default function PropertyFormScreen() {
 
   const [title, setTitle] = useState(existing?.title ?? '');
   const [address, setAddress] = useState(existing?.address ?? '');
+  const [neighborhood, setNeighborhood] = useState(existing?.neighborhood ?? '');
   const [type, setType] = useState<PropertyType>(existing?.type ?? 'apartamento');
   const [status, setStatus] = useState<PropertyStatus>(existing?.status ?? 'disponible');
   const [rooms, setRooms] = useState(existing?.rooms ? String(existing.rooms) : '');
@@ -45,7 +46,7 @@ export default function PropertyFormScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !address.trim() || !rentAmount.trim()) {
-      showAlert('Faltan datos', 'Completa el título, la dirección y el monto de alquiler.');
+      showAlert('Faltan datos', 'Completá el nombre, la dirección y el monto de alquiler.');
       return;
     }
     const parsedRent = Number(rentAmount);
@@ -65,6 +66,7 @@ export default function PropertyFormScreen() {
     const payload = {
       title: title.trim(),
       address: address.trim(),
+      neighborhood: neighborhood.trim() || undefined,
       type,
       status,
       rooms: rooms ? Number(rooms) : undefined,
@@ -88,8 +90,9 @@ export default function PropertyFormScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <FormField label="Título" value={title} onChangeText={setTitle} placeholder="Ej: Depto Palermo 2B" required />
-        <FormField label="Dirección" value={address} onChangeText={setAddress} placeholder="Calle, número, ciudad" required />
+        <FormField label="Nombre" value={title} onChangeText={setTitle} placeholder="Ej: Carpeta 102" required />
+        <FormField label="Dirección" value={address} onChangeText={setAddress} placeholder="Calle, número y piso" required />
+        <FormField label="Barrio" value={neighborhood} onChangeText={setNeighborhood} placeholder="Ej: Belgrano" />
         <OptionChips label="Tipo de propiedad" options={PROPERTY_TYPE_OPTIONS} value={type} onChange={setType} />
         <OptionChips label="Estado" options={PROPERTY_STATUS_OPTIONS} value={status} onChange={setStatus} />
         <OptionChips

@@ -82,7 +82,7 @@ export default function PropertyDetailScreen() {
         </View>
         <View style={styles.addressRow}>
           <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-          <Text style={styles.address}>{property.address}</Text>
+          <Text style={styles.address}>{property.neighborhood ? `${property.address} · ${property.neighborhood}` : property.address}</Text>
         </View>
 
         <Card style={styles.card}>

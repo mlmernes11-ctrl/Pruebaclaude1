@@ -150,7 +150,6 @@ interface DashboardStats {
   rentedProperties: number;
   maintenanceProperties: number;
   activeContracts: number;
-  monthlyExpectedIncome: MoneyTotals;
   pendingCount: number;
   pendingAmount: MoneyTotals;
   overdueCount: number;
@@ -450,7 +449,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let overdueCount = 0;
     const overdueAmount = emptyTotals();
     const collectedThisMonth = emptyTotals();
-    const monthlyExpectedIncome = emptyTotals();
 
     chargeViews.forEach((view) => {
       if (view.status === 'pendiente') {
@@ -464,7 +462,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     data.payments
       .filter((p) => p.date.slice(0, 7) === thisPeriod)
       .forEach((p) => addToTotals(collectedThisMonth, p.amount, p.currency));
-    activeContracts.forEach((c) => addToTotals(monthlyExpectedIncome, c.rentAmount, c.currency));
 
     return {
       totalProperties: data.properties.length,
@@ -472,7 +469,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       rentedProperties: data.properties.filter((p) => p.status === 'alquilada').length,
       maintenanceProperties: data.properties.filter((p) => p.status === 'mantenimiento').length,
       activeContracts: activeContracts.length,
-      monthlyExpectedIncome,
       pendingCount,
       pendingAmount,
       overdueCount,
