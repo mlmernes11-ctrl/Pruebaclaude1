@@ -1,3 +1,7 @@
+export type Currency = 'USD' | 'ARS';
+
+export type MoneyTotals = Record<Currency, number>;
+
 export type PropertyType =
   | 'apartamento'
   | 'casa'
@@ -17,6 +21,8 @@ export interface Property {
   bathrooms?: number;
   area?: number;
   rentAmount: number;
+  rentCurrency: Currency;
+  // Expensas and servicios are always billed in pesos.
   expensasAmount?: number;
   serviciosAmount?: number;
   status: PropertyStatus;
@@ -43,6 +49,7 @@ export interface Contract {
   startDate: string;
   endDate: string;
   rentAmount: number;
+  currency: Currency;
   depositAmount?: number;
   paymentDay: number;
   status: ContractStatus;
@@ -60,9 +67,12 @@ export interface Payment {
   concept: PaymentConcept;
   period: string;
   amount: number;
+  currency: Currency;
   dueDate: string;
   paidDate?: string;
   method?: string;
+  // Pesos per dollar used when a dollar payment was settled.
+  exchangeRate?: number;
   notes?: string;
   createdAt: string;
 }

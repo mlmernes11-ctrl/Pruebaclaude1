@@ -1,4 +1,11 @@
-import { ContractStatus, PaymentConcept, PropertyStatus, PropertyType } from './types';
+import { ContractStatus, Currency, PaymentConcept, PropertyStatus, PropertyType } from './types';
+
+export const DEFAULT_RENT_CURRENCY: Currency = 'USD';
+
+export const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
+  { value: 'USD', label: 'Dólares (US$)' },
+  { value: 'ARS', label: 'Pesos ($)' },
+];
 
 export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   apartamento: 'Apartamento',

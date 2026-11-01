@@ -1,14 +1,40 @@
+import { Currency, MoneyTotals } from '../types';
+
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-export function formatCurrency(amount: number): string {
+export const CURRENCY_SYMBOL: Record<Currency, string> = { USD: 'US$', ARS: '$' };
+
+export function formatMoney(amount: number, currency: Currency = 'ARS'): string {
   const rounded = Math.round((amount + Number.EPSILON) * 100) / 100;
-  return `$${rounded.toLocaleString('es-ES', {
+  const number = rounded.toLocaleString('es-AR', {
     minimumFractionDigits: rounded % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
-  })}`;
+  });
+  // Non-breaking space keeps the symbol attached to the number when the text wraps.
+  return `${CURRENCY_SYMBOL[currency]} ${number}`;
+}
+
+export function emptyTotals(): MoneyTotals {
+  return { USD: 0, ARS: 0 };
+}
+
+export function addToTotals(totals: MoneyTotals, amount: number, currency: Currency) {
+  totals[currency] += amount;
+}
+
+export function formatTotals(totals: MoneyTotals): string {
+  const parts: string[] = [];
+  if (totals.USD) parts.push(formatMoney(totals.USD, 'USD'));
+  if (totals.ARS) parts.push(formatMoney(totals.ARS, 'ARS'));
+  return parts.length ? parts.join(' + ') : formatMoney(0, 'ARS');
+}
+
+export function totalsInPesos(totals: MoneyTotals, rate?: number): number | undefined {
+  if (totals.USD && !rate) return undefined;
+  return totals.ARS + totals.USD * (rate ?? 0);
 }
 
 // 'YYYY-MM-DD' strings parse as UTC midnight with new Date(), which shifts the day in UTC-3.
@@ -31,6 +57,18 @@ export function formatDate(iso?: string): string {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+  });
+}
+
+export function formatDateTime(iso?: string): string {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 

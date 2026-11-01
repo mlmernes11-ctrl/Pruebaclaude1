@@ -5,11 +5,12 @@ import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
+import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import { PAYMENT_CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
-import { formatCurrency, formatDate, formatPeriod } from '../../utils/format';
+import { formatDate, formatPeriod } from '../../utils/format';
 import { getPaymentStatus, PAYMENT_STATUS_LABEL } from '../../utils/payments';
 import { PaymentStatus } from '../../types';
 
@@ -23,7 +24,7 @@ type FilterValue = 'todos' | PaymentStatus;
 
 const FILTERS: { value: FilterValue; label: string }[] = [
   { value: 'todos', label: 'Todos' },
-  { value: 'pendiente', label: 'Pendientes' },
+  { value: 'pendiente', label: 'Por vencer' },
   { value: 'vencido', label: 'Vencidos' },
   { value: 'pagado', label: 'Pagados' },
 ];
@@ -99,7 +100,12 @@ export default function PaymentsListScreen() {
                   <Text style={styles.periodText}>{formatPeriod(item.payment.period)}</Text>
                   <Text style={styles.dueText}>Vence: {formatDate(item.payment.dueDate)}</Text>
                 </View>
-                <Text style={styles.amountText}>{formatCurrency(item.payment.amount)}</Text>
+                <MoneyText
+                  amount={item.payment.amount}
+                  currency={item.payment.currency}
+                  settledRate={item.payment.paidDate ? item.payment.exchangeRate : undefined}
+                  style={styles.amountText}
+                />
               </View>
             </Card>
           );

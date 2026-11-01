@@ -4,6 +4,7 @@ export type PropertiesStackParamList = {
   PropertiesList: undefined;
   PropertyForm: { propertyId?: string } | undefined;
   PropertyDetail: { propertyId: string };
+  PropertyPayments: { propertyId: string };
 };
 
 export type TenantsStackParamList = {
@@ -25,6 +26,7 @@ export type PaymentsStackParamList = {
 
 export type DashboardStackParamList = {
   Dashboard: undefined;
+  ExchangeRate: undefined;
 };
 
 export type MainTabParamList = {

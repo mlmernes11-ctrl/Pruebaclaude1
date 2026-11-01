@@ -6,11 +6,11 @@ import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
+import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import { PROPERTY_STATUS_LABEL, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { formatCurrency } from '../../utils/format';
 
 const STATUS_TONE = {
   disponible: 'primary',
@@ -62,7 +62,7 @@ export default function PropertiesListScreen() {
             </View>
             <View style={styles.footerRow}>
               <Text style={styles.typeText}>{PROPERTY_TYPE_LABEL[item.type]}</Text>
-              <Text style={styles.rentText}>{formatCurrency(item.rentAmount)}/mes</Text>
+              <MoneyText amount={item.rentAmount} currency={item.rentCurrency} suffix="/mes" style={styles.rentText} />
             </View>
           </Card>
         )}

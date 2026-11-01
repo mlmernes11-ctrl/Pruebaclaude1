@@ -6,6 +6,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import { showAlert, showConfirm } from '../../components/DialogHost';
+import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import {
   CONTRACT_STATUS_LABEL,
@@ -14,7 +15,8 @@ import {
 } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate, formatMoney, formatTotals } from '../../utils/format';
+import { PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
 
 const STATUS_TONE = {
   disponible: 'primary',
@@ -32,7 +34,15 @@ export default function PropertyDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
-  const { getPropertyById, deleteProperty, contractsForProperty, getTenantById } = useData();
+  const {
+    getPropertyById,
+    deleteProperty,
+    contractsForProperty,
+    getTenantById,
+    contracts: allContracts,
+    payments,
+    tenants,
+  } = useData();
   const property = getPropertyById(propertyId);
 
   if (!property) {
@@ -44,6 +54,7 @@ export default function PropertyDetailScreen() {
   }
 
   const contracts = contractsForProperty(property.id);
+  const summary = summarizeProperty(property, allContracts, payments, tenants);
 
   const handleDelete = () => {
     showConfirm({
@@ -77,17 +88,40 @@ export default function PropertyDetailScreen() {
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Detalles</Text>
           <DetailRow label="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} />
-          <DetailRow label="Alquiler mensual" value={formatCurrency(property.rentAmount)} />
+          <DetailRow
+            label="Alquiler mensual"
+            value={
+              <MoneyText
+                amount={property.rentAmount}
+                currency={property.rentCurrency}
+                style={styles.detailValue}
+              />
+            }
+          />
           {property.expensasAmount ? (
-            <DetailRow label="Expensas mensuales" value={formatCurrency(property.expensasAmount)} />
+            <DetailRow label="Expensas mensuales" value={formatMoney(property.expensasAmount, 'ARS')} />
           ) : null}
           {property.serviciosAmount ? (
-            <DetailRow label="Servicios mensuales" value={formatCurrency(property.serviciosAmount)} />
+            <DetailRow label="Servicios mensuales" value={formatMoney(property.serviciosAmount, 'ARS')} />
           ) : null}
           {property.rooms ? <DetailRow label="Ambientes" value={String(property.rooms)} /> : null}
           {property.bathrooms ? <DetailRow label="Baños" value={String(property.bathrooms)} /> : null}
           {property.area ? <DetailRow label="Superficie" value={`${property.area} m²`} /> : null}
           {property.notes ? <DetailRow label="Notas" value={property.notes} /> : null}
+        </Card>
+
+        <Text style={styles.sectionTitle}>Pagos</Text>
+        <Card style={styles.card}>
+          <View style={styles.paymentStats}>
+            <PaymentStat label="Vencidos" bucket={summary.overdue} color={colors.danger} />
+            <PaymentStat label="Por vencer" bucket={summary.pending} color={colors.warning} />
+            <PaymentStat label="Pagados" bucket={summary.paid} color={colors.success} />
+          </View>
+          <Button
+            label="Ver historial de pagos"
+            variant="secondary"
+            onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
+          />
         </Card>
 
         <View style={styles.sectionHeaderRow}>
@@ -150,11 +184,31 @@ export default function PropertyDetailScreen() {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      {typeof value === 'string' ? <Text style={styles.detailValue}>{value}</Text> : value}
+    </View>
+  );
+}
+
+function PaymentStat({
+  label,
+  bucket,
+  color,
+}: {
+  label: string;
+  bucket: PaymentBucket;
+  color: string;
+}) {
+  return (
+    <View style={styles.paymentStat}>
+      <Text style={[styles.paymentStatCount, { color: bucket.count ? color : colors.textMuted }]}>
+        {bucket.count}
+      </Text>
+      <Text style={styles.paymentStatLabel}>{label}</Text>
+      {bucket.count ? <Text style={styles.paymentStatTotal}>{formatTotals(bucket.totals)}</Text> : null}
     </View>
   );
 }
@@ -247,5 +301,30 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  paymentStats: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  paymentStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  paymentStatCount: {
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+  },
+  paymentStatLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  paymentStatTotal: {
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontWeight: '600',
+    marginTop: 2,
+    textAlign: 'center',
   },
 });

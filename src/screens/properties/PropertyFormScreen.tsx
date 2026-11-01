@@ -6,10 +6,16 @@ import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
-import { PROPERTY_STATUS_OPTIONS, PROPERTY_TYPE_OPTIONS } from '../../constants';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_RENT_CURRENCY,
+  PROPERTY_STATUS_OPTIONS,
+  PROPERTY_TYPE_OPTIONS,
+} from '../../constants';
 import { useData } from '../../context/DataContext';
-import { PropertyStatus, PropertyType } from '../../types';
+import { Currency, PropertyStatus, PropertyType } from '../../types';
 import { spacing } from '../../theme';
+import { CURRENCY_SYMBOL } from '../../utils/format';
 
 export default function PropertyFormScreen() {
   const navigation = useNavigation<any>();
@@ -26,6 +32,9 @@ export default function PropertyFormScreen() {
   const [bathrooms, setBathrooms] = useState(existing?.bathrooms ? String(existing.bathrooms) : '');
   const [area, setArea] = useState(existing?.area ? String(existing.area) : '');
   const [rentAmount, setRentAmount] = useState(existing?.rentAmount ? String(existing.rentAmount) : '');
+  const [rentCurrency, setRentCurrency] = useState<Currency>(
+    existing?.rentCurrency ?? DEFAULT_RENT_CURRENCY,
+  );
   const [expensasAmount, setExpensasAmount] = useState(
     existing?.expensasAmount ? String(existing.expensasAmount) : '',
   );
@@ -62,6 +71,7 @@ export default function PropertyFormScreen() {
       bathrooms: bathrooms ? Number(bathrooms) : undefined,
       area: area ? Number(area) : undefined,
       rentAmount: parsedRent,
+      rentCurrency,
       expensasAmount: expensasAmount ? Number(expensasAmount) : undefined,
       serviciosAmount: serviciosAmount ? Number(serviciosAmount) : undefined,
       notes: notes.trim() || undefined,
@@ -82,8 +92,14 @@ export default function PropertyFormScreen() {
         <FormField label="Dirección" value={address} onChangeText={setAddress} placeholder="Calle, número, ciudad" required />
         <OptionChips label="Tipo de propiedad" options={PROPERTY_TYPE_OPTIONS} value={type} onChange={setType} />
         <OptionChips label="Estado" options={PROPERTY_STATUS_OPTIONS} value={status} onChange={setStatus} />
+        <OptionChips
+          label="Moneda del alquiler"
+          options={CURRENCY_OPTIONS}
+          value={rentCurrency}
+          onChange={setRentCurrency}
+        />
         <FormField
-          label="Monto de alquiler mensual"
+          label={`Monto de alquiler mensual (${CURRENCY_SYMBOL[rentCurrency]})`}
           value={rentAmount}
           onChangeText={setRentAmount}
           placeholder="0"
@@ -91,14 +107,14 @@ export default function PropertyFormScreen() {
           required
         />
         <FormField
-          label="Expensas mensuales (opcional)"
+          label="Expensas mensuales en pesos (opcional)"
           value={expensasAmount}
           onChangeText={setExpensasAmount}
           placeholder="0"
           keyboardType="numeric"
         />
         <FormField
-          label="Servicios mensuales (opcional)"
+          label="Servicios mensuales en pesos (opcional)"
           value={serviciosAmount}
           onChangeText={setServiciosAmount}
           placeholder="0"

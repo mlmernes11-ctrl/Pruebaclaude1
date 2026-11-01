@@ -5,11 +5,12 @@ import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
+import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate } from '../../utils/format';
 
 const CONTRACT_TONE = {
   activo: 'success',
@@ -58,7 +59,7 @@ export default function ContractsListScreen() {
                 <Text style={styles.dateText}>
                   {formatDate(item.startDate)} - {formatDate(item.endDate)}
                 </Text>
-                <Text style={styles.rentText}>{formatCurrency(item.rentAmount)}/mes</Text>
+                <MoneyText amount={item.rentAmount} currency={item.currency} suffix="/mes" style={styles.rentText} />
               </View>
             </Card>
           );

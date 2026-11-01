@@ -7,11 +7,17 @@ import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
-import { PAYMENT_CONCEPT_OPTIONS, PAYMENT_METHOD_OPTIONS } from '../../constants';
+import {
+  CURRENCY_OPTIONS,
+  DEFAULT_RENT_CURRENCY,
+  PAYMENT_CONCEPT_OPTIONS,
+  PAYMENT_METHOD_OPTIONS,
+} from '../../constants';
 import { useData } from '../../context/DataContext';
+import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { PaymentConcept } from '../../types';
-import { todayISO } from '../../utils/format';
+import { Currency, PaymentConcept } from '../../types';
+import { CURRENCY_SYMBOL, formatMoney, todayISO } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
 
 function isValidDate(value: string): boolean {
@@ -40,10 +46,22 @@ export default function PaymentFormScreen() {
     getPropertyById,
     getTenantById,
   } = useData();
+  const { rate } = useExchangeRate();
   const existing = payments.find((p) => p.id === paymentId);
+
+  const currencyFor = (targetContractId: string, targetConcept: PaymentConcept): Currency => {
+    if (targetConcept !== 'alquiler') return 'ARS';
+    return contracts.find((c) => c.id === targetContractId)?.currency ?? DEFAULT_RENT_CURRENCY;
+  };
 
   const [contractId, setContractId] = useState(existing?.contractId ?? presetContractId ?? '');
   const [concept, setConcept] = useState<PaymentConcept>(existing?.concept ?? 'alquiler');
+  const [currency, setCurrency] = useState<Currency>(
+    existing?.currency ?? currencyFor(presetContractId ?? '', 'alquiler'),
+  );
+  const [exchangeRateInput, setExchangeRateInput] = useState(
+    existing?.exchangeRate ? String(existing.exchangeRate) : '',
+  );
   const [period, setPeriod] = useState(existing?.period ?? initialPeriod ?? '');
   const [dueDate, setDueDate] = useState(existing?.dueDate ?? initialDueDate ?? '');
   const [amount, setAmount] = useState(existing?.amount ? String(existing.amount) : initialAmount ?? '');
@@ -75,6 +93,7 @@ export default function PaymentFormScreen() {
     if (!existing) {
       const suggested = amountForConcept(id, concept);
       if (suggested !== undefined) setAmount(String(suggested));
+      setCurrency(currencyFor(id, concept));
     }
   };
 
@@ -83,8 +102,17 @@ export default function PaymentFormScreen() {
     if (!existing) {
       const suggested = amountForConcept(contractId, value);
       setAmount(suggested !== undefined ? String(suggested) : '');
+      setCurrency(currencyFor(contractId, value));
     }
   };
+
+  const handleTogglePaid = () => {
+    if (!isPaid && !exchangeRateInput && rate) setExchangeRateInput(String(rate));
+    setIsPaid((prev) => !prev);
+  };
+
+  const parsedAmountPreview = Number(amount);
+  const needsExchangeRate = isPaid && currency === 'USD';
 
   const handleSave = () => {
     if (!contractId) {
@@ -108,6 +136,11 @@ export default function PaymentFormScreen() {
       showAlert('Fecha inválida', 'Ingresa la fecha de pago en formato AAAA-MM-DD.');
       return;
     }
+    const parsedRate = exchangeRateInput ? Number(exchangeRateInput.replace(',', '.')) : undefined;
+    if (needsExchangeRate && parsedRate !== undefined && (Number.isNaN(parsedRate) || parsedRate <= 0)) {
+      showAlert('Cotización inválida', 'Ingresá cuántos pesos se pagaron por dólar, por ejemplo 1250.');
+      return;
+    }
 
     const payload = {
       contractId,
@@ -115,8 +148,10 @@ export default function PaymentFormScreen() {
       period,
       dueDate,
       amount: parsedAmount,
+      currency,
       paidDate: isPaid ? paidDate : undefined,
       method: isPaid ? method : undefined,
+      exchangeRate: needsExchangeRate ? parsedRate : undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -163,14 +198,27 @@ export default function PaymentFormScreen() {
         <Text style={styles.hint}>Período en formato AAAA-MM, fechas en formato AAAA-MM-DD</Text>
         <FormField label="Período" value={period} onChangeText={setPeriod} placeholder="2024-05" required />
         <FormField label="Fecha de vencimiento" value={dueDate} onChangeText={setDueDate} placeholder="2024-05-05" required />
-        <FormField label="Monto" value={amount} onChangeText={setAmount} placeholder="0" keyboardType="numeric" required />
+        <OptionChips label="Moneda" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
+        <FormField
+          label={`Monto (${CURRENCY_SYMBOL[currency]})`}
+          value={amount}
+          onChangeText={setAmount}
+          placeholder="0"
+          keyboardType="numeric"
+          required
+        />
+        {currency === 'USD' && rate && parsedAmountPreview > 0 && !needsExchangeRate ? (
+          <Text style={styles.estimate}>
+            ≈ {formatMoney(parsedAmountPreview * rate, 'ARS')} con la cotización de hoy
+          </Text>
+        ) : null}
 
         <View style={styles.paidToggleRow}>
           <Text style={styles.paidLabel}>Marcar como pagado</Text>
           <Button
             label={isPaid ? 'Sí' : 'No'}
             variant={isPaid ? 'primary' : 'secondary'}
-            onPress={() => setIsPaid((prev) => !prev)}
+            onPress={handleTogglePaid}
             style={styles.paidToggleButton}
           />
         </View>
@@ -178,6 +226,22 @@ export default function PaymentFormScreen() {
         {isPaid ? (
           <>
             <FormField label="Fecha de pago" value={paidDate} onChangeText={setPaidDate} placeholder="2024-05-05" required />
+            {needsExchangeRate ? (
+              <>
+                <FormField
+                  label="Cotización usada (pesos por dólar)"
+                  value={exchangeRateInput}
+                  onChangeText={setExchangeRateInput}
+                  placeholder="Ej: 1250"
+                  keyboardType="numeric"
+                />
+                {Number(exchangeRateInput) > 0 && parsedAmountPreview > 0 ? (
+                  <Text style={styles.estimate}>
+                    Equivale a {formatMoney(parsedAmountPreview * Number(exchangeRateInput), 'ARS')}
+                  </Text>
+                ) : null}
+              </>
+            ) : null}
             <OptionChips
               label="Método de pago"
               options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m, label: m }))}
@@ -208,6 +272,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.sm,
     marginTop: -spacing.sm,
+  },
+  estimate: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.lg,
   },
   paidToggleRow: {
     flexDirection: 'row',

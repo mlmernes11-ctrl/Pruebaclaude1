@@ -6,9 +6,11 @@ import React from 'react';
 import { colors } from '../theme';
 
 import DashboardScreen from '../screens/DashboardScreen';
+import ExchangeRateScreen from '../screens/ExchangeRateScreen';
 import PropertiesListScreen from '../screens/properties/PropertiesListScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
 import PropertyDetailScreen from '../screens/properties/PropertyDetailScreen';
+import PropertyPaymentsScreen from '../screens/properties/PropertyPaymentsScreen';
 import TenantsListScreen from '../screens/tenants/TenantsListScreen';
 import TenantFormScreen from '../screens/tenants/TenantFormScreen';
 import TenantDetailScreen from '../screens/tenants/TenantDetailScreen';
@@ -41,6 +43,11 @@ function DashboardStackNavigator() {
         component={DashboardScreen}
         options={{ headerShown: false }}
       />
+      <DashboardStack.Screen
+        name="ExchangeRate"
+        component={ExchangeRateScreen}
+        options={{ title: 'Cotización del dólar' }}
+      />
     </DashboardStack.Navigator>
   );
 }
@@ -64,6 +71,11 @@ function PropertiesStackNavigator() {
         name="PropertyDetail"
         component={PropertyDetailScreen}
         options={{ title: 'Propiedad' }}
+      />
+      <PropertiesStack.Screen
+        name="PropertyPayments"
+        component={PropertyPaymentsScreen}
+        options={{ title: 'Historial de pagos' }}
       />
     </PropertiesStack.Navigator>
   );

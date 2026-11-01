@@ -7,7 +7,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { Contract, Payment, Property, PropertyStatus, Tenant } from '../types';
+import { Contract, MoneyTotals, Payment, Property, PropertyStatus, Tenant } from '../types';
+import { addToTotals, emptyTotals } from '../utils/format';
 import { generateId } from '../utils/id';
 import { getPaymentStatus } from '../utils/payments';
 import { buildSampleData } from '../utils/sampleData';
@@ -48,18 +49,40 @@ function syncPropertyOccupancy(
   });
 }
 
+// Records saved before currencies existed were entered in pesos.
+function normalizeStoredData(parsed: Partial<StoredData>): StoredData {
+  const contracts = (parsed.contracts ?? []).map((c) => ({ ...c, currency: c.currency ?? 'ARS' }));
+  return {
+    properties: (parsed.properties ?? []).map((p) => ({
+      ...p,
+      rentCurrency: p.rentCurrency ?? 'ARS',
+    })),
+    tenants: parsed.tenants ?? [],
+    contracts,
+    payments: (parsed.payments ?? []).map((p) => {
+      const concept = p.concept ?? 'alquiler';
+      const contractCurrency = contracts.find((c) => c.id === p.contractId)?.currency ?? 'ARS';
+      return {
+        ...p,
+        concept,
+        currency: p.currency ?? (concept === 'alquiler' ? contractCurrency : 'ARS'),
+      };
+    }),
+  };
+}
+
 interface DashboardStats {
   totalProperties: number;
   availableProperties: number;
   rentedProperties: number;
   maintenanceProperties: number;
   activeContracts: number;
-  monthlyExpectedIncome: number;
+  monthlyExpectedIncome: MoneyTotals;
   pendingCount: number;
-  pendingAmount: number;
+  pendingAmount: MoneyTotals;
   overdueCount: number;
-  overdueAmount: number;
-  paidThisMonthAmount: number;
+  overdueAmount: MoneyTotals;
+  paidThisMonthAmount: MoneyTotals;
 }
 
 interface DataContextValue extends StoredData {
@@ -86,6 +109,7 @@ interface DataContextValue extends StoredData {
   contractsForProperty: (propertyId: string) => Contract[];
   contractsForTenant: (tenantId: string) => Contract[];
   paymentsForContract: (contractId: string) => Payment[];
+  paymentsForProperty: (propertyId: string) => Payment[];
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
@@ -99,15 +123,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
-          const parsed = JSON.parse(raw) as StoredData;
-          setData({
-            ...EMPTY_DATA,
-            ...parsed,
-            payments: (parsed.payments ?? []).map((p) => ({
-              ...p,
-              concept: p.concept ?? 'alquiler',
-            })),
-          });
+          setData(normalizeStoredData(JSON.parse(raw) as Partial<StoredData>));
         }
       } catch (e) {
         console.warn('No se pudo cargar la información guardada', e);
@@ -290,6 +306,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .sort((a, b) => (a.dueDate < b.dueDate ? 1 : -1)),
     [data.payments],
   );
+  const paymentsForProperty = useCallback(
+    (propertyId: string) => {
+      const contractIds = new Set(
+        data.contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id),
+      );
+      return data.payments
+        .filter((p) => contractIds.has(p.contractId))
+        .sort((a, b) => (a.dueDate < b.dueDate ? 1 : -1));
+    },
+    [data.contracts, data.payments],
+  );
 
   const stats = useMemo<DashboardStats>(() => {
     const activeContracts = data.contracts.filter((c) => c.status === 'activo');
@@ -297,23 +324,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const currentPeriodStr = `${nowPeriod.getFullYear()}-${String(nowPeriod.getMonth() + 1).padStart(2, '0')}`;
 
     let pendingCount = 0;
-    let pendingAmount = 0;
+    const pendingAmount = emptyTotals();
     let overdueCount = 0;
-    let overdueAmount = 0;
-    let paidThisMonthAmount = 0;
+    const overdueAmount = emptyTotals();
+    const paidThisMonthAmount = emptyTotals();
+    const monthlyExpectedIncome = emptyTotals();
 
     data.payments.forEach((payment) => {
       const status = getPaymentStatus(payment);
       if (status === 'pendiente') {
         pendingCount += 1;
-        pendingAmount += payment.amount;
+        addToTotals(pendingAmount, payment.amount, payment.currency);
       } else if (status === 'vencido') {
         overdueCount += 1;
-        overdueAmount += payment.amount;
+        addToTotals(overdueAmount, payment.amount, payment.currency);
       } else if (status === 'pagado' && payment.paidDate?.slice(0, 7) === currentPeriodStr) {
-        paidThisMonthAmount += payment.amount;
+        addToTotals(paidThisMonthAmount, payment.amount, payment.currency);
       }
     });
+    activeContracts.forEach((c) => addToTotals(monthlyExpectedIncome, c.rentAmount, c.currency));
 
     return {
       totalProperties: data.properties.length,
@@ -321,7 +350,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       rentedProperties: data.properties.filter((p) => p.status === 'alquilada').length,
       maintenanceProperties: data.properties.filter((p) => p.status === 'mantenimiento').length,
       activeContracts: activeContracts.length,
-      monthlyExpectedIncome: activeContracts.reduce((sum, c) => sum + c.rentAmount, 0),
+      monthlyExpectedIncome,
       pendingCount,
       pendingAmount,
       overdueCount,
@@ -355,6 +384,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     contractsForProperty,
     contractsForTenant,
     paymentsForContract,
+    paymentsForProperty,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

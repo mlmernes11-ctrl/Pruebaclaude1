@@ -8,6 +8,6 @@ export function getPaymentStatus(payment: Payment): PaymentStatus {
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   pagado: 'Pagado',
-  pendiente: 'Pendiente',
+  pendiente: 'Por vencer',
   vencido: 'Vencido',
 };

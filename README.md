@@ -4,13 +4,14 @@ Aplicación móvil (Expo + React Native + TypeScript) para la gestión de una ca
 
 ## Funcionalidades
 
-- **Inicio**: resumen con cantidad de propiedades, contratos activos, ingreso mensual esperado, pagos pendientes/vencidos y próximos cobros.
-- **Propiedades**: alta, edición, eliminación y ficha con tipo, dirección, ambientes, superficie y alquiler mensual. El estado (disponible / alquilada / mantenimiento) se actualiza automáticamente según los contratos activos.
+- **Inicio**: resumen con propiedades, contratos activos, ingreso mensual esperado, pagos por vencer y vencidos, estado de cada propiedad (deudas, contratos por vencer) y próximos cobros. Incluye un botón para cargar datos de ejemplo y otro para borrar todo.
+- **Propiedades**: alta, edición, eliminación y ficha con tipo, dirección, ambientes, superficie, alquiler (en dólares o pesos), expensas y servicios (en pesos). El estado (disponible / alquilada / mantenimiento) se actualiza automáticamente según los contratos activos. Cada ficha tiene su historial de pagos.
 - **Inquilinos**: alta, edición, eliminación y ficha con datos de contacto y sus contratos asociados.
-- **Contratos**: vinculan una propiedad con un inquilino, con fechas de inicio/fin, alquiler, depósito, día de pago y estado.
-- **Pagos**: registro de pagos por período con vencimiento, monto y método; se calculan automáticamente como pendientes, vencidos o pagados.
+- **Contratos**: vinculan una propiedad con un inquilino, con fechas de inicio/fin, moneda, alquiler, depósito, día de pago y estado.
+- **Pagos**: registro por período y concepto (alquiler, expensas o servicios), con vencimiento, monto y método; se calculan automáticamente como por vencer, vencidos o pagados. En los pagos en dólares se puede anotar la cotización usada.
+- **Cotización del dólar**: se descarga de [DolarAPI](https://dolarapi.com) (blue, oficial o MEP, promedio entre compra y venta) o se carga a mano. Los montos en dólares muestran su estimado en pesos.
 
-Los datos se guardan localmente en el dispositivo con `AsyncStorage`, por lo que la app funciona sin conexión ni backend.
+Los datos se guardan localmente en el dispositivo con `AsyncStorage`, por lo que la app funciona sin backend. Solo la descarga de la cotización necesita conexión.
 
 ## Requisitos
 

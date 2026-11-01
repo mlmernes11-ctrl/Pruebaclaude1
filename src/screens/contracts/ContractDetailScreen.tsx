@@ -5,6 +5,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import { showConfirm } from '../../components/DialogHost';
+import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import { CONTRACT_STATUS_LABEL, PAYMENT_CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -12,8 +13,8 @@ import { colors, fontSize, spacing } from '../../theme';
 import {
   addMonthsToPeriod,
   currentPeriod,
-  formatCurrency,
   formatDate,
+  formatMoney,
   formatPeriod,
   periodToDueDate,
 } from '../../utils/format';
@@ -104,9 +105,14 @@ export default function ContractDetailScreen() {
           <Text style={styles.sectionTitle}>Detalles del contrato</Text>
           <DetailRow label="Inicio" value={formatDate(contract.startDate)} />
           <DetailRow label="Fin" value={formatDate(contract.endDate)} />
-          <DetailRow label="Alquiler mensual" value={formatCurrency(contract.rentAmount)} />
+          <DetailRow
+            label="Alquiler mensual"
+            value={
+              <MoneyText amount={contract.rentAmount} currency={contract.currency} style={styles.detailValue} />
+            }
+          />
           {contract.depositAmount ? (
-            <DetailRow label="Depósito" value={formatCurrency(contract.depositAmount)} />
+            <DetailRow label="Depósito" value={formatMoney(contract.depositAmount, contract.currency)} />
           ) : null}
           <DetailRow label="Día de pago" value={`Día ${contract.paymentDay} de cada mes`} />
           {contract.notes ? <DetailRow label="Notas" value={contract.notes} /> : null}
@@ -141,7 +147,12 @@ export default function ContractDetailScreen() {
                   <Text style={styles.paymentDue}>Vence: {formatDate(payment.dueDate)}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.paymentAmount}>{formatCurrency(payment.amount)}</Text>
+                  <MoneyText
+                    amount={payment.amount}
+                    currency={payment.currency}
+                    settledRate={payment.paidDate ? payment.exchangeRate : undefined}
+                    style={styles.paymentAmount}
+                  />
                   <Badge label={PAYMENT_STATUS_LABEL[status]} tone={PAYMENT_TONE[status]} />
                 </View>
               </Card>
@@ -163,11 +174,11 @@ export default function ContractDetailScreen() {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      {typeof value === 'string' ? <Text style={styles.detailValue}>{value}</Text> : value}
     </View>
   );
 }

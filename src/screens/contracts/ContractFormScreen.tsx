@@ -7,10 +7,11 @@ import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
-import { CONTRACT_STATUS_OPTIONS } from '../../constants';
+import { CONTRACT_STATUS_OPTIONS, CURRENCY_OPTIONS, DEFAULT_RENT_CURRENCY } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { ContractStatus } from '../../types';
+import { ContractStatus, Currency } from '../../types';
+import { CURRENCY_SYMBOL } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
 
 function isValidDate(value: string): boolean {
@@ -32,8 +33,12 @@ export default function ContractFormScreen() {
   const [tenantId, setTenantId] = useState(existing?.tenantId ?? presetTenantId ?? '');
   const [startDate, setStartDate] = useState(existing?.startDate ?? '');
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  const presetProperty = getPropertyById(propertyId);
   const [rentAmount, setRentAmount] = useState(
-    existing ? String(existing.rentAmount) : propertyId ? String(getPropertyById(propertyId)?.rentAmount ?? '') : '',
+    existing ? String(existing.rentAmount) : presetProperty ? String(presetProperty.rentAmount) : '',
+  );
+  const [currency, setCurrency] = useState<Currency>(
+    existing?.currency ?? presetProperty?.rentCurrency ?? DEFAULT_RENT_CURRENCY,
   );
   const [depositAmount, setDepositAmount] = useState(
     existing?.depositAmount ? String(existing.depositAmount) : '',
@@ -46,7 +51,10 @@ export default function ContractFormScreen() {
     setPropertyId(id);
     if (!existing && !rentAmount) {
       const property = getPropertyById(id);
-      if (property) setRentAmount(String(property.rentAmount));
+      if (property) {
+        setRentAmount(String(property.rentAmount));
+        setCurrency(property.rentCurrency);
+      }
     }
   };
 
@@ -80,6 +88,7 @@ export default function ContractFormScreen() {
       startDate,
       endDate,
       rentAmount: parsedRent,
+      currency,
       depositAmount: depositAmount ? Number(depositAmount) : undefined,
       paymentDay: parsedDay,
       status,
@@ -118,8 +127,9 @@ export default function ContractFormScreen() {
         <Text style={styles.hint}>Formato de fechas: AAAA-MM-DD</Text>
         <FormField label="Fecha de inicio" value={startDate} onChangeText={setStartDate} placeholder="2024-01-01" required />
         <FormField label="Fecha de fin" value={endDate} onChangeText={setEndDate} placeholder="2024-12-31" required />
+        <OptionChips label="Moneda del contrato" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         <FormField
-          label="Monto de alquiler mensual"
+          label={`Monto de alquiler mensual (${CURRENCY_SYMBOL[currency]})`}
           value={rentAmount}
           onChangeText={setRentAmount}
           placeholder="0"
@@ -127,7 +137,7 @@ export default function ContractFormScreen() {
           required
         />
         <FormField
-          label="Depósito de garantía"
+          label={`Depósito de garantía (${CURRENCY_SYMBOL[currency]})`}
           value={depositAmount}
           onChangeText={setDepositAmount}
           placeholder="0"

@@ -5,12 +5,35 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { showConfirm } from '../components/DialogHost';
+import MoneyText from '../components/MoneyText';
 import Screen from '../components/Screen';
-import { PAYMENT_CONCEPT_LABEL } from '../constants';
+import { PAYMENT_CONCEPT_LABEL, PROPERTY_STATUS_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
+import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../theme';
-import { formatCurrency, formatPeriod } from '../utils/format';
+import { MoneyTotals } from '../types';
+import {
+  formatDateTime,
+  formatMoney,
+  formatPeriod,
+  formatTotals,
+  totalsInPesos,
+} from '../utils/format';
 import { getPaymentStatus } from '../utils/payments';
+import {
+  AttentionLevel,
+  PropertySummary,
+  sortByAttention,
+  summarizeProperty,
+} from '../utils/propertySummary';
+
+// Mixed-currency totals are shown in pesos when there is a rate, with the breakdown underneath.
+function describeTotals(totals: MoneyTotals, rate?: number) {
+  const pesos = totalsInPesos(totals, rate);
+  if (!totals.USD) return { main: formatMoney(totals.ARS, 'ARS'), detail: undefined };
+  if (pesos === undefined) return { main: formatTotals(totals), detail: undefined };
+  return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
+}
 
 export default function DashboardScreen() {
   const {
@@ -24,9 +47,17 @@ export default function DashboardScreen() {
     loadSampleData,
     clearAllData,
   } = useData();
+  const { rate, source: rateSource, updatedAt: rateUpdatedAt } = useExchangeRate();
   const navigation = useNavigation<any>();
   const isEmpty =
     properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
+
+  const income = describeTotals(stats.monthlyExpectedIncome, rate);
+  const pending = describeTotals(stats.pendingAmount, rate);
+  const overdue = describeTotals(stats.overdueAmount, rate);
+  const summaries = sortByAttention(
+    properties.map((p) => summarizeProperty(p, contracts, payments, tenants)),
+  );
 
   const upcomingPayments = payments
     .filter((p) => getPaymentStatus(p) !== 'pagado')
@@ -74,6 +105,28 @@ export default function DashboardScreen() {
           </Card>
         ) : null}
 
+        <Card
+          style={[styles.rateCard, !rate && styles.rateCardMissing]}
+          onPress={() => navigation.navigate('ExchangeRate')}
+        >
+          <Ionicons name="cash-outline" size={20} color={rate ? colors.primary : colors.warning} />
+          <View style={styles.rateInfo}>
+            <Text style={styles.rateTitle}>
+              {rate
+                ? `Dólar ${RATE_SOURCE_LABEL[rateSource]}: US$ 1 = ${formatMoney(rate, 'ARS')}`
+                : 'Falta la cotización del dólar'}
+            </Text>
+            <Text style={styles.rateMeta}>
+              {rate
+                ? rateSource === 'manual'
+                  ? 'Cargada a mano · tocá para cambiarla'
+                  : `Promedio compra/venta · ${formatDateTime(rateUpdatedAt)}`
+                : 'Tocá para cargarla y ver los montos en pesos'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </Card>
+
         <View style={styles.grid}>
           <StatCard
             icon="business-outline"
@@ -93,7 +146,8 @@ export default function DashboardScreen() {
 
         <Card style={styles.incomeCard}>
           <Text style={styles.incomeLabel}>Ingreso mensual esperado</Text>
-          <Text style={styles.incomeValue}>{formatCurrency(stats.monthlyExpectedIncome)}</Text>
+          <Text style={styles.incomeValue}>{income.main}</Text>
+          {income.detail ? <Text style={styles.incomeDetail}>{income.detail}</Text> : null}
           <View style={styles.incomeRow}>
             <View style={styles.incomeItem}>
               <View style={[styles.dot, { backgroundColor: colors.success }]} />
@@ -119,21 +173,40 @@ export default function DashboardScreen() {
         <View style={styles.grid}>
           <StatCard
             icon="time-outline"
-            label="Pagos pendientes"
-            value={formatCurrency(stats.pendingAmount)}
-            sublabel={`${stats.pendingCount} pagos`}
+            label="Pagos por vencer"
+            value={pending.main}
+            sublabel={[`${stats.pendingCount} pagos`, pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
           <StatCard
             icon="alert-circle-outline"
             label="Pagos vencidos"
-            value={formatCurrency(stats.overdueAmount)}
-            sublabel={`${stats.overdueCount} pagos`}
+            value={overdue.main}
+            sublabel={[`${stats.overdueCount} pagos`, overdue.detail].filter(Boolean).join(' · ')}
             tone={colors.danger}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
         </View>
+
+        {summaries.length ? (
+          <>
+            <Text style={styles.sectionTitle}>Estado por propiedad</Text>
+            {summaries.map((summary) => (
+              <PropertyStatusCard
+                key={summary.property.id}
+                summary={summary}
+                onPress={() =>
+                  navigation.navigate('PropertiesTab', {
+                    screen: 'PropertyDetail',
+                    params: { propertyId: summary.property.id },
+                    initial: false,
+                  })
+                }
+              />
+            ))}
+          </>
+        ) : null}
 
         <Text style={styles.sectionTitle}>Próximos cobros</Text>
         {upcomingPayments.length === 0 ? (
@@ -156,14 +229,14 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.paymentAmount}>{formatCurrency(payment.amount)}</Text>
+                  <MoneyText amount={payment.amount} currency={payment.currency} style={styles.paymentAmount} />
                   <Text
                     style={[
                       styles.paymentStatus,
                       { color: status === 'vencido' ? colors.danger : colors.warning },
                     ]}
                   >
-                    {status === 'vencido' ? 'Vencido' : 'Pendiente'}
+                    {status === 'vencido' ? 'Vencido' : 'Por vencer'}
                   </Text>
                 </View>
               </Card>
@@ -197,6 +270,41 @@ export default function DashboardScreen() {
   );
 }
 
+const LEVEL_COLOR: Record<AttentionLevel, string> = {
+  danger: colors.danger,
+  warning: colors.warning,
+  ok: colors.success,
+  idle: colors.textMuted,
+};
+
+function PropertyStatusCard({ summary, onPress }: { summary: PropertySummary; onPress: () => void }) {
+  const { property, activeContract, tenant, overdue, level, alerts } = summary;
+  const rentAmount = activeContract?.rentAmount ?? property.rentAmount;
+  const rentCurrency = activeContract?.currency ?? property.rentCurrency;
+  const levelColor = LEVEL_COLOR[level];
+
+  return (
+    <Card style={styles.propertyCard} onPress={onPress}>
+      <View style={styles.propertyHeader}>
+        <View style={[styles.levelDot, { backgroundColor: levelColor }]} />
+        <View style={styles.propertyInfo}>
+          <Text style={styles.propertyTitle} numberOfLines={1}>
+            {property.title}
+          </Text>
+          <Text style={styles.propertyTenant} numberOfLines={1}>
+            {tenant ? tenant.name : PROPERTY_STATUS_LABEL[property.status]}
+          </Text>
+        </View>
+        <MoneyText amount={rentAmount} currency={rentCurrency} suffix="/mes" style={styles.propertyRent} />
+      </View>
+      <Text style={[styles.propertyAlerts, { color: levelColor }]}>{alerts.join(' · ')}</Text>
+      {overdue.count ? (
+        <Text style={styles.propertyDebt}>Adeuda {formatTotals(overdue.totals)}</Text>
+      ) : null}
+    </Card>
+  );
+}
+
 function StatCard({
   icon,
   label,
@@ -217,7 +325,13 @@ function StatCard({
       <View style={[styles.statIcon, { backgroundColor: `${tone}1A` }]}>
         <Ionicons name={icon} size={20} color={tone} />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text
+        style={[styles.statValue, value.length > 11 && styles.statValueLong]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {value}
+      </Text>
       <Text style={styles.statLabel}>{label}</Text>
       {sublabel ? <Text style={styles.statSublabel}>{sublabel}</Text> : null}
     </Card>
@@ -369,5 +483,84 @@ const styles = StyleSheet.create({
   },
   testDataButton: {
     flex: 1,
+  },
+  statValueLong: {
+    fontSize: fontSize.lg,
+  },
+  incomeDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+  },
+  rateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  rateCardMissing: {
+    borderColor: colors.warning,
+    backgroundColor: colors.warningMuted,
+  },
+  rateInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rateTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  rateMeta: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  propertyCard: {
+    marginBottom: spacing.sm,
+  },
+  propertyHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  levelDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 6,
+  },
+  propertyInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  propertyTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  propertyTenant: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  propertyRent: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  propertyAlerts: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    marginTop: spacing.sm,
+    marginLeft: 18,
+  },
+  propertyDebt: {
+    fontSize: fontSize.xs,
+    color: colors.text,
+    marginTop: 2,
+    marginLeft: 18,
   },
 });
