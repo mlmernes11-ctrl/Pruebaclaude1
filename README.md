@@ -4,12 +4,12 @@ Aplicación móvil (Expo + React Native + TypeScript) para la gestión de una ca
 
 ## Funcionalidades
 
-- **Inicio**: resumen con propiedades, contratos activos, ingreso mensual esperado, pagos por vencer y vencidos, estado de cada propiedad (deudas, contratos por vencer) y próximos cobros. Incluye un botón para cargar datos de ejemplo y otro para borrar todo.
+- **Inicio**: resumen con propiedades, contratos activos, ingreso mensual esperado, liquidaciones por vencer y vencidas, estado de cada propiedad (deudas, contratos por vencer) y liquidaciones pendientes. Incluye un botón para cargar datos de ejemplo y otro para borrar todo.
 - **Propiedades**: alta, edición, eliminación y ficha con tipo, dirección, ambientes, superficie, alquiler (en dólares o pesos), expensas y servicios (en pesos). El estado (disponible / alquilada / mantenimiento) se actualiza automáticamente según los contratos activos. Cada ficha tiene su historial de pagos.
 - **Inquilinos**: alta, edición, eliminación y ficha con datos de contacto y sus contratos asociados.
 - **Contratos**: vinculan una propiedad con un inquilino, con fechas de inicio/fin, moneda, alquiler, depósito, día de pago y estado.
-- **Cuotas**: cada mes se generan solas las cuotas de cada contrato activo (alquiler, y expensas y servicios si la propiedad los tiene). Se pueden editar, anular o crear a mano, y figuran como por vencer, vencidas o pagadas según lo cobrado.
-- **Cobros**: al registrar un cobro se elige el concepto y cuánto paga (lo del mes, el total adeudado u otro monto); el sistema muestra a qué cuotas se aplica, acepta pagos parciales y deja el excedente a favor del inquilino. En los cobros en dólares se puede anotar la cotización usada. Las fechas se eligen con un calendario.
+- **Liquidaciones**: cada mes se generan solas las liquidaciones de cada contrato activo (alquiler, y expensas y servicios si la propiedad los tiene). Se pueden editar, anular o crear a mano, y figuran como por vencer, vencidas o pagadas según lo pagado.
+- **Pagos recibidos**: al registrar un pago se elige el concepto y cuánto paga (lo del mes, el total adeudado u otro monto); el sistema muestra a qué liquidaciones se aplica, acepta pagos parciales y deja el excedente a favor del inquilino. En los pagos en dólares se puede anotar la cotización usada. Las fechas se eligen con un calendario.
 - **Cotización del dólar**: se descarga de [DolarAPI](https://dolarapi.com) (blue, oficial o MEP, promedio entre compra y venta) o se carga a mano. Los montos en dólares muestran su estimado en pesos.
 
 Los datos se guardan localmente en el dispositivo con `AsyncStorage`, por lo que la app funciona sin backend. Solo la descarga de la cotización necesita conexión.

@@ -119,7 +119,7 @@ export default function PropertyDetailScreen() {
           </View>
           {summary.activeContract ? (
             <Button
-              label="Registrar cobro"
+              label="Registrar pago"
               onPress={() =>
                 navigation.navigate('PaymentsTab', {
                   screen: 'PaymentForm',

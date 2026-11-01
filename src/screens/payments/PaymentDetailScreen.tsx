@@ -23,7 +23,7 @@ export default function PaymentDetailScreen() {
   if (!payment) {
     return (
       <Screen>
-        <Text style={styles.notFound}>Este cobro ya no existe.</Text>
+        <Text style={styles.notFound}>Este pago ya no existe.</Text>
       </Screen>
     );
   }
@@ -35,9 +35,9 @@ export default function PaymentDetailScreen() {
 
   const handleDelete = () => {
     showConfirm({
-      title: 'Anular cobro',
-      message: 'Las cuotas que cubría este cobro vuelven a figurar como deuda. ¿Continuar?',
-      confirmLabel: 'Anular cobro',
+      title: 'Anular pago',
+      message: 'Las liquidaciones que cubría este pago vuelven a figurar como deuda. ¿Continuar?',
+      confirmLabel: 'Anular pago',
       destructive: true,
       onConfirm: () => {
         deletePayment(payment.id);
@@ -66,10 +66,10 @@ export default function PaymentDetailScreen() {
           {payment.notes ? <Detail label="Notas" value={payment.notes} /> : null}
         </Card>
 
-        <Text style={styles.sectionTitle}>Cuotas que cubre</Text>
+        <Text style={styles.sectionTitle}>Liquidaciones que cubre</Text>
         <Card style={styles.card}>
           {payment.allocations.length === 0 ? (
-            <Text style={styles.meta}>No se aplicó a ninguna cuota.</Text>
+            <Text style={styles.meta}>No se aplicó a ninguna liquidación.</Text>
           ) : (
             payment.allocations.map((allocation) => {
               const charge = charges.find((c) => c.id === allocation.chargeId);
@@ -79,7 +79,7 @@ export default function PaymentDetailScreen() {
                     style={styles.allocationPeriod}
                     onPress={() => navigation.navigate('ChargeForm', { chargeId: allocation.chargeId })}
                   >
-                    {charge ? formatPeriod(charge.period) : 'Cuota eliminada'}
+                    {charge ? formatPeriod(charge.period) : 'Liquidación eliminada'}
                   </Text>
                   <Text style={styles.allocationAmount}>
                     {formatMoney(allocation.amount, payment.currency)}
@@ -96,7 +96,7 @@ export default function PaymentDetailScreen() {
           ) : null}
         </Card>
 
-        <Button label="Anular cobro" variant="danger" onPress={handleDelete} />
+        <Button label="Anular pago" variant="danger" onPress={handleDelete} />
       </ScrollView>
     </Screen>
   );

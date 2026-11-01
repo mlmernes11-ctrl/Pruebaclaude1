@@ -58,7 +58,7 @@ export default function ContractDetailScreen() {
   const handleDelete = () => {
     showConfirm({
       title: 'Eliminar contrato',
-      message: 'También se eliminan sus cuotas y cobros registrados. ¿Continuar?',
+      message: 'También se eliminan sus liquidaciones y pagos registrados. ¿Continuar?',
       confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
@@ -98,15 +98,15 @@ export default function ContractDetailScreen() {
         </Card>
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Cuotas</Text>
+          <Text style={styles.sectionTitle}>Liquidaciones</Text>
           <Button
-            label="+ Cuota manual"
+            label="+ Liquidación manual"
             variant="ghost"
             onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
           />
         </View>
         <Button
-          label="Registrar cobro"
+          label="Registrar pago"
           onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
           style={styles.collectButton}
         />
@@ -116,7 +116,7 @@ export default function ContractDetailScreen() {
         {charges.length === 0 ? (
           <Card>
             <Text style={styles.emptyText}>
-              Todavía no hay cuotas. Se generan solas cada mes mientras el contrato esté activo.
+              Todavía no hay liquidaciones. Se generan solas cada mes mientras el contrato esté activo.
             </Text>
           </Card>
         ) : (

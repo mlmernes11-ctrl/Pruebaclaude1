@@ -44,18 +44,18 @@ export default function PropertyPaymentsScreen() {
         ListHeaderComponent={
           <View>
             <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
-            <Text style={styles.subtitle}>Cuotas y pagos de todos sus contratos</Text>
+            <Text style={styles.subtitle}>Liquidaciones y pagos de todos sus contratos</Text>
             <OptionChips label="Mostrar" options={FILTERS} value={filter} onChange={setFilter} />
           </View>
         }
         ListEmptyComponent={
           <EmptyState
             icon="receipt-outline"
-            title="Sin cuotas"
+            title="Sin liquidaciones"
             message={
               filter === 'todos'
-                ? 'Todavía no hay cuotas para esta propiedad.'
-                : 'No hay cuotas con este estado.'
+                ? 'Todavía no hay liquidaciones para esta propiedad.'
+                : 'No hay liquidaciones con este estado.'
             }
           />
         }

@@ -63,7 +63,7 @@ export type ChargeStatus = 'pagado' | 'pendiente' | 'vencido';
 
 export type ChargeConcept = 'alquiler' | 'expensas' | 'servicios';
 
-// What the tenant owes for one concept and month ("cuota").
+// What the tenant owes for one concept and month ("liquidación").
 export interface Charge {
   id: string;
   contractId: string;
@@ -84,7 +84,7 @@ export interface PaymentAllocation {
   amount: number;
 }
 
-// Money actually received ("cobro"), applied to one or more charges of the same concept.
+// Money actually received ("pago recibido"), applied to one or more charges of the same concept.
 export interface Payment {
   id: string;
   contractId: string;

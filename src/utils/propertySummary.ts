@@ -100,10 +100,10 @@ export function summarizeProperty(
   const notes: string[] = [];
   if (collection === 'sin-contrato') notes.push('Disponible para alquilar');
   if (collection === 'mantenimiento') notes.push(property.notes ?? 'No disponible por ahora');
-  if (overdue.count) notes.push(plural(overdue.count, 'cuota vencida', 'cuotas vencidas'));
+  if (overdue.count) notes.push(plural(overdue.count, 'liquidación vencida', 'liquidaciones vencidas'));
   if (pending.count && nextDueDate) {
     notes.push(
-      `${plural(pending.count, 'cuota por vencer', 'cuotas por vencer')} · vence el ${formatDate(nextDueDate).slice(0, 5)}`,
+      `${plural(pending.count, 'liquidación por vencer', 'liquidaciones por vencer')} · vence el ${formatDate(nextDueDate).slice(0, 5)}`,
     );
   }
   if (daysToContractEnd !== undefined && daysToContractEnd < 0) {
@@ -111,7 +111,7 @@ export function summarizeProperty(
   } else if (daysToContractEnd !== undefined && daysToContractEnd <= CONTRACT_ENDING_SOON_DAYS) {
     notes.push(`Contrato vence en ${plural(daysToContractEnd, 'día', 'días')}`);
   }
-  if (collection === 'al-dia' && notes.length === 0) notes.push('Todas las cuotas pagas');
+  if (collection === 'al-dia' && notes.length === 0) notes.push('Todas las liquidaciones pagas');
 
   return {
     property,

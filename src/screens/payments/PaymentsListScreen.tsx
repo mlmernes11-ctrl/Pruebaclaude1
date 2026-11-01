@@ -14,7 +14,7 @@ import { ChargeStatus } from '../../types';
 import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
 
-type View_ = 'cuotas' | 'cobros';
+type View_ = 'pagos' | 'liquidaciones';
 type FilterValue = 'todos' | ChargeStatus;
 
 const FILTERS: { value: FilterValue; label: string }[] = [
@@ -27,7 +27,7 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 export default function PaymentsListScreen() {
   const { chargeViews, payments, charges, getContractById, getPropertyById, getTenantById } = useData();
   const navigation = useNavigation<any>();
-  const [view, setView] = useState<View_>('cuotas');
+  const [view, setView] = useState<View_>('pagos');
   const [filter, setFilter] = useState<FilterValue>('todos');
 
   const sortedCharges = useMemo(
@@ -58,20 +58,20 @@ export default function PaymentsListScreen() {
         <Text style={styles.title}>Pagos</Text>
       </View>
       <View style={styles.segment}>
-        {(['cuotas', 'cobros'] as View_[]).map((value) => (
+        {(['pagos', 'liquidaciones'] as View_[]).map((value) => (
           <TouchableOpacity
             key={value}
             style={[styles.segmentItem, view === value && styles.segmentItemActive]}
             onPress={() => setView(value)}
           >
             <Text style={[styles.segmentText, view === value && styles.segmentTextActive]}>
-              {value === 'cuotas' ? 'Cuotas' : 'Cobros recibidos'}
+              {value === 'pagos' ? 'Pagos recibidos' : 'Liquidaciones'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {view === 'cuotas' ? (
+      {view === 'liquidaciones' ? (
         <>
           <View style={styles.filterRow}>
             {FILTERS.map((item) => {
@@ -94,8 +94,8 @@ export default function PaymentsListScreen() {
             ListEmptyComponent={
               <EmptyState
                 icon="calendar-outline"
-                title="Sin cuotas"
-                message="Las cuotas de cada contrato activo se generan solas todos los meses."
+                title="Sin liquidaciones"
+                message="Las liquidaciones de cada contrato activo se generan solas todos los meses."
               />
             }
             renderItem={({ item }) => {
@@ -150,7 +150,7 @@ export default function PaymentsListScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="cash-outline"
-              title="Sin cobros"
+              title="Sin pagos"
               message="Tocá + para registrar lo que te pagó un inquilino."
             />
           }
@@ -178,7 +178,7 @@ export default function PaymentsListScreen() {
                 </Text>
                 <View style={styles.footerRow}>
                   <Text style={[styles.metaText, styles.periodsText]} numberOfLines={2}>
-                    {periods.length ? `Cubre: ${periods.join(', ')}` : 'Sin cuotas aplicadas'}
+                    {periods.length ? `Cubre: ${periods.join(', ')}` : 'Sin liquidaciones aplicadas'}
                     {credit > 0 ? ` · ${formatMoney(credit, item.currency)} a favor` : ''}
                   </Text>
                   <MoneyText

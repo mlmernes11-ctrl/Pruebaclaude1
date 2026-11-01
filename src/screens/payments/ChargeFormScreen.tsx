@@ -84,18 +84,18 @@ export default function ChargeFormScreen() {
 
   const handleSave = () => {
     if (!contract) {
-      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde la cuota.');
+      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde la liquidación.');
       return;
     }
     const parsedAmount = Number(amount.replace(',', '.'));
     if (!(parsedAmount > 0)) {
-      showAlert('Monto inválido', 'Ingresá el monto de la cuota.');
+      showAlert('Monto inválido', 'Ingresá el monto de la liquidación.');
       return;
     }
     if (existing && parsedAmount < existing.paid) {
       showAlert(
-        'Monto menor a lo cobrado',
-        `Ya se cobraron ${formatMoney(existing.paid, existing.charge.currency)} de esta cuota.`,
+        'Monto menor a lo pagado',
+        `Ya se pagaron ${formatMoney(existing.paid, existing.charge.currency)} de esta liquidación.`,
       );
       return;
     }
@@ -121,8 +121,8 @@ export default function ChargeFormScreen() {
   const handleVoid = () => {
     if (!charge) return;
     showConfirm({
-      title: 'Anular cuota',
-      message: `La cuota de ${CONCEPT_LABEL[charge.concept].toLowerCase()} de ${formatPeriod(
+      title: 'Anular liquidación',
+      message: `La liquidación de ${CONCEPT_LABEL[charge.concept].toLowerCase()} de ${formatPeriod(
         charge.period,
       )} deja de figurar como deuda y no se vuelve a generar.`,
       confirmLabel: 'Anular',
@@ -155,13 +155,13 @@ export default function ChargeFormScreen() {
               <Badge label={CHARGE_STATUS_LABEL[existing.status]} tone={CHARGE_STATUS_TONE[existing.status]} />
             </View>
             <View style={styles.summaryAmounts}>
-              <AmountLine label="Cuota" amount={charge.amount} currency={charge.currency} />
-              <AmountLine label="Cobrado" amount={existing.paid} currency={charge.currency} />
+              <AmountLine label="Liquidado" amount={charge.amount} currency={charge.currency} />
+              <AmountLine label="Pagado" amount={existing.paid} currency={charge.currency} />
               <AmountLine label="Resta" amount={existing.balance} currency={charge.currency} strong />
             </View>
             {appliedPayments.length ? (
               <View style={styles.applied}>
-                <Text style={styles.appliedTitle}>Cobros aplicados</Text>
+                <Text style={styles.appliedTitle}>Pagos aplicados</Text>
                 {appliedPayments.map((payment) => {
                   const applied = payment.allocations.find((a) => a.chargeId === charge.id)!.amount;
                   return (
@@ -179,7 +179,7 @@ export default function ChargeFormScreen() {
             ) : null}
             {existing.balance > 0 ? (
               <Button
-                label="Registrar cobro de esta cuota"
+                label="Registrar pago de esta liquidación"
                 onPress={() =>
                   navigation.navigate('PaymentForm', {
                     contractId: charge.contractId,
@@ -214,7 +214,7 @@ export default function ChargeFormScreen() {
 
         {hasPayments ? (
           <Text style={styles.locked}>
-            Como ya tiene cobros, el concepto y la moneda no se pueden cambiar.
+            Como ya tiene pagos, el concepto y la moneda no se pueden cambiar.
           </Text>
         ) : (
           <OptionChips
@@ -240,7 +240,7 @@ export default function ChargeFormScreen() {
           <OptionChips label="Moneda" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         ) : null}
         <FormField
-          label={`Monto de la cuota (${CURRENCY_SYMBOL[currency]})`}
+          label={`Monto de la liquidación (${CURRENCY_SYMBOL[currency]})`}
           value={amount}
           onChangeText={setAmount}
           placeholder="0"
@@ -249,9 +249,9 @@ export default function ChargeFormScreen() {
         />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />
 
-        <Button label={charge ? 'Guardar cambios' : 'Crear cuota'} onPress={handleSave} />
+        <Button label={charge ? 'Guardar cambios' : 'Crear liquidación'} onPress={handleSave} />
         {charge ? (
-          <Button label="Anular cuota" variant="danger" onPress={handleVoid} style={styles.voidButton} />
+          <Button label="Anular liquidación" variant="danger" onPress={handleVoid} style={styles.voidButton} />
         ) : null}
       </ScrollView>
     </Screen>

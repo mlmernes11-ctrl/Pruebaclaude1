@@ -363,7 +363,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if ((ledger.get(id)?.paid ?? 0) > 0) {
         return {
           ok: false,
-          reason: 'Esta cuota tiene cobros registrados. Anulá primero esos cobros.',
+          reason: 'Esta liquidación tiene pagos registrados. Anulá primero esos pagos.',
         };
       }
       setData((prev) => ({

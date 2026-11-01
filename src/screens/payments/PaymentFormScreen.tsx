@@ -135,15 +135,15 @@ export default function PaymentFormScreen() {
 
   const handleSave = () => {
     if (!contract) {
-      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el cobro.');
+      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el pago.');
       return;
     }
     if (!(parsedAmount > 0)) {
-      showAlert('Monto inválido', 'Ingresá cuánto se cobró.');
+      showAlert('Monto inválido', 'Ingresá cuánto pagó.');
       return;
     }
     if (!date) {
-      showAlert('Falta la fecha', 'Elegí la fecha del cobro.');
+      showAlert('Falta la fecha', 'Elegí la fecha del pago.');
       return;
     }
     if (currency === 'USD' && exchangeRateInput && !(parsedRate > 0)) {
@@ -177,7 +177,7 @@ export default function PaymentFormScreen() {
           emptyMessage="No hay contratos. Creá uno primero."
           options={contractOptions}
         />
-        <OptionChips label="¿Qué se cobra?" options={conceptOptions} value={concept} onChange={handleSelectConcept} />
+        <OptionChips label="¿Qué paga?" options={conceptOptions} value={concept} onChange={handleSelectConcept} />
 
         {contract ? (
           <Card style={styles.debtCard}>
@@ -187,7 +187,7 @@ export default function PaymentFormScreen() {
             </Text>
             {outstanding.length === 0 ? (
               <Text style={styles.debtEmpty}>
-                No hay cuotas pendientes. Si el inquilino adelanta, el monto queda a su favor.
+                No hay liquidaciones pendientes. Si el inquilino adelanta, el monto queda a su favor.
               </Text>
             ) : (
               outstanding.map((view) => <DebtRow key={view.charge.id} view={view} />)
@@ -204,7 +204,7 @@ export default function PaymentFormScreen() {
                 title={
                   reference.charge.period === currentPeriod()
                     ? `Lo del mes (${formatPeriod(reference.charge.period)})`
-                    : `Cuota de ${formatPeriod(reference.charge.period)}`
+                    : `Liquidación de ${formatPeriod(reference.charge.period)}`
                 }
                 amount={formatMoney(reference.balance, currency)}
                 onPress={() => handleSelectOption('cuota')}
@@ -214,7 +214,7 @@ export default function PaymentFormScreen() {
               <AmountChoice
                 selected={option === 'total'}
                 title="Total adeudado"
-                subtitle={outstanding.length > 1 ? `Incluye ${outstanding.length} cuotas` : undefined}
+                subtitle={outstanding.length > 1 ? `Incluye ${outstanding.length} liquidaciones` : undefined}
                 amount={formatMoney(total, currency)}
                 onPress={() => handleSelectOption('total')}
               />
@@ -229,7 +229,7 @@ export default function PaymentFormScreen() {
         ) : null}
 
         <FormField
-          label={`Monto cobrado (${CURRENCY_SYMBOL[currency]})`}
+          label={`Monto pagado (${CURRENCY_SYMBOL[currency]})`}
           value={amount}
           onChangeText={setAmount}
           placeholder="0"
@@ -270,7 +270,7 @@ export default function PaymentFormScreen() {
           </View>
         ) : null}
 
-        <DateField label="Fecha del cobro" value={date} onChange={setDate} required />
+        <DateField label="Fecha del pago" value={date} onChange={setDate} required />
         <OptionChips
           label="Método de pago"
           options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m, label: m }))}
@@ -296,7 +296,7 @@ export default function PaymentFormScreen() {
         ) : null}
 
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />
-        <Button label="Registrar cobro" onPress={handleSave} />
+        <Button label="Registrar pago" onPress={handleSave} />
       </ScrollView>
     </Screen>
   );

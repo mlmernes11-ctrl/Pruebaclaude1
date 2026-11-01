@@ -38,7 +38,7 @@ function describeTotals(totals: MoneyTotals, rate?: number) {
   return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
 }
 
-const countCuotas = (n: number) => `${n} ${n === 1 ? 'cuota' : 'cuotas'}`;
+const countLiquidaciones = (n: number) => `${n} ${n === 1 ? 'liquidación' : 'liquidaciones'}`;
 
 export default function DashboardScreen() {
   const {
@@ -160,13 +160,13 @@ export default function DashboardScreen() {
             <View style={styles.incomeItem}>
               <View style={[styles.dot, { backgroundColor: colors.success }]} />
               <Text style={styles.incomeItemText}>
-                {stats.rentedProperties} alquiladas
+                {stats.rentedProperties} {stats.rentedProperties === 1 ? 'alquilada' : 'alquiladas'}
               </Text>
             </View>
             <View style={styles.incomeItem}>
               <View style={[styles.dot, { backgroundColor: colors.info }]} />
               <Text style={styles.incomeItemText}>
-                {stats.availableProperties} disponibles
+                {stats.availableProperties} {stats.availableProperties === 1 ? 'disponible' : 'disponibles'}
               </Text>
             </View>
             <View style={styles.incomeItem}>
@@ -181,17 +181,17 @@ export default function DashboardScreen() {
         <View style={styles.grid}>
           <StatCard
             icon="time-outline"
-            label="Cuotas por vencer"
+            label="Liquidaciones por vencer"
             value={pending.main}
-            sublabel={[countCuotas(stats.pendingCount), pending.detail].filter(Boolean).join(' · ')}
+            sublabel={[countLiquidaciones(stats.pendingCount), pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
           <StatCard
             icon="alert-circle-outline"
-            label="Cuotas vencidas"
+            label="Liquidaciones vencidas"
             value={overdue.main}
-            sublabel={[countCuotas(stats.overdueCount), overdue.detail].filter(Boolean).join(' · ')}
+            sublabel={[countLiquidaciones(stats.overdueCount), overdue.detail].filter(Boolean).join(' · ')}
             tone={colors.danger}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
@@ -251,10 +251,10 @@ export default function DashboardScreen() {
           </>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Cuotas a cobrar</Text>
+        <Text style={styles.sectionTitle}>Liquidaciones pendientes</Text>
         {upcomingCharges.length === 0 ? (
           <Card>
-            <Text style={styles.emptyText}>No hay cuotas pendientes.</Text>
+            <Text style={styles.emptyText}>No hay liquidaciones pendientes.</Text>
           </Card>
         ) : (
           upcomingCharges.map(({ charge, balance, status }) => {

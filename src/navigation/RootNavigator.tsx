@@ -143,18 +143,18 @@ function PaymentsStackNavigator() {
       <PaymentsStack.Screen
         name="PaymentForm"
         component={PaymentFormScreen}
-        options={{ title: 'Registrar cobro' }}
+        options={{ title: 'Registrar pago' }}
       />
       <PaymentsStack.Screen
         name="PaymentDetail"
         component={PaymentDetailScreen}
-        options={{ title: 'Cobro' }}
+        options={{ title: 'Pago recibido' }}
       />
       <PaymentsStack.Screen
         name="ChargeForm"
         component={ChargeFormScreen}
         options={({ route }: any) => ({
-          title: route.params?.chargeId ? 'Cuota' : 'Nueva cuota',
+          title: route.params?.chargeId ? 'Liquidación' : 'Nueva liquidación',
         })}
       />
     </PaymentsStack.Navigator>
