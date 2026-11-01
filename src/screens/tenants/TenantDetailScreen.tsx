@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import { showAlert, showConfirm } from '../../components/DialogHost';
 import Screen from '../../components/Screen';
 import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -35,21 +36,20 @@ export default function TenantDetailScreen() {
   const contracts = contractsForTenant(tenant.id);
 
   const handleDelete = () => {
-    Alert.alert('Eliminar inquilino', `¿Seguro que deseas eliminar a "${tenant.name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: () => {
-          const result = deleteTenant(tenant.id);
-          if (!result.ok) {
-            Alert.alert('No se puede eliminar', result.reason ?? 'Operación no permitida');
-            return;
-          }
-          navigation.goBack();
-        },
+    showConfirm({
+      title: 'Eliminar inquilino',
+      message: `¿Seguro que deseas eliminar a "${tenant.name}"?`,
+      confirmLabel: 'Eliminar',
+      destructive: true,
+      onConfirm: () => {
+        const result = deleteTenant(tenant.id);
+        if (!result.ok) {
+          showAlert('No se puede eliminar', result.reason ?? 'Operación no permitida');
+          return;
+        }
+        navigation.goBack();
       },
-    ]);
+    });
   };
 
   return (

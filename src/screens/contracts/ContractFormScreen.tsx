@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
+import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -51,25 +52,25 @@ export default function ContractFormScreen() {
 
   const handleSave = () => {
     if (!propertyId || !tenantId) {
-      Alert.alert('Faltan datos', 'Selecciona la propiedad y el inquilino.');
+      showAlert('Faltan datos', 'Selecciona la propiedad y el inquilino.');
       return;
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
-      Alert.alert('Fechas inválidas', 'Ingresa las fechas en formato AAAA-MM-DD.');
+      showAlert('Fechas inválidas', 'Ingresa las fechas en formato AAAA-MM-DD.');
       return;
     }
     if (endDate < startDate) {
-      Alert.alert('Fechas inválidas', 'La fecha de fin debe ser posterior a la de inicio.');
+      showAlert('Fechas inválidas', 'La fecha de fin debe ser posterior a la de inicio.');
       return;
     }
     const parsedRent = Number(rentAmount);
     if (Number.isNaN(parsedRent) || parsedRent <= 0) {
-      Alert.alert('Monto inválido', 'Ingresa un monto de alquiler válido.');
+      showAlert('Monto inválido', 'Ingresa un monto de alquiler válido.');
       return;
     }
     const parsedDay = Number(paymentDay);
     if (Number.isNaN(parsedDay) || parsedDay < 1 || parsedDay > 28) {
-      Alert.alert('Día inválido', 'El día de pago debe estar entre 1 y 28.');
+      showAlert('Día inválido', 'El día de pago debe estar entre 1 y 28.');
       return;
     }
 

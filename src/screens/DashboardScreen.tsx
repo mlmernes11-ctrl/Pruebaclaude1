@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Button from '../components/Button';
 import Card from '../components/Card';
+import { showConfirm } from '../components/DialogHost';
 import Screen from '../components/Screen';
 import { PAYMENT_CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
@@ -11,19 +13,66 @@ import { formatCurrency, formatPeriod } from '../utils/format';
 import { getPaymentStatus } from '../utils/payments';
 
 export default function DashboardScreen() {
-  const { stats, payments, contracts, getPropertyById, getTenantById } = useData();
+  const {
+    stats,
+    properties,
+    tenants,
+    payments,
+    contracts,
+    getPropertyById,
+    getTenantById,
+    loadSampleData,
+    clearAllData,
+  } = useData();
   const navigation = useNavigation<any>();
+  const isEmpty =
+    properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
 
   const upcomingPayments = payments
     .filter((p) => getPaymentStatus(p) !== 'pagado')
     .sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1))
     .slice(0, 5);
 
+  const handleLoadSamples = () => {
+    if (isEmpty) {
+      loadSampleData();
+      return;
+    }
+    showConfirm({
+      title: 'Cargar datos de ejemplo',
+      message: 'Esto reemplaza todo lo que tenés cargado por datos de ejemplo. ¿Continuar?',
+      confirmLabel: 'Reemplazar',
+      destructive: true,
+      onConfirm: loadSampleData,
+    });
+  };
+
+  const handleClearAll = () => {
+    showConfirm({
+      title: 'Borrar todo',
+      message: 'Se eliminan todas las propiedades, inquilinos, contratos y pagos. No se puede deshacer.',
+      confirmLabel: 'Borrar todo',
+      destructive: true,
+      onConfirm: clearAllData,
+    });
+  };
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>Resumen</Text>
         <Text style={styles.subheader}>Vista general de tu cartera de alquileres</Text>
+
+        {isEmpty ? (
+          <Card style={styles.welcomeCard}>
+            <Text style={styles.welcomeTitle}>¿Querés probar la app rápido?</Text>
+            <Text style={styles.welcomeText}>
+              Cargá 5 propiedades, 4 inquilinos, contratos y pagos de ejemplo para recorrer todas las
+              pantallas sin cargar nada a mano.
+            </Text>
+            <Button label="Cargar datos de ejemplo" onPress={handleLoadSamples} />
+          </Card>
+        ) : null}
 
         <View style={styles.grid}>
           <StatCard
@@ -121,6 +170,28 @@ export default function DashboardScreen() {
             );
           })
         )}
+
+        <Text style={styles.sectionTitle}>Datos de prueba</Text>
+        <Card>
+          <Text style={styles.testDataText}>
+            Los datos se guardan solo en este dispositivo. Podés cargar ejemplos o empezar de cero.
+          </Text>
+          <View style={styles.testDataActions}>
+            <Button
+              label="Cargar ejemplos"
+              variant="secondary"
+              onPress={handleLoadSamples}
+              style={styles.testDataButton}
+            />
+            <Button
+              label="Borrar todo"
+              variant="secondary"
+              onPress={handleClearAll}
+              disabled={isEmpty}
+              style={styles.testDataButton}
+            />
+          </View>
+        </Card>
       </ScrollView>
     </Screen>
   );
@@ -269,5 +340,34 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.textMuted,
     textAlign: 'center',
+  },
+  welcomeCard: {
+    marginBottom: spacing.md,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
+  },
+  welcomeTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  welcomeText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    lineHeight: 19,
+    marginBottom: spacing.md,
+  },
+  testDataText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  testDataActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  testDataButton: {
+    flex: 1,
   },
 });

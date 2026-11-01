@@ -1,9 +1,10 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import { showConfirm } from '../../components/DialogHost';
 import Screen from '../../components/Screen';
 import { CONTRACT_STATUS_LABEL, PAYMENT_CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -57,21 +58,16 @@ export default function ContractDetailScreen() {
   const payments = paymentsForContract(contract.id);
 
   const handleDelete = () => {
-    Alert.alert(
-      'Eliminar contrato',
-      'Esto también eliminará los pagos asociados al contrato. ¿Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => {
-            deleteContract(contract.id);
-            smartGoBack(navigation, 'ContractsList');
-          },
-        },
-      ],
-    );
+    showConfirm({
+      title: 'Eliminar contrato',
+      message: 'Esto también eliminará los pagos asociados al contrato. ¿Continuar?',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+      onConfirm: () => {
+        deleteContract(contract.id);
+        smartGoBack(navigation, 'ContractsList');
+      },
+    });
   };
 
   const handleAddPayment = () => {

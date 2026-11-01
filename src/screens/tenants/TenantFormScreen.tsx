@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import Screen from '../../components/Screen';
@@ -22,7 +23,7 @@ export default function TenantFormScreen() {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Falta el nombre', 'Ingresa el nombre del inquilino.');
+      showAlert('Falta el nombre', 'Ingresa el nombre del inquilino.');
       return;
     }
 

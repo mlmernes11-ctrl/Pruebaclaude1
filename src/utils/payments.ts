@@ -1,10 +1,9 @@
 import { Payment, PaymentStatus } from '../types';
-import { startOfToday } from './format';
+import { parseLocalDate, startOfToday } from './format';
 
 export function getPaymentStatus(payment: Payment): PaymentStatus {
   if (payment.paidDate) return 'pagado';
-  const due = new Date(payment.dueDate);
-  return due < startOfToday() ? 'vencido' : 'pendiente';
+  return parseLocalDate(payment.dueDate) < startOfToday() ? 'vencido' : 'pendiente';
 }
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {

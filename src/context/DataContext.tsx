@@ -10,6 +10,7 @@ import React, {
 import { Contract, Payment, Property, PropertyStatus, Tenant } from '../types';
 import { generateId } from '../utils/id';
 import { getPaymentStatus } from '../utils/payments';
+import { buildSampleData } from '../utils/sampleData';
 
 const STORAGE_KEY = 'gestion_alquileres_v1';
 
@@ -77,6 +78,8 @@ interface DataContextValue extends StoredData {
   updatePayment: (id: string, data: Partial<Payment>) => void;
   deletePayment: (id: string) => void;
   markPaymentPaid: (id: string, paidDate: string, method?: string) => void;
+  loadSampleData: () => void;
+  clearAllData: () => void;
   getPropertyById: (id?: string) => Property | undefined;
   getTenantById: (id?: string) => Tenant | undefined;
   getContractById: (id?: string) => Contract | undefined;
@@ -257,6 +260,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const loadSampleData = useCallback(() => setData(buildSampleData()), []);
+  const clearAllData = useCallback(() => setData(EMPTY_DATA), []);
+
   const getPropertyById = useCallback(
     (id?: string) => data.properties.find((p) => p.id === id),
     [data.properties],
@@ -341,6 +347,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updatePayment,
     deletePayment,
     markPaymentPaid,
+    loadSampleData,
+    clearAllData,
     getPropertyById,
     getTenantById,
     getContractById,

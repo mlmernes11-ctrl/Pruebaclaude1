@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -87,24 +88,24 @@ export default function PaymentFormScreen() {
 
   const handleSave = () => {
     if (!contractId) {
-      Alert.alert('Falta el contrato', 'Selecciona el contrato asociado a este pago.');
+      showAlert('Falta el contrato', 'Selecciona el contrato asociado a este pago.');
       return;
     }
     if (!isValidPeriod(period)) {
-      Alert.alert('Período inválido', 'Ingresa el período en formato AAAA-MM.');
+      showAlert('Período inválido', 'Ingresa el período en formato AAAA-MM.');
       return;
     }
     if (!isValidDate(dueDate)) {
-      Alert.alert('Fecha inválida', 'Ingresa la fecha de vencimiento en formato AAAA-MM-DD.');
+      showAlert('Fecha inválida', 'Ingresa la fecha de vencimiento en formato AAAA-MM-DD.');
       return;
     }
     const parsedAmount = Number(amount);
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      Alert.alert('Monto inválido', 'Ingresa un monto válido.');
+      showAlert('Monto inválido', 'Ingresa un monto válido.');
       return;
     }
     if (isPaid && !isValidDate(paidDate)) {
-      Alert.alert('Fecha inválida', 'Ingresa la fecha de pago en formato AAAA-MM-DD.');
+      showAlert('Fecha inválida', 'Ingresa la fecha de pago en formato AAAA-MM-DD.');
       return;
     }
 
@@ -129,17 +130,16 @@ export default function PaymentFormScreen() {
 
   const handleDelete = () => {
     if (!existing) return;
-    Alert.alert('Eliminar pago', '¿Seguro que deseas eliminar este registro de pago?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: () => {
-          deletePayment(existing.id);
-          smartGoBack(navigation, 'PaymentsList');
-        },
+    showConfirm({
+      title: 'Eliminar pago',
+      message: '¿Seguro que deseas eliminar este registro de pago?',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+      onConfirm: () => {
+        deletePayment(existing.id);
+        smartGoBack(navigation, 'PaymentsList');
       },
-    ]);
+    });
   };
 
   return (

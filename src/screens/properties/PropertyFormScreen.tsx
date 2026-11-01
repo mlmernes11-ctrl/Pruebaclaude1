@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -35,20 +36,20 @@ export default function PropertyFormScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !address.trim() || !rentAmount.trim()) {
-      Alert.alert('Faltan datos', 'Completa el título, la dirección y el monto de alquiler.');
+      showAlert('Faltan datos', 'Completa el título, la dirección y el monto de alquiler.');
       return;
     }
     const parsedRent = Number(rentAmount);
     if (Number.isNaN(parsedRent) || parsedRent <= 0) {
-      Alert.alert('Monto inválido', 'Ingresa un monto de alquiler válido.');
+      showAlert('Monto inválido', 'Ingresa un monto de alquiler válido.');
       return;
     }
     if (expensasAmount && Number.isNaN(Number(expensasAmount))) {
-      Alert.alert('Monto inválido', 'Ingresa un monto de expensas válido.');
+      showAlert('Monto inválido', 'Ingresa un monto de expensas válido.');
       return;
     }
     if (serviciosAmount && Number.isNaN(Number(serviciosAmount))) {
-      Alert.alert('Monto inválido', 'Ingresa un monto de servicios válido.');
+      showAlert('Monto inválido', 'Ingresa un monto de servicios válido.');
       return;
     }
 
