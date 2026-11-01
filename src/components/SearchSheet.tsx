@@ -82,7 +82,7 @@ export default function SearchLauncher({ scope }: { scope: SearchScope }) {
       >
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <Text style={styles.launcherText} numberOfLines={1}>
-          {PLACEHOLDER[scope]}
+          Buscar
         </Text>
       </TouchableOpacity>
       {open ? <SearchSheet scope={scope} onClose={close} /> : null}
@@ -346,19 +346,17 @@ const useStyles = makeStyles((colors) => ({
   launcher: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 11,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.neutralMuted,
   },
   launcherText: {
     flex: 1,
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     color: colors.textMuted,
   },
   sheet: {
@@ -449,9 +447,7 @@ const useStyles = makeStyles((colors) => ({
     gap: spacing.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
   },
   resultInfo: {

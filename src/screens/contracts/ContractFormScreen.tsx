@@ -29,7 +29,7 @@ export default function ContractFormScreen() {
   const presetPropertyId = route.params?.propertyId as string | undefined;
   const presetTenantId = route.params?.tenantId as string | undefined;
 
-  const { getContractById, addContract, updateContract, properties, tenants, contracts, getPropertyById } =
+  const { getContractById, addContract, updateContract, deleteContract, properties, tenants, contracts, getPropertyById } =
     useData();
   const existing = getContractById(contractId);
 
@@ -187,12 +187,34 @@ export default function ContractFormScreen() {
         <OptionChips label="Estado" options={CONTRACT_STATUS_OPTIONS} value={status} onChange={setStatus} />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Cláusulas o información adicional" multiline />
         <Button label={existing ? 'Guardar cambios' : 'Crear contrato'} onPress={handleSave} />
+        {existing ? (
+          <Button
+            label="Eliminar contrato"
+            variant="dangerOutline"
+            style={styles.deleteButton}
+            onPress={() =>
+              showConfirm({
+                title: 'Eliminar contrato',
+                message: 'También se eliminan sus liquidaciones y pagos registrados. ¿Continuar?',
+                confirmLabel: 'Eliminar',
+                destructive: true,
+                onConfirm: () => {
+                  deleteContract(existing.id);
+                  navigation.popToTop();
+                },
+              })
+            }
+          />
+        ) : null}
       </ScrollView>
     </Screen>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
+  deleteButton: {
+    marginTop: spacing.md,
+  },
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,

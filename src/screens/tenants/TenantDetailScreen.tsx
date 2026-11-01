@@ -1,20 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React from 'react';
-import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Badge from '../../components/Badge';
-import Button from '../../components/Button';
-import Card from '../../components/Card';
-import { showAlert, showConfirm } from '../../components/DialogHost';
+import React, { useLayoutEffect } from 'react';
+import { Linking, ScrollView, Text, View } from 'react-native';
+import HeaderTextButton from '../../components/HeaderTextButton';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
-import SectionHeader from '../../components/SectionHeader';
-import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
+import { DotTone } from '../../components/StatusDot';
+import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
+import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
+import { Contract } from '../../types';
 import { formatDate } from '../../utils/format';
-import { openInTab } from '../../utils/navigation';
 import { contractEndBadge } from '../../utils/propertySummary';
-import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 // Argentine mobile numbers for WhatsApp links: country code 54 plus the 9 for mobiles.
 function whatsappUrl(phone: string): string {
@@ -25,14 +23,28 @@ function whatsappUrl(phone: string): string {
 
 const openUrl = (url: string) => Linking.openURL(url).catch(() => undefined);
 
+function contractDot(contract: Contract): DotTone {
+  if (contract.status !== 'activo') return 'empty';
+  const end = contractEndBadge(contract);
+  return !end ? 'success' : end.tone === 'danger' ? 'danger' : 'warning';
+}
+
 export default function TenantDetailScreen() {
-  const { colors } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { tenantId } = route.params;
-  const { getTenantById, deleteTenant, contractsForTenant, getPropertyById } = useData();
+  const { getTenantById, contractsForTenant, getPropertyById } = useData();
   const tenant = getTenantById(tenantId);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: '',
+      headerRight: tenant
+        ? () => <HeaderTextButton label="Editar" onPress={() => navigation.navigate('TenantForm', { tenantId })} />
+        : undefined,
+    });
+  }, [navigation, tenant, tenantId]);
 
   if (!tenant) {
     return (
@@ -43,227 +55,94 @@ export default function TenantDetailScreen() {
   }
 
   const contracts = contractsForTenant(tenant.id);
-
-  const handleDelete = () => {
-    showConfirm({
-      title: 'Eliminar inquilino',
-      message: `¿Seguro que querés eliminar a "${tenant.name}"?`,
-      confirmLabel: 'Eliminar',
-      destructive: true,
-      onConfirm: () => {
-        const result = deleteTenant(tenant.id);
-        if (!result.ok) {
-          showAlert('No se puede eliminar', result.reason ?? 'Operación no permitida');
-          return;
-        }
-        navigation.goBack();
-      },
-    });
-  };
+  const hasContact = tenant.phone || tenant.email || tenant.document;
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{tenant.name}</Text>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title} accessibilityRole="header">
+            {tenant.name}
+          </Text>
+        </View>
 
-        <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Información de contacto</Text>
-          {tenant.document ? <ContactRow icon="card-outline" value={tenant.document} /> : null}
+        <ListSection header="Contacto" footer={tenant.notes ? `Notas: ${tenant.notes}` : undefined}>
           {tenant.phone ? (
-            <ContactRow
+            <ListRow
+              title="Llamar"
               icon="call-outline"
               value={tenant.phone}
+              valueTone="muted"
               onPress={() => openUrl(`tel:${tenant.phone!.replace(/[^\d+]/g, '')}`)}
-              extra={
-                <TouchableOpacity
-                  style={styles.whatsapp}
-                  onPress={() => openUrl(whatsappUrl(tenant.phone!))}
-                  accessibilityRole="link"
-                  accessibilityLabel="Escribir por WhatsApp"
-                >
-                  <Ionicons name="logo-whatsapp" size={14} color={colors.success} />
-                  <Text style={styles.whatsappText}>WhatsApp</Text>
-                </TouchableOpacity>
-              }
+              chevron={false}
             />
           ) : null}
+          {tenant.phone ? (
+            <ListRow title="WhatsApp" icon="logo-whatsapp" onPress={() => openUrl(whatsappUrl(tenant.phone!))} chevron={false} />
+          ) : null}
           {tenant.email ? (
-            <ContactRow icon="mail-outline" value={tenant.email} onPress={() => openUrl(`mailto:${tenant.email}`)} />
+            <ListRow
+              title="Email"
+              icon="mail-outline"
+              value={tenant.email}
+              valueTone="muted"
+              onPress={() => openUrl(`mailto:${tenant.email}`)}
+              chevron={false}
+            />
           ) : null}
-          {tenant.notes ? <ContactRow icon="document-text-outline" value={tenant.notes} /> : null}
-          {!tenant.document && !tenant.phone && !tenant.email && !tenant.notes ? (
-            <Text style={styles.emptyText}>Sin información adicional.</Text>
-          ) : null}
-        </Card>
+          {tenant.document ? <ListRow title="Documento" value={tenant.document} valueTone="muted" /> : null}
+          {hasContact ? null : <ListRow title="Sin datos de contacto" />}
+        </ListSection>
 
-        <SectionHeader
-          title="Contratos"
-          actionLabel="+ Nuevo contrato"
-          onAction={() => openInTab(navigation, 'RentalsTab', 'ContractForm', { tenantId: tenant.id })}
-        />
-        {contracts.length === 0 ? (
-          <Card>
-            <Text style={styles.emptyText}>Este inquilino no tiene contratos.</Text>
-          </Card>
-        ) : (
-          contracts.map((contract) => {
-            const property = getPropertyById(contract.propertyId);
-            const endBadge = contractEndBadge(contract);
+        <ListSection header="Contratos">
+          {contracts.map((contract) => {
+            const end = contractEndBadge(contract);
             return (
-              <Card
+              <ListRow
                 key={contract.id}
-                style={styles.contractCard}
-                onPress={() => openInTab(navigation, 'RentalsTab', 'ContractDetail', { contractId: contract.id })}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.contractProperty}>{property?.title ?? 'Propiedad'}</Text>
-                  <Badge
-                    label={CONTRACT_STATUS_LABEL[contract.status]}
-                    tone={CONTRACT_STATUS_TONE[contract.status]}
-                  />
-                </View>
-                <View style={styles.contractFooter}>
-                  <Text style={styles.contractDates}>
-                    {formatDate(contract.startDate)} al {formatDate(contract.endDate)}
-                  </Text>
-                  {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
-                </View>
-              </Card>
+                dot={contractDot(contract)}
+                title={getPropertyById(contract.propertyId)?.title ?? 'Propiedad'}
+                subtitle={
+                  contract.status !== 'activo'
+                    ? `${formatDate(contract.startDate)} al ${formatDate(contract.endDate)}`
+                    : end
+                      ? end.label
+                      : `Hasta ${formatDate(contract.endDate)}`
+                }
+                value={CONTRACT_STATUS_LABEL[contract.status]}
+                valueTone="muted"
+                onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
+              />
             );
-          })
-        )}
-
-        <View style={styles.actionsRow}>
-          <Button
-            label="Editar"
-            variant="secondary"
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('TenantForm', { tenantId: tenant.id })}
+          })}
+          <ListRow
+            title="Nuevo contrato"
+            icon="add-circle-outline"
+            onPress={() => navigation.navigate('ContractForm', { tenantId: tenant.id })}
           />
-          <Button label="Eliminar" variant="dangerOutline" style={styles.actionButton} onPress={handleDelete} />
-        </View>
+        </ListSection>
       </ScrollView>
     </Screen>
   );
 }
 
-function ContactRow({
-  icon,
-  value,
-  onPress,
-  extra,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  value: string;
-  onPress?: () => void;
-  extra?: React.ReactNode;
-}) {
-  const { colors } = useTheme();
-  const styles = useStyles();
-  return (
-    <View style={styles.detailRow}>
-      <TouchableOpacity style={styles.detailMain} onPress={onPress} disabled={!onPress}>
-        <Ionicons name={icon} size={16} color={onPress ? colors.primary : colors.textMuted} />
-        <Text style={[styles.detailValue, onPress && styles.detailLink]}>{value}</Text>
-      </TouchableOpacity>
-      {extra}
-    </View>
-  );
-}
-
 const useStyles = makeStyles((colors) => ({
   content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   notFound: {
     padding: spacing.lg,
     color: colors.textMuted,
   },
+  titleBlock: {
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.lg,
+  },
   title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.lg,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.largeTitle,
     fontWeight: '700',
+    letterSpacing: -0.5,
     color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  detailMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  detailValue: {
-    flexShrink: 1,
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  detailLink: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  whatsapp: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.successMuted,
-  },
-  whatsappText: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
-    color: colors.success,
-  },
-  emptyText: {
-    color: colors.textMuted,
-  },
-  contractCard: {
-    marginBottom: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  contractProperty: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  contractFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  contractDates: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  actionButton: {
-    flex: 1,
   },
 }));

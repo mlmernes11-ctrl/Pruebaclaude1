@@ -1,21 +1,23 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
-import Badge from '../../components/Badge';
-import Card from '../../components/Card';
+import { ScrollView, Text, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
-import MoneyText from '../../components/MoneyText';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
+import { DotTone } from '../../components/StatusDot';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
+import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
-import { MoneyTotals } from '../../types';
+import { ChargeStatus, MoneyTotals } from '../../types';
 import { describeTotals, formatDate, formatMoney } from '../../utils/format';
 import { buildPeriodRow } from '../../utils/history';
-import { compareTitles } from '../../utils/text';
-import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
-import { makeStyles } from '../../context/ThemeContext';
+import { openInTab } from '../../utils/navigation';
+import { compareTitles, plural } from '../../utils/text';
+
+const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
 
 export default function MonthDetailScreen() {
   const styles = useStyles();
@@ -29,7 +31,7 @@ export default function MonthDetailScreen() {
   const contractIds = propertyId
     ? new Set(contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id))
     : undefined;
-  const views = chargeViews
+  const items = chargeViews
     .filter((v) => v.charge.period === period && (!contractIds || contractIds.has(v.charge.contractId)))
     .map((view) => {
       const contract = getContractById(view.charge.contractId);
@@ -41,156 +43,71 @@ export default function MonthDetailScreen() {
     })
     .sort((a, b) => compareTitles(a.propertyTitle, b.propertyTitle));
   const row = buildPeriodRow(
-    views.map((v) => v.view),
+    items.map((i) => i.view),
     period,
     toPesos,
   );
-  const unpaid: MoneyTotals = {
-    USD: row.overdue.USD + row.pending.USD,
-    ARS: row.overdue.ARS + row.pending.ARS,
-  };
+  const unpaid: MoneyTotals = { USD: row.overdue.USD + row.pending.USD, ARS: row.overdue.ARS + row.pending.ARS };
 
   return (
     <Screen>
-      <FlatList
-        data={views}
-        keyExtractor={(item) => item.view.charge.id}
-        contentContainerStyle={styles.content}
-        ListHeaderComponent={
-          <View>
-            <Text style={styles.subtitle}>
-              {property ? property.title : 'Todas las propiedades'} · {views.length}{' '}
-              {views.length === 1 ? 'liquidación' : 'liquidaciones'}
-            </Text>
-            <Card style={styles.summary}>
-              <SummaryLine label="Liquidado" text={describeTotals(row.billed, rate).main} strong />
-              <SummaryLine label="Pagado" text={describeTotals(row.paid, rate).main} />
-              <SummaryLine label="Sin pagar" text={describeTotals(unpaid, rate).main} />
-            </Card>
-          </View>
-        }
-        ListEmptyComponent={
-          <EmptyState icon="calendar-outline" title="Sin liquidaciones" message="No hay liquidaciones en este mes." />
-        }
-        renderItem={({ item }) => {
-          const { view, propertyTitle, tenantName } = item;
-          const { charge, status, paid, balance, lastPaymentDate } = view;
-          return (
-            <Card
-              style={styles.card}
-              onPress={() =>
-                navigation.navigate('PaymentsTab', {
-                  screen: 'ChargeForm',
-                  params: { chargeId: charge.id },
-                  initial: false,
-                })
-              }
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {propertyTitle}
-                </Text>
-                <Badge label={CHARGE_STATUS_LABEL[status]} tone={CHARGE_STATUS_TONE[status]} />
-              </View>
-              <Text style={styles.meta}>
-                {tenantName} · {CONCEPT_LABEL[charge.concept]}
-              </Text>
-              <View style={styles.footer}>
-                <Text style={styles.meta}>
-                  {status === 'pagado' && lastPaymentDate
-                    ? `Pagada el ${formatDate(lastPaymentDate)}`
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.subtitle}>
+          {property ? property.title : 'Todas las propiedades'} · {plural(items.length, 'liquidación', 'liquidaciones')}
+        </Text>
+        {items.length ? (
+          <>
+            <ListSection>
+              <ListRow title="Liquidado" value={describeTotals(row.billed, rate).main} />
+              <ListRow title="Cobrado" value={describeTotals(row.paid, rate).main} valueTone="muted" />
+              <ListRow
+                title="Sin cobrar"
+                value={describeTotals(unpaid, rate).main}
+                valueTone={row.overdueCount ? 'danger' : 'muted'}
+              />
+            </ListSection>
+            <ListSection>
+              {items.map(({ view, propertyTitle, tenantName }) => {
+                const { charge, status, paid, balance, lastPaymentDate } = view;
+                const when =
+                  status === 'pagado' && lastPaymentDate
+                    ? `pagada el ${formatDate(lastPaymentDate).slice(0, 5)}`
                     : paid > 0
-                      ? `Pagó ${formatMoney(paid, charge.currency)} de ${formatMoney(charge.amount, charge.currency)}`
-                      : `Vence el ${formatDate(charge.dueDate)}`}
-                </Text>
-                <MoneyText
-                  amount={status === 'pagado' ? charge.amount : balance}
-                  currency={charge.currency}
-                  style={styles.amount}
-                />
-              </View>
-            </Card>
-          );
-        }}
-      />
+                      ? `pagó ${formatMoney(paid, charge.currency)}`
+                      : `vence el ${formatDate(charge.dueDate).slice(0, 5)}`;
+                return (
+                  <ListRow
+                    key={charge.id}
+                    dot={STATUS_DOT[status]}
+                    title={propertyTitle}
+                    subtitle={`${tenantName} · ${CONCEPT_LABEL[charge.concept]} · ${when}`}
+                    value={formatMoney(status === 'pagado' ? charge.amount : balance, charge.currency)}
+                    valueTone={status === 'vencido' ? 'danger' : status === 'pagado' ? 'muted' : 'default'}
+                    onPress={() => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId: charge.id })}
+                  />
+                );
+              })}
+            </ListSection>
+          </>
+        ) : (
+          <View>
+            <EmptyState icon="calendar-outline" title="Sin liquidaciones" message="No hay liquidaciones en este mes." />
+          </View>
+        )}
+      </ScrollView>
     </Screen>
-  );
-}
-
-function SummaryLine({ label, text, strong }: { label: string; text: string; strong?: boolean }) {
-  const styles = useStyles();
-  return (
-    <View style={styles.summaryLine}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryValue, strong && styles.summaryStrong]}>{text}</Text>
-    </View>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: spacing.xxl,
   },
   subtitle: {
     fontSize: fontSize.md,
-    fontWeight: '600',
     color: colors.textMuted,
+    marginHorizontal: spacing.xs,
     marginBottom: spacing.md,
-  },
-  summary: {
-    marginBottom: spacing.lg,
-    gap: spacing.xs,
-  },
-  summaryLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  summaryLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
-  summaryValue: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-    fontVariant: ['tabular-nums'],
-  },
-  summaryStrong: {
-    fontSize: fontSize.md,
-    fontWeight: '800',
-  },
-  card: {
-    marginBottom: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  meta: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-    flexShrink: 1,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  amount: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
   },
 }));

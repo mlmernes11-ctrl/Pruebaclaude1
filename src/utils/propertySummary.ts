@@ -42,6 +42,8 @@ export interface PropertySummary {
   pending: PaymentBucket;
   paid: PaymentBucket;
   nextDueDate?: string;
+  // Due date of the oldest unpaid overdue charge (how long the debt has been running).
+  oldestOverdueDate?: string;
   daysToContractEnd?: number;
   collection: CollectionState;
   notes: string[];
@@ -79,6 +81,7 @@ export function summarizeProperty(
   const pending = bucket();
   const paid = bucket();
   let nextDueDate: string | undefined;
+  let oldestOverdueDate: string | undefined;
   chargeViews
     .filter((view) => contractIds.has(view.charge.contractId))
     .forEach((view) => {
@@ -89,6 +92,9 @@ export function summarizeProperty(
       }
       if (view.status === 'pendiente' && (!nextDueDate || view.charge.dueDate < nextDueDate)) {
         nextDueDate = view.charge.dueDate;
+      }
+      if (view.status === 'vencido' && (!oldestOverdueDate || view.charge.dueDate < oldestOverdueDate)) {
+        oldestOverdueDate = view.charge.dueDate;
       }
       const target = view.status === 'vencido' ? overdue : pending;
       target.count += 1;
@@ -127,6 +133,7 @@ export function summarizeProperty(
     pending,
     paid,
     nextDueDate,
+    oldestOverdueDate,
     daysToContractEnd,
     collection,
     notes,

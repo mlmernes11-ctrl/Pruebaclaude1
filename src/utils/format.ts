@@ -84,6 +84,15 @@ export function formatDateTime(iso?: string): string {
   });
 }
 
+const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+// "dic 2026": compact period for list subtitles.
+export function formatPeriodShort(period: string): string {
+  const [year, month] = period.split('-').map(Number);
+  if (!year || !month) return period;
+  return `${MONTHS_SHORT[month - 1]} ${year}`;
+}
+
 export function formatPeriod(period: string): string {
   const [year, month] = period.split('-').map(Number);
   if (!year || !month) return period;
@@ -118,12 +127,14 @@ export function startOfToday(): Date {
 }
 
 // Mixed-currency totals are shown in pesos when there is a rate, with the breakdown underneath.
+// approx=false drops the "≈" where a note on the screen already says amounts use today's rate.
 export function describeTotals(
   totals: MoneyTotals,
   rate?: number,
+  approx = true,
 ): { main: string; detail?: string } {
   const pesos = totalsInPesos(totals, rate);
   if (!totals.USD) return { main: formatMoney(totals.ARS, 'ARS') };
   if (pesos === undefined) return { main: formatTotals(totals) };
-  return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
+  return { main: `${approx ? '≈\u00A0' : ''}${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
 }

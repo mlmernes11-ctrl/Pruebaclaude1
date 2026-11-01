@@ -1,46 +1,66 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import Badge from '../../components/Badge';
 import Button from '../../components/Button';
-import Card from '../../components/Card';
-import DetailRow, { useDetailValueStyle } from '../../components/DetailRow';
-import { showAlert, showConfirm } from '../../components/DialogHost';
-import MoneyText from '../../components/MoneyText';
+import HeaderTextButton from '../../components/HeaderTextButton';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
-import SectionHeader from '../../components/SectionHeader';
-import {
-  CONTRACT_STATUS_LABEL,
-  CONTRACT_STATUS_TONE,
-  PROPERTY_STATUS_LABEL,
-  PROPERTY_STATUS_TONE,
-  PROPERTY_TYPE_LABEL,
-} from '../../constants';
+import StatusHero from '../../components/StatusHero';
+import { CONTRACT_STATUS_LABEL, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
+import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatTotals } from '../../utils/format';
 import { openInTab } from '../../utils/navigation';
-import { contractEndBadge, PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
-import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../../utils/propertySummary';
+import { plural } from '../../utils/text';
+
+function heroFor(summary: PropertySummary, today: string) {
+  const { collection, overdue, pending, nextDueDate, oldestOverdueDate, property } = summary;
+  if (collection === 'deuda') {
+    const days = Math.max(1, -daysUntil(oldestOverdueDate ?? today));
+    return {
+      tone: 'danger' as const,
+      label: 'Con deuda',
+      value: formatTotals(overdue.totals),
+      detail: `${plural(overdue.count, 'liquidación vencida', 'liquidaciones vencidas')} · ${plural(days, 'día', 'días')} de mora`,
+    };
+  }
+  if (collection === 'por-vencer') {
+    return {
+      tone: 'warning' as const,
+      label: 'Por vencer',
+      value: formatTotals(pending.totals),
+      detail: `Vence el ${formatDate(nextDueDate)}`,
+    };
+  }
+  if (collection === 'al-dia') {
+    return { tone: 'success' as const, label: 'Al día', value: 'Sin deuda', detail: 'Todas las liquidaciones están pagas' };
+  }
+  if (collection === 'sin-contrato') {
+    return { tone: 'empty' as const, label: 'Disponible', value: 'Sin inquilino', detail: 'Lista para alquilar' };
+  }
+  return { tone: 'empty' as const, label: 'En mantenimiento', value: 'No disponible', detail: property.notes };
+}
 
 export default function PropertyDetailScreen() {
-  const { colors } = useTheme();
   const styles = useStyles();
-  const detailValue = useDetailValueStyle();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
-  const {
-    getPropertyById,
-    deleteProperty,
-    contractsForProperty,
-    getTenantById,
-    contracts: allContracts,
-    chargeViews,
-    tenants,
-  } = useData();
+  const { getPropertyById, contractsForProperty, getTenantById, contracts: allContracts, chargeViews, tenants, today } =
+    useData();
   const property = getPropertyById(propertyId);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: '',
+      headerRight: property
+        ? () => <HeaderTextButton label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
+        : undefined,
+    });
+  }, [navigation, property, propertyId]);
 
   if (!property) {
     return (
@@ -50,263 +70,181 @@ export default function PropertyDetailScreen() {
     );
   }
 
-  const contracts = contractsForProperty(property.id);
   const summary = summarizeProperty(property, allContracts, chargeViews, tenants);
-
-  const handleDelete = () => {
-    showConfirm({
-      title: 'Eliminar propiedad',
-      message: `¿Seguro que querés eliminar "${property.title}"?`,
-      confirmLabel: 'Eliminar',
-      destructive: true,
-      onConfirm: () => {
-        const result = deleteProperty(property.id);
-        if (!result.ok) {
-          showAlert('No se puede eliminar', result.reason ?? 'Operación no permitida');
-          return;
-        }
-        navigation.goBack();
-      },
-    });
-  };
+  const hero = heroFor(summary, today);
+  const active = summary.activeContract;
+  const tenant = summary.tenant;
+  const endBadge = active ? contractEndBadge(active) : undefined;
+  const pastContracts = contractsForProperty(property.id).filter((c) => c.id !== active?.id);
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>{property.title}</Text>
-          <Badge label={PROPERTY_STATUS_LABEL[property.status]} tone={PROPERTY_STATUS_TONE[property.status]} />
-        </View>
-        <View style={styles.addressRow}>
-          <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-          <Text style={styles.address}>
-            {property.neighborhood ? `${property.address} · ${property.neighborhood}` : property.address}
+        <View style={styles.titleBlock}>
+          <Text style={styles.title} accessibilityRole="header">
+            {property.title}
           </Text>
+          <Text style={styles.address}>{[property.address, property.neighborhood].filter(Boolean).join(' · ')}</Text>
         </View>
 
-        <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Detalles</Text>
-          <DetailRow label="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} />
-          <DetailRow
-            label="Alquiler mensual"
-            value={
-              <MoneyText
-                amount={property.rentAmount}
-                currency={property.rentCurrency}
-                style={detailValue}
-              />
-            }
-          />
-          {property.expensasAmount ? (
-            <DetailRow label="Expensas mensuales" value={formatMoney(property.expensasAmount, 'ARS')} />
+        <StatusHero tone={hero.tone} label={hero.label} value={hero.value} detail={hero.detail}>
+          {summary.collection === 'deuda' && summary.pending.count ? (
+            <View style={styles.heroExtra}>
+              <View style={styles.heroExtraRow}>
+                <Text style={styles.heroExtraLabel}>Por vencer</Text>
+                <Text style={styles.heroExtraValue}>{formatTotals(summary.pending.totals)}</Text>
+              </View>
+              <Text style={styles.heroExtraNote}>Vence el {formatDate(summary.nextDueDate)}</Text>
+            </View>
           ) : null}
-          {property.serviciosAmount ? (
-            <DetailRow label="Servicios mensuales" value={formatMoney(property.serviciosAmount, 'ARS')} />
-          ) : null}
-          {property.rooms ? <DetailRow label="Ambientes" value={String(property.rooms)} /> : null}
-          {property.bathrooms ? <DetailRow label="Baños" value={String(property.bathrooms)} /> : null}
-          {property.area ? <DetailRow label="Superficie" value={`${property.area} m²`} /> : null}
-          {property.notes ? <DetailRow label="Notas" value={property.notes} /> : null}
-        </Card>
+        </StatusHero>
 
-        <SectionHeader title="Pagos" />
-        <Card style={styles.card}>
-          <View style={styles.paymentStats}>
-            <PaymentStat label="Vencidas" bucket={summary.overdue} color={colors.danger} />
-            <PaymentStat label="Por vencer" bucket={summary.pending} color={colors.warning} />
-            <PaymentStat label="Pagadas" bucket={summary.paid} color={colors.success} />
-          </View>
-          {summary.activeContract ? (
-            <Button
-              label="Registrar pago"
-              onPress={() =>
-                openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: summary.activeContract!.id })
-              }
-              style={styles.collectButton}
-            />
-          ) : null}
+        {active ? (
           <Button
-            label="Ver historial de pagos"
-            variant="secondary"
-            onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
+            label="Registrar pago"
+            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
+            style={styles.primaryAction}
           />
-        </Card>
-
-        <SectionHeader
-          title="Contratos"
-          actionLabel="+ Nuevo contrato"
-          onAction={() => openInTab(navigation, 'RentalsTab', 'ContractForm', { propertyId: property.id })}
-        />
-        {contracts.length === 0 ? (
-          <Card>
-            <Text style={styles.emptyText}>Esta propiedad no tiene contratos.</Text>
-          </Card>
         ) : (
-          contracts.map((contract) => {
-            const tenant = getTenantById(contract.tenantId);
-            const endBadge = contractEndBadge(contract);
-            return (
-              <Card
-                key={contract.id}
-                style={styles.contractCard}
-                onPress={() => openInTab(navigation, 'RentalsTab', 'ContractDetail', { contractId: contract.id })}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.contractTenant}>{tenant?.name ?? 'Inquilino'}</Text>
-                  <Badge
-                    label={CONTRACT_STATUS_LABEL[contract.status]}
-                    tone={CONTRACT_STATUS_TONE[contract.status]}
-                  />
-                </View>
-                <View style={styles.contractFooter}>
-                  <Text style={styles.contractDates}>
-                    {formatDate(contract.startDate)} al {formatDate(contract.endDate)}
-                  </Text>
-                  {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
-                </View>
-              </Card>
-            );
-          })
+          <View style={styles.heroGap} />
         )}
 
-        <View style={styles.actionsRow}>
-          <Button
-            label="Editar"
-            variant="secondary"
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('PropertyForm', { propertyId: property.id })}
+        <ListSection header="Contrato">
+          {active ? (
+            <ListRow
+              title="Inquilino"
+              value={tenant?.name ?? 'Inquilino'}
+              valueTone="muted"
+              onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
+            />
+          ) : null}
+          {active ? (
+            <ListRow
+              title="Vigencia"
+              value={endBadge ? endBadge.label : `Hasta ${formatDate(active.endDate)}`}
+              valueTone={endBadge ? (endBadge.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
+            />
+          ) : null}
+          {active ? (
+            <ListRow
+              title="Alquiler"
+              value={`${formatMoney(active.rentAmount, active.currency)} · día ${active.paymentDay}`}
+              valueTone="muted"
+            />
+          ) : null}
+          {active ? (
+            <ListRow
+              title="Ver contrato"
+              onPress={() => navigation.navigate('ContractDetail', { contractId: active.id })}
+            />
+          ) : (
+            <ListRow
+              title="Nuevo contrato"
+              icon="add-circle-outline"
+              onPress={() => navigation.navigate('ContractForm', { propertyId: property.id })}
+            />
+          )}
+        </ListSection>
+
+        <ListSection>
+          <ListRow
+            title="Historial de pagos"
+            icon="time-outline"
+            onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
           />
-          <Button label="Eliminar" variant="dangerOutline" style={styles.actionButton} onPress={handleDelete} />
-        </View>
+        </ListSection>
+
+        <ListSection header="Detalles" footer={property.notes ? `Notas: ${property.notes}` : undefined}>
+          <ListRow title="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} valueTone="muted" />
+          <ListRow
+            title="Alquiler publicado"
+            value={formatMoney(property.rentAmount, property.rentCurrency)}
+            valueTone="muted"
+          />
+          {property.expensasAmount ? (
+            <ListRow title="Expensas" value={formatMoney(property.expensasAmount, 'ARS')} valueTone="muted" />
+          ) : null}
+          {property.serviciosAmount ? (
+            <ListRow title="Servicios" value={formatMoney(property.serviciosAmount, 'ARS')} valueTone="muted" />
+          ) : null}
+          {property.rooms ? <ListRow title="Ambientes" value={String(property.rooms)} valueTone="muted" /> : null}
+          {property.bathrooms ? <ListRow title="Baños" value={String(property.bathrooms)} valueTone="muted" /> : null}
+          {property.area ? <ListRow title="Superficie" value={`${property.area} m²`} valueTone="muted" /> : null}
+        </ListSection>
+
+        {pastContracts.length ? (
+          <ListSection header="Contratos anteriores">
+            {pastContracts.map((contract) => (
+              <ListRow
+                key={contract.id}
+                title={getTenantById(contract.tenantId)?.name ?? 'Inquilino'}
+                subtitle={`${formatDate(contract.startDate)} al ${formatDate(contract.endDate)}`}
+                value={CONTRACT_STATUS_LABEL[contract.status]}
+                valueTone="muted"
+                onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
+              />
+            ))}
+          </ListSection>
+        ) : null}
       </ScrollView>
     </Screen>
   );
 }
 
-function PaymentStat({
-  label,
-  bucket,
-  color,
-}: {
-  label: string;
-  bucket: PaymentBucket;
-  color: string;
-}) {
-  const { colors } = useTheme();
-  const styles = useStyles();
-  return (
-    <View style={styles.paymentStat}>
-      <Text style={[styles.paymentStatCount, { color: bucket.count ? color : colors.textMuted }]}>
-        {bucket.count}
-      </Text>
-      <Text style={styles.paymentStatLabel}>{label}</Text>
-      {bucket.count ? <Text style={styles.paymentStatTotal}>{formatTotals(bucket.totals)}</Text> : null}
-    </View>
-  );
-}
-
 const useStyles = makeStyles((colors) => ({
   content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   notFound: {
     padding: spacing.lg,
     color: colors.textMuted,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
+  titleBlock: {
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
+    fontSize: fontSize.largeTitle,
+    fontWeight: '700',
+    letterSpacing: -0.5,
     color: colors.text,
-    flex: 1,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-    marginBottom: spacing.lg,
   },
   address: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  heroExtra: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  heroExtraRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    gap: spacing.sm,
+  },
+  heroExtraLabel: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+  },
+  heroExtraValue: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  heroExtraNote: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-  },
-  card: {
-    marginBottom: spacing.lg,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    color: colors.textMuted,
-  },
-  contractCard: {
-    marginBottom: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  contractTenant: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  contractFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  contractDates: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  collectButton: {
-    marginBottom: spacing.sm,
-  },
-  paymentStats: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  paymentStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  paymentStatCount: {
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-  },
-  paymentStatLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
     marginTop: 2,
   },
-  paymentStatTotal: {
-    fontSize: fontSize.xs,
-    color: colors.text,
-    fontWeight: '600',
-    marginTop: 2,
-    textAlign: 'center',
+  primaryAction: {
+    marginBottom: spacing.xl,
+  },
+  heroGap: {
+    height: spacing.md,
   },
 }));

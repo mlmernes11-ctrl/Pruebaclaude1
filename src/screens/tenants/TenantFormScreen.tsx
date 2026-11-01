@@ -1,7 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { showAlert } from '../../components/DialogHost';
+import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import Screen from '../../components/Screen';
@@ -14,7 +14,7 @@ export default function TenantFormScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const tenantId = route.params?.tenantId as string | undefined;
-  const { getTenantById, addTenant, updateTenant } = useData();
+  const { getTenantById, addTenant, updateTenant, deleteTenant } = useData();
   const existing = getTenantById(tenantId);
 
   const [name, setName] = useState(existing?.name ?? '');
@@ -54,12 +54,38 @@ export default function TenantFormScreen() {
         <FormField label="Correo electrónico" value={email} onChangeText={setEmail} placeholder="correo@ejemplo.com" keyboardType="email-address" />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />
         <Button label={existing ? 'Guardar cambios' : 'Crear inquilino'} onPress={handleSave} />
+        {existing ? (
+          <Button
+            label="Eliminar inquilino"
+            variant="dangerOutline"
+            style={styles.deleteButton}
+            onPress={() =>
+              showConfirm({
+                title: 'Eliminar inquilino',
+                message: `¿Seguro que querés eliminar a "${existing.name}"?`,
+                confirmLabel: 'Eliminar',
+                destructive: true,
+                onConfirm: () => {
+                  const result = deleteTenant(existing.id);
+                  if (!result.ok) {
+                    showAlert('No se puede eliminar', result.reason ?? 'Operación no permitida');
+                    return;
+                  }
+                  navigation.popToTop();
+                },
+              })
+            }
+          />
+        ) : null}
       </ScrollView>
     </Screen>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
+  deleteButton: {
+    marginTop: spacing.md,
+  },
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,

@@ -40,17 +40,18 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: 'space-between',
     gap: spacing.md,
     minHeight: 32,
+    marginHorizontal: spacing.xs,
     marginBottom: spacing.sm,
   },
   title: {
     flexShrink: 1,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.xl,
     fontWeight: '700',
+    letterSpacing: -0.3,
     color: colors.text,
   },
   action: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontSize: fontSize.md,
     color: colors.primary,
   },
 }));

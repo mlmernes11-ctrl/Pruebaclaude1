@@ -18,7 +18,7 @@ export default function EmptyState({
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={32} color={colors.primary} />
+        <Ionicons name={icon} size={44} color={colors.textMuted} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
@@ -30,17 +30,11 @@ const useStyles = makeStyles((colors) => ({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xxl * 2,
+    paddingVertical: spacing.xxl * 1.5,
     paddingHorizontal: spacing.xl,
   },
   iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: fontSize.lg,

@@ -1,24 +1,35 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
-import Badge from '../../components/Badge';
-import Card from '../../components/Card';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
-import MoneyText from '../../components/MoneyText';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import SearchLauncher from '../../components/SearchSheet';
-import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
+import { DotTone } from '../../components/StatusDot';
+import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
-import FAB, { FAB_CLEARANCE } from '../../components/FAB';
-import { fontSize, spacing } from '../../theme';
-import { formatDate } from '../../utils/format';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useRefresh } from '../../hooks/useRefresh';
+import { spacing } from '../../theme';
+import { Contract } from '../../types';
+import { formatDate, formatMoney } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
-import { makeStyles } from '../../context/ThemeContext';
+
+// Contracts use the same colors for their term: red ended without renewal, amber ending soon.
+function contractDot(contract: Contract): DotTone {
+  if (contract.status !== 'activo') return 'empty';
+  const end = contractEndBadge(contract);
+  if (!end) return 'success';
+  return end.tone === 'danger' ? 'danger' : 'warning';
+}
 
 export default function ContractsList() {
   const styles = useStyles();
-  const { contracts, getPropertyById, getTenantById } = useData();
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
+  const { contracts, getPropertyById, getTenantById } = useData();
+  const { refreshing, onRefresh } = useRefresh();
 
   // Active contracts first, then by carpeta.
   const sorted = [...contracts].sort(
@@ -28,99 +39,52 @@ export default function ContractsList() {
   );
 
   return (
-    <>
+    <ScrollView
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
+    >
       {contracts.length ? <SearchLauncher scope="contratos" /> : null}
-      <FlatList
-        data={sorted}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="document-text-outline"
-            title="Sin contratos"
-            message="Creá un contrato para vincular una propiedad con un inquilino."
-          />
-        }
-        renderItem={({ item }) => {
-          const property = getPropertyById(item.propertyId);
-          const tenant = getTenantById(item.tenantId);
-          const endBadge = contractEndBadge(item);
-          return (
-            <Card
-              style={styles.card}
-              onPress={() => navigation.navigate('ContractDetail', { contractId: item.id })}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {property?.title ?? 'Propiedad'}
-                </Text>
-                <Badge label={CONTRACT_STATUS_LABEL[item.status]} tone={CONTRACT_STATUS_TONE[item.status]} />
-              </View>
-              <Text style={styles.tenantText}>{tenant?.name ?? 'Inquilino'}</Text>
-              <View style={styles.footerRow}>
-                <View style={styles.dates}>
-                  <Text style={styles.dateText}>
-                    {formatDate(item.startDate)} al {formatDate(item.endDate)}
-                  </Text>
-                  {endBadge ? <Badge label={endBadge.label} tone={endBadge.tone} /> : null}
-                </View>
-                <MoneyText amount={item.rentAmount} currency={item.currency} suffix="/mes" style={styles.rentText} />
-              </View>
-            </Card>
-          );
-        }}
-      />
-      <FAB onPress={() => navigation.navigate('ContractForm')} />
-    </>
+      {sorted.length ? (
+        <View style={styles.body}>
+          <ListSection>
+            {sorted.map((contract) => {
+              const end = contractEndBadge(contract);
+              const term =
+                contract.status !== 'activo'
+                  ? CONTRACT_STATUS_LABEL[contract.status]
+                  : end
+                    ? end.label
+                    : `Hasta ${formatDate(contract.endDate)}`;
+              return (
+                <ListRow
+                  key={contract.id}
+                  dot={contractDot(contract)}
+                  title={getPropertyById(contract.propertyId)?.title ?? 'Propiedad'}
+                  subtitle={`${getTenantById(contract.tenantId)?.name ?? 'Inquilino'} · ${term}`}
+                  value={`${formatMoney(contract.rentAmount, contract.currency)}/mes`}
+                  valueTone="muted"
+                  onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
+                />
+              );
+            })}
+          </ListSection>
+        </View>
+      ) : (
+        <EmptyState
+          icon="document-text-outline"
+          title="Sin contratos"
+          message="Tocá + para vincular una propiedad con un inquilino."
+        />
+      )}
+    </ScrollView>
   );
 }
 
-const useStyles = makeStyles((colors) => ({
-  listContent: {
-    padding: spacing.lg,
-    paddingTop: 0,
-    paddingBottom: FAB_CLEARANCE,
+const useStyles = makeStyles(() => ({
+  content: {
+    paddingBottom: spacing.xxl,
   },
-  card: {
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  tenantText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  dates: {
-    flexShrink: 1,
-    gap: 4,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-  },
-  dateText: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  rentText: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.primary,
+  body: {
+    paddingHorizontal: spacing.lg,
   },
 }));

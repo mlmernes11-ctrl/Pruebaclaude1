@@ -48,15 +48,16 @@ export default function Button({
 
 const variantStyles = (colors: Palette): Record<Variant, { bg: string; fg: string; border: string }> => ({
   primary: { bg: colors.primarySolid, fg: colors.white, border: colors.primarySolid },
-  secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary },
+  secondary: { bg: colors.primaryMuted, fg: colors.primary, border: colors.primaryMuted },
   danger: { bg: colors.dangerSolid, fg: colors.white, border: colors.dangerSolid },
-  dangerOutline: { bg: colors.surface, fg: colors.danger, border: colors.danger },
-  ghost: { bg: 'transparent', fg: colors.textMuted, border: 'transparent' },
+  dangerOutline: { bg: colors.surface, fg: colors.danger, border: colors.surface },
+  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
 });
 
 const useStyles = makeStyles((colors) => ({
   base: {
-    borderRadius: radius.md,
+    borderRadius: 14,
+    minHeight: 50,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
@@ -67,7 +68,7 @@ const useStyles = makeStyles((colors) => ({
     opacity: 0.5,
   },
   label: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: '600',
   },
 }));

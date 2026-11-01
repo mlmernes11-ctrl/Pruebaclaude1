@@ -1,26 +1,24 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import Button from '../../components/Button';
-import Card from '../../components/Card';
 import { showConfirm } from '../../components/DialogHost';
-import MoneyText from '../../components/MoneyText';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { unallocatedAmount } from '../../utils/ledger';
-import { fontSize, spacing } from '../../theme';
-import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
-import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
+import { fontSize, radius, spacing } from '../../theme';
+import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
+import { unallocatedAmount } from '../../utils/ledger';
+import { smartGoBack } from '../../utils/navigation';
 
 export default function PaymentDetailScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { paymentId } = route.params;
-  const { getPaymentById, getContractById, getPropertyById, getTenantById, charges, deletePayment } =
-    useData();
+  const { getPaymentById, getContractById, getPropertyById, getTenantById, charges, deletePayment } = useData();
   const payment = getPaymentById(paymentId);
 
   if (!payment) {
@@ -52,143 +50,84 @@ export default function PaymentDetailScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <Card style={styles.card}>
-          <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
-          <Text style={styles.meta}>{tenant?.name ?? 'Inquilino'}</Text>
-          <View style={styles.amountRow}>
-            <Text style={styles.label}>{CONCEPT_LABEL[payment.concept]}</Text>
-            <MoneyText
-              amount={payment.amount}
-              currency={payment.currency}
-              settledRate={payment.exchangeRate}
-              style={styles.amount}
-            />
-          </View>
-          <Detail label="Fecha" value={formatDate(payment.date)} />
-          <Detail label="Método" value={payment.method ?? '-'} />
-          {payment.notes ? <Detail label="Notas" value={payment.notes} /> : null}
-        </Card>
-
-        <Text style={styles.sectionTitle}>Liquidaciones que cubre</Text>
-        <Card style={styles.card}>
-          {payment.allocations.length === 0 ? (
-            <Text style={styles.meta}>No se aplicó a ninguna liquidación.</Text>
-          ) : (
-            payment.allocations.map((allocation) => {
-              const charge = charges.find((c) => c.id === allocation.chargeId);
-              return (
-                <View key={allocation.chargeId} style={styles.allocationRow}>
-                  <Text
-                    style={styles.allocationPeriod}
-                    onPress={() => navigation.navigate('ChargeForm', { chargeId: allocation.chargeId })}
-                  >
-                    {charge ? formatPeriod(charge.period) : 'Liquidación eliminada'}
-                  </Text>
-                  <Text style={styles.allocationAmount}>
-                    {formatMoney(allocation.amount, payment.currency)}
-                  </Text>
-                </View>
-              );
-            })
-          )}
-          {credit > 0 ? (
-            <View style={styles.allocationRow}>
-              <Text style={styles.creditText}>A favor del inquilino</Text>
-              <Text style={styles.allocationAmount}>{formatMoney(credit, payment.currency)}</Text>
-            </View>
+        <View style={styles.hero}>
+          <Text style={styles.heroLabel}>
+            {CONCEPT_LABEL[payment.concept]} · {formatDate(payment.date)}
+          </Text>
+          <Text style={styles.heroValue}>{formatMoney(payment.amount, payment.currency)}</Text>
+          {payment.currency === 'USD' && payment.exchangeRate ? (
+            <Text style={styles.heroDetail}>
+              = {formatMoney(payment.amount * payment.exchangeRate, 'ARS')} a {formatMoney(payment.exchangeRate, 'ARS')}
+            </Text>
           ) : null}
-        </Card>
+        </View>
 
-        <Button label="Anular pago" variant="dangerOutline" onPress={handleDelete} />
+        <ListSection footer={payment.notes ? `Notas: ${payment.notes}` : undefined}>
+          <ListRow title="Propiedad" value={property?.title ?? 'Propiedad'} valueTone="muted" />
+          <ListRow title="Inquilino" value={tenant?.name ?? 'Inquilino'} valueTone="muted" />
+          <ListRow title="Método" value={payment.method ?? '-'} valueTone="muted" />
+        </ListSection>
+
+        <ListSection header="Liquidaciones que cubre">
+          {payment.allocations.length === 0 ? <ListRow title="No se aplicó a ninguna liquidación" /> : null}
+          {payment.allocations.map((allocation) => {
+            const charge = charges.find((c) => c.id === allocation.chargeId);
+            return (
+              <ListRow
+                key={allocation.chargeId}
+                title={charge ? `${CONCEPT_LABEL[charge.concept]} ${formatPeriodShort(charge.period)}` : 'Liquidación eliminada'}
+                value={formatMoney(allocation.amount, payment.currency)}
+                valueTone="muted"
+                onPress={charge ? () => navigation.navigate('ChargeForm', { chargeId: allocation.chargeId }) : undefined}
+              />
+            );
+          })}
+          {credit > 0 ? (
+            <ListRow title="A favor del inquilino" value={formatMoney(credit, payment.currency)} valueTone="primary" />
+          ) : null}
+        </ListSection>
+
+        <ListSection>
+          <ListRow title="Anular pago" destructive onPress={handleDelete} />
+        </ListSection>
       </ScrollView>
     </Screen>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  const styles = useStyles();
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: spacing.xxl,
   },
   notFound: {
     padding: spacing.lg,
     color: colors.textMuted,
   },
-  card: {
-    marginBottom: spacing.lg,
+  hero: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl - 4,
+    marginBottom: spacing.xl,
   },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  meta: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  amount: {
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-    gap: spacing.md,
-  },
-  detailValue: {
+  heroLabel: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: colors.text,
-    flexShrink: 1,
-    textAlign: 'right',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
+  heroValue: {
+    fontSize: 34,
     fontWeight: '700',
+    letterSpacing: -0.8,
     color: colors.text,
-    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+    fontVariant: ['tabular-nums'],
   },
-  allocationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  allocationPeriod: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  allocationAmount: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  creditText: {
-    fontSize: fontSize.sm,
-    color: colors.text,
+  heroDetail: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
 }));

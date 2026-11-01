@@ -177,14 +177,12 @@ const useStyles = makeStyles((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    marginBottom: spacing.md,
+    borderRadius: 10,
+    minHeight: 40,
+    backgroundColor: colors.neutralMuted,
   },
   triggerActive: {
-    borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
   },
   triggerMain: {
@@ -197,9 +195,9 @@ const useStyles = makeStyles((colors) => ({
   },
   triggerText: {
     flex: 1,
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontSize: fontSize.md,
+    fontWeight: '500',
+    color: colors.text,
   },
   triggerTextActive: {
     color: colors.primary,

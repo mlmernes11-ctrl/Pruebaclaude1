@@ -28,7 +28,5 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 }));

@@ -2,24 +2,25 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 import { MoneyTotals } from '../types';
 import { describeTotals, formatPeriod } from '../utils/format';
 import { buildYearHistory, HistoryRow, yearRange } from '../utils/history';
 import { ChargeView } from '../utils/ledger';
-import Card from './Card';
-import { makeStyles, useTheme } from '../context/ThemeContext';
-
-const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+import { plural } from '../utils/text';
 
 const SEGMENTS = [
-  { key: 'paid', label: 'Pagado', colorKey: 'chartPaid' },
+  { key: 'paid', label: 'Cobrado', colorKey: 'chartPaid' },
   { key: 'overdue', label: 'En mora', colorKey: 'chartOverdue' },
   { key: 'pending', label: 'Por vencer', colorKey: 'chartPending' },
 ] as const;
 
 const hasAmount = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
+// Pesos without "≈": the note under the list says dollars use today's rate.
+const describeTotals_ = (totals: MoneyTotals, rate?: number) => describeTotals(totals, rate, false);
 
+// Calendar-year view: how much of what was billed got collected, then one row per month.
 export default function YearHistory({
   views,
   year,
@@ -34,10 +35,9 @@ export default function YearHistory({
   const { colors } = useTheme();
   const styles = useStyles();
   const { rate, toPesos } = useExchangeRate();
-  const currentYear = new Date().getFullYear();
-  const range = yearRange(views, currentYear);
+  const range = yearRange(views, new Date().getFullYear());
   const { months, total } = buildYearHistory(views, year, toPesos);
-  const collectedPct = total.count ? Math.round(total.shares.paid * 100) : 0;
+  const hasDollars = views.some((v) => v.charge.currency === 'USD');
 
   return (
     <View>
@@ -45,150 +45,116 @@ export default function YearHistory({
         <TouchableOpacity
           onPress={() => onChangeYear(year - 1)}
           disabled={year <= range.min}
-          style={[styles.yearButton, year <= range.min && styles.yearButtonDisabled]}
+          style={styles.yearButton}
           accessibilityLabel="Año anterior"
         >
-          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Ionicons name="chevron-back" size={22} color={year <= range.min ? colors.chevron : colors.primary} />
         </TouchableOpacity>
         <Text style={styles.yearText}>{year}</Text>
         <TouchableOpacity
           onPress={() => onChangeYear(year + 1)}
           disabled={year >= range.max}
-          style={[styles.yearButton, year >= range.max && styles.yearButtonDisabled]}
+          style={styles.yearButton}
           accessibilityLabel="Año siguiente"
         >
-          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+          <Ionicons name="chevron-forward" size={22} color={year >= range.max ? colors.chevron : colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <Card style={styles.totalCard}>
-        <Text style={styles.totalTitle}>Total {year}</Text>
+      <View style={styles.hero}>
+        <Text style={styles.heroLabel}>Cobrado en {year}</Text>
         {total.count === 0 ? (
-          <Text style={styles.muted}>No hay liquidaciones en {year}.</Text>
+          <Text style={styles.heroDetail}>No hay liquidaciones en {year}.</Text>
         ) : (
           <>
-            <AmountLine label="Liquidado" totals={total.billed} rate={rate} strong />
-            <AmountLine label="Pagado" totals={total.paid} rate={rate} swatch={colors.chartPaid} />
-            <AmountLine label="En mora" totals={total.overdue} rate={rate} swatch={colors.chartOverdue} />
-            {hasAmount(total.pending) ? (
-              <AmountLine label="Por vencer" totals={total.pending} rate={rate} swatch={colors.chartPending} />
-            ) : null}
-            <SegmentedBar row={total} />
-            <Text style={styles.muted}>
-              {collectedPct}% cobrado de lo liquidado
-              {total.sharesByAmount ? '' : ' (por liquidación; cargá la cotización para ponderar por monto)'}
+            <Text style={styles.heroValue}>{Math.round(total.shares.paid * 100)} %</Text>
+            <Text style={styles.heroDetail}>
+              {describeTotals_(total.paid, rate).main} de {describeTotals_(total.billed, rate).main}
             </Text>
+            <SegmentedBar row={total} height={8} />
+            <View style={styles.stats}>
+              {SEGMENTS.map((segment) => (
+                <View key={segment.key} style={styles.stat}>
+                  <View style={styles.statLabelRow}>
+                    <View style={[styles.swatch, { backgroundColor: colors[segment.colorKey] }]} />
+                    <Text style={styles.statLabel}>{segment.label}</Text>
+                  </View>
+                  <Text
+                    style={[styles.statValue, segment.key === 'overdue' && hasAmount(total.overdue) && { color: colors.danger }]}
+                  >
+                    {describeTotals_(total[segment.key], rate).main}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            {total.sharesByAmount ? null : (
+              <Text style={styles.note}>Porcentaje por cantidad de liquidaciones: falta la cotización del dólar.</Text>
+            )}
           </>
         )}
-      </Card>
+      </View>
 
       {months.length ? (
-        <>
-          <View style={styles.legend}>
-            {SEGMENTS.map((segment) => (
-              <View key={segment.key} style={styles.legendItem}>
-                <View style={[styles.legendSwatch, { backgroundColor: colors[segment.colorKey] }]} />
-                <Text style={styles.legendText}>{segment.label}</Text>
-              </View>
-            ))}
-          </View>
-          {months.map((row) => (
-            <MonthRow key={row.period} row={row} rate={rate} onPress={() => onPressMonth(row.period)} />
+        <View style={styles.group}>
+          {months.map((row, index) => (
+            <MonthRow key={row.period} row={row} rate={rate} first={index === 0} onPress={() => onPressMonth(row.period)} />
           ))}
-        </>
+        </View>
+      ) : null}
+      {months.length && hasDollars && rate ? (
+        <Text style={styles.footer}>Montos en dólares convertidos a pesos con la cotización de hoy.</Text>
       ) : null}
     </View>
   );
 }
 
-function MonthRow({ row, rate, onPress }: { row: HistoryRow; rate?: number; onPress: () => void }) {
-  const { colors } = useTheme();
+function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: number; first: boolean; onPress: () => void }) {
   const styles = useStyles();
-  const billed = describeTotals(row.billed, rate);
-  const paid = describeTotals(row.paid, rate);
-  const unpaid: MoneyTotals = {
-    USD: row.overdue.USD + row.pending.USD,
-    ARS: row.overdue.ARS + row.pending.ARS,
-  };
-  const monthIndex = Number(row.period.slice(5, 7)) - 1;
+  const { colors } = useTheme();
+  const unpaid: MoneyTotals = { USD: row.overdue.USD + row.pending.USD, ARS: row.overdue.ARS + row.pending.ARS };
+  const monthName = formatPeriod(row.period).split(' ')[0];
+  let caption = 'Todo cobrado';
+  let captionColor = colors.success;
+  if (row.overdueCount) {
+    caption = `En mora ${describeTotals_(row.overdue, rate).main} · ${plural(row.overdueCount, 'liquidación', 'liquidaciones')}`;
+    captionColor = colors.danger;
+  } else if (hasAmount(unpaid)) {
+    caption = `Por cobrar ${describeTotals_(unpaid, rate).main}`;
+    captionColor = colors.textMuted;
+  }
 
   return (
     <TouchableOpacity
       style={styles.monthRow}
       onPress={onPress}
+      activeOpacity={0.6}
       accessibilityRole="button"
-      accessibilityLabel={`${formatPeriod(row.period)}: liquidado ${billed.main}, pagado ${paid.main}`}
+      accessibilityLabel={`${formatPeriod(row.period)}: ${caption}`}
     >
-      <View style={styles.monthHeader}>
-        <Text style={styles.monthName}>{MONTH_SHORT[monthIndex]}</Text>
-        <Text style={styles.monthBilled}>{billed.main}</Text>
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      {!first ? <View style={styles.separator} /> : null}
+      <View style={styles.monthTop}>
+        <Text style={styles.monthName}>{monthName}</Text>
+        <Text style={styles.monthAmount}>{describeTotals_(row.billed, rate).main}</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
       </View>
-      <SegmentedBar row={row} />
-      <Text style={styles.monthMeta}>
-        Pagado {paid.main}
-        {hasAmount(unpaid) ? ` · Sin pagar ${describeTotals(unpaid, rate).main}` : ' · Todo pago'}
-        {row.overdueCount ? ` · ${row.overdueCount} en mora` : ''}
-      </Text>
+      <SegmentedBar row={row} height={6} />
+      <Text style={[styles.monthCaption, { color: captionColor }]}>{caption}</Text>
     </TouchableOpacity>
   );
 }
 
-// One whole split into paid / overdue / pending, with a 2px surface gap between segments.
-function SegmentedBar({ row }: { row: HistoryRow }) {
+// One whole split into collected / overdue / due soon, with a 2px gap between segments.
+function SegmentedBar({ row, height }: { row: HistoryRow; height: number }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const parts = SEGMENTS.map((segment) => ({ ...segment, share: row.shares[segment.key] })).filter(
     (part) => part.share > 0.001,
   );
   return (
-    <View style={styles.bar}>
-      {parts.map((part, index) => (
-        <View
-          key={part.key}
-          style={[
-            styles.barSegment,
-            {
-              flex: part.share,
-              backgroundColor: colors[part.colorKey],
-              marginLeft: index === 0 ? 0 : 2,
-              borderTopLeftRadius: index === 0 ? 4 : 0,
-              borderBottomLeftRadius: index === 0 ? 4 : 0,
-              borderTopRightRadius: index === parts.length - 1 ? 4 : 0,
-              borderBottomRightRadius: index === parts.length - 1 ? 4 : 0,
-            },
-          ]}
-        />
+    <View style={[styles.bar, { height, borderRadius: height / 2 }]}>
+      {parts.map((part) => (
+        <View key={part.key} style={{ flex: part.share, backgroundColor: colors[part.colorKey] }} />
       ))}
-    </View>
-  );
-}
-
-function AmountLine({
-  label,
-  totals,
-  rate,
-  swatch,
-  strong,
-}: {
-  label: string;
-  totals: MoneyTotals;
-  rate?: number;
-  swatch?: string;
-  strong?: boolean;
-}) {
-  const styles = useStyles();
-  const described = describeTotals(totals, rate);
-  return (
-    <View style={styles.amountLine}>
-      <View style={styles.amountLabelRow}>
-        {swatch ? <View style={[styles.legendSwatch, { backgroundColor: swatch }]} /> : null}
-        <Text style={[styles.amountLabel, strong && styles.amountStrong]}>{label}</Text>
-      </View>
-      <View style={styles.amountValues}>
-        <Text style={[styles.amountValue, strong && styles.amountStrong]}>{described.main}</Text>
-        {described.detail ? <Text style={styles.amountDetail}>{described.detail}</Text> : null}
-      </View>
     </View>
   );
 }
@@ -198,137 +164,131 @@ const useStyles = makeStyles((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   yearButton: {
-    padding: spacing.sm,
-    borderRadius: radius.round,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  yearButtonDisabled: {
-    opacity: 0.3,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   yearText: {
-    fontSize: fontSize.xl,
-    fontWeight: '800',
+    fontSize: fontSize.lg,
+    fontWeight: '600',
     color: colors.text,
-    fontVariant: ['tabular-nums'],
     minWidth: 64,
     textAlign: 'center',
-  },
-  totalCard: {
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  totalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  muted: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  amountLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  amountLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  amountLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
-  amountValues: {
-    alignItems: 'flex-end',
-    flexShrink: 1,
-  },
-  amountValue: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
     fontVariant: ['tabular-nums'],
   },
-  amountDetail: {
-    fontSize: fontSize.xs,
+  hero: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl - 4,
+    marginBottom: spacing.xl,
+  },
+  heroLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
     color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  amountStrong: {
-    fontSize: fontSize.md,
-    fontWeight: '800',
+  heroValue: {
+    fontSize: 40,
+    fontWeight: '700',
+    letterSpacing: -1,
     color: colors.text,
+    marginTop: spacing.sm,
+    fontVariant: ['tabular-nums'],
   },
-  legend: {
+  heroDetail: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  stats: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
-  legendItem: {
+  stat: {
+    flex: 1,
+    minWidth: 0,
+  },
+  statLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-  legendSwatch: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
+  swatch: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  legendText: {
+  statLabel: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+  },
+  statValue: {
+    fontSize: fontSize.sm,
     fontWeight: '600',
+    color: colors.text,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+  note: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
+  group: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
   },
   monthRow: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
     gap: 6,
   },
-  monthHeader: {
+  separator: {
+    position: 'absolute',
+    top: 0,
+    left: spacing.lg,
+    right: 0,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  monthTop: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   monthName: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
-    width: 40,
-  },
-  monthBilled: {
     flex: 1,
-    textAlign: 'right',
-    fontSize: fontSize.md,
-    fontWeight: '700',
+    fontSize: fontSize.lg,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  monthAmount: {
+    fontSize: fontSize.lg,
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
-  monthMeta: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
+  monthCaption: {
+    fontSize: fontSize.sm,
   },
   bar: {
     flexDirection: 'row',
-    height: 10,
-    borderRadius: 4,
+    gap: 2,
     overflow: 'hidden',
-    backgroundColor: colors.neutralTint,
+    backgroundColor: colors.neutralMuted,
   },
-  barSegment: {
-    height: '100%',
+  footer: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    marginHorizontal: spacing.lg,
   },
 }));

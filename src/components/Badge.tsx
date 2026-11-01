@@ -25,11 +25,11 @@ export default function Badge({ label, tone = 'neutral' }: { label: string; tone
   );
 }
 
-const useStyles = makeStyles((colors) => ({
+const useStyles = makeStyles(() => ({
   container: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.round,
+    paddingVertical: 3,
+    borderRadius: radius.sm - 2,
     alignSelf: 'flex-start',
   },
   text: {

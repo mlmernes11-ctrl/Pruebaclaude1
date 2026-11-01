@@ -159,6 +159,8 @@ interface DataContextValue extends StoredData {
   loading: boolean;
   // Today's date; changes at midnight or when the app comes back, so statuses stay current.
   today: string;
+  // Re-reads today's date (statuses, new month) — used by pull to refresh.
+  refreshToday: () => void;
   stats: DashboardStats;
   chargeViews: ChargeView[];
   addProperty: (data: Omit<Property, 'id' | 'createdAt'>) => Property;
@@ -505,6 +507,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ...data,
     loading,
     today,
+    refreshToday: () => setToday(todayISO()),
     stats,
     chargeViews,
     addProperty,

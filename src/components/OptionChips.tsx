@@ -50,9 +50,10 @@ const useStyles = makeStyles((colors) => ({
   },
   label: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
+    fontWeight: '500',
+    color: colors.textMuted,
+    marginLeft: spacing.xs,
+    marginBottom: 6,
   },
   row: {
     flexDirection: 'row',
@@ -60,23 +61,22 @@ const useStyles = makeStyles((colors) => ({
     gap: spacing.sm,
   },
   chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 14,
+    minHeight: 36,
+    justifyContent: 'center',
     borderRadius: radius.round,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.neutralMuted,
   },
   chipActive: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   chipText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    fontWeight: '600',
+    fontSize: fontSize.md,
+    color: colors.text,
+    fontWeight: '500',
   },
   chipTextActive: {
     color: colors.primary,
+    fontWeight: '600',
   },
 }));

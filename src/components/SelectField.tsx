@@ -100,30 +100,30 @@ const useStyles = makeStyles((colors) => ({
   },
   label: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.xs,
+    fontWeight: '500',
+    color: colors.textMuted,
+    marginLeft: spacing.xs,
+    marginBottom: 6,
   },
   required: {
     color: colors.danger,
   },
   field: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   value: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     color: colors.text,
   },
   placeholder: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     color: colors.textMuted,
   },
   backdrop: {

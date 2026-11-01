@@ -13,10 +13,13 @@ export default function SortMenu<T extends string>({
   options,
   value,
   onChange,
+  compact,
 }: {
   options: SortOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  // Icon-only trigger, for rows that also hold filters.
+  compact?: boolean;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -26,14 +29,18 @@ export default function SortMenu<T extends string>({
   return (
     <>
       <TouchableOpacity
-        style={styles.trigger}
+        style={[styles.trigger, compact && styles.triggerCompact]}
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={`Ordenar: ${current?.label ?? ''}`}
       >
-        <Ionicons name="swap-vertical" size={14} color={colors.text} />
-        <Text style={styles.triggerText}>{current?.label}</Text>
-        <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+        <Ionicons name="swap-vertical" size={compact ? 18 : 14} color={compact ? colors.primary : colors.text} />
+        {compact ? null : (
+          <>
+            <Text style={styles.triggerText}>{current?.label}</Text>
+            <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+          </>
+        )}
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -73,15 +80,19 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    minHeight: 32,
     borderRadius: radius.round,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.neutralMuted,
+  },
+  triggerCompact: {
+    width: 36,
+    height: 36,
+    paddingHorizontal: 0,
+    justifyContent: 'center',
   },
   triggerText: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontSize: fontSize.sm,
+    fontWeight: '500',
     color: colors.text,
   },
   backdrop: {

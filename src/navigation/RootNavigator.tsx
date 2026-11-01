@@ -37,8 +37,9 @@ function useScreenOptions() {
   const { colors } = useTheme();
   return useMemo(
     () => ({
-      headerStyle: { backgroundColor: colors.surface },
-      headerTitleStyle: { color: colors.text, fontWeight: '700' as const },
+      // Header blends with the grouped background, like iOS navigation bars.
+      headerStyle: { backgroundColor: colors.background },
+      headerTitleStyle: { color: colors.text, fontWeight: '600' as const, fontSize: 17 },
       headerTintColor: colors.primary,
       headerShadowVisible: false,
       contentStyle: { backgroundColor: colors.background },
@@ -158,11 +159,12 @@ function SettingsStackNavigator() {
   );
 }
 
-const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  DashboardTab: 'home',
-  RentalsTab: 'business',
-  PaymentsTab: 'cash',
-  SettingsTab: 'settings',
+// Filled icon for the active tab, outline for the rest (as on iOS).
+const TAB_ICONS: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Ionicons.glyphMap]> = {
+  DashboardTab: ['home', 'home-outline'],
+  RentalsTab: ['business', 'business-outline'],
+  PaymentsTab: ['wallet', 'wallet-outline'],
+  SettingsTab: ['settings', 'settings-outline'],
 };
 
 const navigationRef = createNavigationContainerRef();
@@ -227,14 +229,16 @@ export default function RootNavigator() {
           tabBarInactiveTintColor: colors.textMuted,
           // Explicit height so labels are never clipped (the web build has no bottom inset).
           tabBarStyle: {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.tabBar,
             borderTopColor: colors.border,
             height: 64 + insets.bottom,
             paddingTop: 4,
             paddingBottom: Math.max(insets.bottom, 6),
           },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-          tabBarIcon: ({ color }) => <Ionicons name={TAB_ICONS[route.name]} size={22} color={color} />,
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={TAB_ICONS[route.name][focused ? 0 : 1]} size={25} color={color} />
+          ),
         })}
       >
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />

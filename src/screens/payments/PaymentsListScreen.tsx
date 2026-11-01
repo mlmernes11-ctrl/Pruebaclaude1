@@ -1,19 +1,21 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Badge from '../../components/Badge';
-import Card from '../../components/Card';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
-import FAB, { FAB_CLEARANCE } from '../../components/FAB';
-import MoneyText from '../../components/MoneyText';
-import Screen from '../../components/Screen';
+import LargeTitleHeader from '../../components/LargeTitleHeader';
+import ListRow from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import PropertyFilter from '../../components/PropertyFilter';
+import Screen from '../../components/Screen';
 import SegmentedControl from '../../components/SegmentedControl';
 import SortMenu, { SortOption } from '../../components/SortMenu';
+import { DotTone } from '../../components/StatusDot';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useRefresh } from '../../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals } from '../../types';
 import {
@@ -25,21 +27,21 @@ import {
   formatDate,
   formatMoney,
   formatPeriod,
+  formatPeriodShort,
 } from '../../utils/format';
+import { ChargeView, unallocatedAmount } from '../../utils/ledger';
 import { compareTitles, plural } from '../../utils/text';
-import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, ChargeView, unallocatedAmount } from '../../utils/ledger';
-import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 type View_ = 'pagos' | 'liquidaciones' | 'historial';
+type FilterValue = 'todos' | ChargeStatus;
+type MonthFilter = 'todos' | 'este' | 'anterior';
+type SortValue = 'reciente' | 'antiguo' | 'propiedad' | 'monto';
 
 const VIEWS: { value: View_; label: string }[] = [
   { value: 'pagos', label: 'Recibidos' },
   { value: 'liquidaciones', label: 'Liquidaciones' },
   { value: 'historial', label: 'Historial' },
 ];
-type FilterValue = 'todos' | ChargeStatus;
-type MonthFilter = 'todos' | 'este' | 'anterior';
-type SortValue = 'reciente' | 'antiguo' | 'propiedad' | 'monto';
 
 const FILTERS: { value: FilterValue; label: string }[] = [
   { value: 'todos', label: 'Todas' },
@@ -61,23 +63,27 @@ const SORT_OPTIONS: SortOption<SortValue>[] = [
   { value: 'monto', label: 'Mayor monto' },
 ];
 
-const STATUS_SUMMARY: { status: ChargeStatus; label: string; colorKey: 'danger' | 'warning' | 'success' }[] = [
-  { status: 'vencido', label: 'En mora', colorKey: 'danger' },
-  { status: 'pendiente', label: 'Por vencer', colorKey: 'warning' },
-  { status: 'pagado', label: 'Pagado', colorKey: 'success' },
+const STATUS_SUMMARY: { status: ChargeStatus; label: string; dot: DotTone }[] = [
+  { status: 'vencido', label: 'En mora', dot: 'danger' },
+  { status: 'pendiente', label: 'Por vencer', dot: 'warning' },
+  { status: 'pagado', label: 'Pagado', dot: 'success' },
 ];
 
+const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
+
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+const shortDate = (iso?: string) => formatDate(iso).slice(0, 5);
 
 // What a liquidación counts for in totals: the outstanding part, or the full amount once paid.
 const chargeValue = (view: ChargeView) => (view.status === 'pagado' ? view.charge.amount : view.balance);
 
 export default function PaymentsListScreen() {
-  const { colors } = useTheme();
   const styles = useStyles();
-  const { chargeViews: allChargeViews, payments: allPayments, charges, contracts, getContractById, getPropertyById, getTenantById } =
+  const { colors } = useTheme();
+  const { chargeViews: allChargeViews, payments: allPayments, contracts, getContractById, getPropertyById, getTenantById } =
     useData();
   const { toPesos, rate } = useExchangeRate();
+  const { refreshing, onRefresh } = useRefresh();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const [view, setView] = useState<View_>('pagos');
@@ -101,7 +107,7 @@ export default function PaymentsListScreen() {
     [allPayments, propertyContracts],
   );
 
-  // The dashboard opens this screen already filtered (e.g. "Dinero en mora").
+  // The dashboard opens this screen already filtered (e.g. "En mora").
   useEffect(() => {
     const params = route.params;
     if (!params) return;
@@ -127,21 +133,19 @@ export default function PaymentsListScreen() {
     if (ca !== cb) return ca === 'USD' ? -1 : 1;
     return b - a;
   };
-
   const compareProperties = (contractA: string, contractB: string) =>
     compareTitles(describeContract(contractA).property, describeContract(contractB).property);
 
-  const statusCharges = filter === 'todos' ? chargeViews : chargeViews.filter((v) => v.status === filter);
-  const visibleCharges = [...statusCharges].sort((a, b) => {
-    if (sort === 'antiguo') return byDate(a.charge.dueDate, b.charge.dueDate);
-    if (sort === 'propiedad') {
-      return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
-    }
-    if (sort === 'monto') {
-      return compareAmounts(chargeValue(a), a.charge.currency, chargeValue(b), b.charge.currency);
-    }
-    return byDate(b.charge.dueDate, a.charge.dueDate);
-  });
+  const visibleCharges = (filter === 'todos' ? chargeViews : chargeViews.filter((v) => v.status === filter)).sort(
+    (a, b) => {
+      if (sort === 'antiguo') return byDate(a.charge.dueDate, b.charge.dueDate);
+      if (sort === 'propiedad') {
+        return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
+      }
+      if (sort === 'monto') return compareAmounts(chargeValue(a), a.charge.currency, chargeValue(b), b.charge.currency);
+      return byDate(b.charge.dueDate, a.charge.dueDate);
+    },
+  );
 
   const thisPeriod = currentPeriod();
   const monthPeriod = month === 'este' ? thisPeriod : month === 'anterior' ? addMonthsToPeriod(thisPeriod, -1) : undefined;
@@ -168,393 +172,241 @@ export default function PaymentsListScreen() {
 
   const paymentTotals = emptyTotals();
   monthPayments.forEach((p) => addToTotals(paymentTotals, p.amount, p.currency));
+  const received = describeTotals(paymentTotals, rate, false);
 
-  const chargesSummary = (
-    <Card style={styles.summaryCard}>
-      {filter === 'todos' ? (
-        STATUS_SUMMARY.map(({ status, label, colorKey }) => {
-          const color = colors[colorKey];
-          const { count, totals } = chargeTotals[status];
-          const described = describeTotals(totals, rate);
-          return (
-            <TouchableOpacity key={status} style={styles.summaryRow} onPress={() => setFilter(status)}>
-              <View style={[styles.summaryDot, { backgroundColor: color }]} />
-              <View style={styles.summaryInfo}>
-                <Text style={styles.summaryLabel}>{label}</Text>
-                <Text style={styles.summaryMeta}>
-                  {plural(count, 'liquidación', 'liquidaciones')}
-                  {described.detail ? ` · ${described.detail}` : ''}
-                </Text>
-              </View>
-              <Text style={[styles.summaryAmount, { color }]}>{described.main}</Text>
-            </TouchableOpacity>
-          );
-        })
-      ) : (
-        <SummaryTotal
-          label={`Total ${STATUS_SUMMARY.find((s) => s.status === filter)!.label.toLowerCase()}`}
-          color={colors[STATUS_SUMMARY.find((s) => s.status === filter)!.colorKey]}
-          totals={chargeTotals[filter].totals}
-          rate={rate}
-          meta={plural(chargeTotals[filter].count, 'liquidación', 'liquidaciones')}
-        />
-      )}
-    </Card>
-  );
+  const dollarsInView = chargeViews.some((v) => v.charge.currency === 'USD');
 
-  const paymentsSummary = (
-    <Card style={styles.summaryCard}>
-      <SummaryTotal
-        label={
-          month === 'este'
-            ? `Recibido en ${formatPeriod(thisPeriod).toLowerCase()}`
-            : month === 'anterior'
-              ? `Recibido en ${formatPeriod(monthPeriod!).toLowerCase()}`
-              : 'Total recibido'
-        }
-        color={colors.success}
-        totals={paymentTotals}
-        rate={rate}
-        meta={plural(monthPayments.length, 'pago', 'pagos')}
-      />
-    </Card>
-  );
+  const registerPayment = () => {
+    const active = propertyId ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo') : undefined;
+    navigation.navigate('PaymentForm', active ? { contractId: active.id } : undefined);
+  };
+
+  const pills =
+    view === 'liquidaciones' ? (
+      <FilterPills options={FILTERS} value={filter} onChange={setFilter} />
+    ) : view === 'pagos' ? (
+      <FilterPills options={MONTH_FILTERS} value={month} onChange={setMonth} />
+    ) : null;
 
   return (
     <Screen>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Pagos</Text>
-        {view === 'historial' ? null : <SortMenu options={SORT_OPTIONS} value={sort} onChange={setSort} />}
-      </View>
+      <LargeTitleHeader title="Pagos" onAdd={registerPayment} addLabel="Registrar pago" />
       <SegmentedControl options={VIEWS} value={view} onChange={setView} />
-
       <PropertyFilter value={propertyId} onChange={setPropertyId} />
 
-      {view === 'historial' ? (
-        <ScrollView contentContainerStyle={styles.listContent}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
+      >
+        {view !== 'historial' ? (
+          <View style={styles.toolbar}>
+            <View style={styles.toolbarPills}>{pills}</View>
+            <SortMenu options={SORT_OPTIONS} value={sort} onChange={setSort} compact />
+          </View>
+        ) : null}
+
+        {view === 'historial' ? (
           <YearHistory
             views={chargeViews}
             year={year}
             onChangeYear={setYear}
             onPressMonth={(period) => navigation.navigate('MonthDetail', { period, propertyId })}
           />
-        </ScrollView>
-      ) : view === 'liquidaciones' ? (
-        <>
-          <View style={styles.filterRow}>
-            {FILTERS.map((item) => {
-              const active = item.value === filter;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  onPress={() => setFilter(item.value)}
-                  style={[styles.filterChip, active && styles.filterChipActive]}
-                >
-                  <Text style={[styles.filterText, active && styles.filterTextActive]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <FlatList
-            data={visibleCharges}
-            keyExtractor={(item) => item.charge.id}
-            contentContainerStyle={styles.listContent}
-            ListHeaderComponent={chargesSummary}
-            ListEmptyComponent={
+        ) : view === 'liquidaciones' ? (
+          <>
+            {filter === 'todos' ? (
+              <ListSection footer={rate && dollarsInView ? 'Totales en pesos con la cotización de hoy.' : undefined}>
+                {STATUS_SUMMARY.map(({ status, label, dot }) => {
+                  const { count, totals } = chargeTotals[status];
+                  return (
+                    <ListRow
+                      key={status}
+                      dot={dot}
+                      title={label}
+                      subtitle={plural(count, 'liquidación', 'liquidaciones')}
+                      value={describeTotals(totals, rate, false).main}
+                      valueTone={status === 'vencido' && count ? 'danger' : 'default'}
+                      onPress={() => setFilter(status)}
+                    />
+                  );
+                })}
+              </ListSection>
+            ) : (
+              <Total
+                label={`Total ${STATUS_SUMMARY.find((s) => s.status === filter)!.label.toLowerCase()}`}
+                value={describeTotals(chargeTotals[filter].totals, rate, false).main}
+                detail={plural(chargeTotals[filter].count, 'liquidación', 'liquidaciones')}
+                danger={filter === 'vencido'}
+              />
+            )}
+            {visibleCharges.length ? (
+              <ListSection>
+                {visibleCharges.map((item) => {
+                  const { property } = describeContract(item.charge.contractId);
+                  const concept = `${CONCEPT_LABEL[item.charge.concept]} ${formatPeriodShort(item.charge.period)}`;
+                  const when =
+                    item.status === 'pagado'
+                      ? `pagada el ${shortDate(item.lastPaymentDate)}`
+                      : item.paid > 0
+                        ? `pagó ${formatMoney(item.paid, item.charge.currency)}`
+                        : `vence el ${shortDate(item.charge.dueDate)}`;
+                  return (
+                    <ListRow
+                      key={item.charge.id}
+                      dot={STATUS_DOT[item.status]}
+                      title={property}
+                      subtitle={`${concept} · ${when}`}
+                      value={formatMoney(chargeValue(item), item.charge.currency)}
+                      valueTone={item.status === 'vencido' ? 'danger' : item.status === 'pagado' ? 'muted' : 'default'}
+                      onPress={() => navigation.navigate('ChargeForm', { chargeId: item.charge.id })}
+                    />
+                  );
+                })}
+              </ListSection>
+            ) : (
               <EmptyState
                 icon="calendar-outline"
                 title="Sin liquidaciones"
                 message="Las liquidaciones de cada contrato activo se generan solas todos los meses."
               />
-            }
-            renderItem={({ item }) => {
-              const { property, tenant } = describeContract(item.charge.contractId);
-              const partial = item.paid > 0 && item.balance > 0;
-              return (
-                <Card
-                  style={styles.card}
-                  onPress={() => navigation.navigate('ChargeForm', { chargeId: item.charge.id })}
-                >
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {property}
-                    </Text>
-                    <Badge label={CHARGE_STATUS_LABEL[item.status]} tone={CHARGE_STATUS_TONE[item.status]} />
-                  </View>
-                  <Text style={styles.subText}>
-                    {tenant} · {CONCEPT_LABEL[item.charge.concept]}
-                  </Text>
-                  <View style={styles.footerRow}>
-                    <View>
-                      <Text style={styles.periodText}>{formatPeriod(item.charge.period)}</Text>
-                      <Text style={styles.metaText}>
-                        {item.status === 'pagado' && item.lastPaymentDate
-                          ? `Pagada el ${formatDate(item.lastPaymentDate)}`
-                          : `Vence: ${formatDate(item.charge.dueDate)}`}
-                      </Text>
-                    </View>
-                    <View style={styles.amountColumn}>
-                      <MoneyText
-                        amount={item.status === 'pagado' ? item.charge.amount : item.balance}
-                        currency={item.charge.currency}
-                        style={styles.amountText}
-                      />
-                      {partial ? (
-                        <Text style={styles.metaText}>
-                          resta de {formatMoney(item.charge.amount, item.charge.currency)}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
-                </Card>
-              );
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <View style={styles.filterRow}>
-            {MONTH_FILTERS.map((item) => {
-              const active = item.value === month;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  onPress={() => setMonth(item.value)}
-                  style={[styles.filterChip, active && styles.filterChipActive]}
-                >
-                  <Text style={[styles.filterText, active && styles.filterTextActive]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <FlatList
-          data={visiblePayments}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={paymentsSummary}
-          ListEmptyComponent={
-            <EmptyState
-              icon="cash-outline"
-              title="Sin pagos"
-              message="Tocá + para registrar lo que te pagó un inquilino."
+            )}
+          </>
+        ) : (
+          <>
+            <Total
+              label={monthPeriod ? `Recibido en ${formatPeriod(monthPeriod).toLowerCase()}` : 'Total recibido'}
+              value={received.main}
+              detail={[plural(monthPayments.length, 'pago', 'pagos'), received.detail].filter(Boolean).join(' · ')}
             />
-          }
-          renderItem={({ item }) => {
-            const { property, tenant } = describeContract(item.contractId);
-            const periods = item.allocations
-              .map((a) => charges.find((c) => c.id === a.chargeId))
-              .filter(Boolean)
-              .map((c) => formatPeriod(c!.period));
-            const credit = unallocatedAmount(item);
-            return (
-              <Card
-                style={styles.card}
-                onPress={() => navigation.navigate('PaymentDetail', { paymentId: item.id })}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {property}
-                  </Text>
-                  <Text style={styles.dateText}>{formatDate(item.date)}</Text>
-                </View>
-                <Text style={styles.subText}>
-                  {tenant} · {CONCEPT_LABEL[item.concept]}
-                  {item.method ? ` · ${item.method}` : ''}
-                </Text>
-                <View style={styles.footerRow}>
-                  <Text style={[styles.metaText, styles.periodsText]} numberOfLines={2}>
-                    {periods.length ? `Cubre: ${periods.join(', ')}` : 'Sin liquidaciones aplicadas'}
-                    {credit > 0 ? ` · ${formatMoney(credit, item.currency)} a favor` : ''}
-                  </Text>
-                  <MoneyText
-                    amount={item.amount}
-                    currency={item.currency}
-                    settledRate={item.exchangeRate}
-                    style={styles.amountText}
-                  />
-                </View>
-              </Card>
-            );
-          }}
-          />
-        </>
-      )}
-      <FAB
-        onPress={() => {
-          const active = propertyId
-            ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo')
-            : undefined;
-          navigation.navigate('PaymentForm', active ? { contractId: active.id } : undefined);
-        }}
-      />
+            {visiblePayments.length ? (
+              <ListSection>
+                {visiblePayments.map((item) => {
+                  const { property, tenant } = describeContract(item.contractId);
+                  const credit = unallocatedAmount(item) > 0 ? ' · saldo a favor' : '';
+                  return (
+                    <ListRow
+                      key={item.id}
+                      title={property}
+                      subtitle={`${tenant} · ${CONCEPT_LABEL[item.concept]} · ${shortDate(item.date)}${credit}`}
+                      value={formatMoney(item.amount, item.currency)}
+                      onPress={() => navigation.navigate('PaymentDetail', { paymentId: item.id })}
+                    />
+                  );
+                })}
+              </ListSection>
+            ) : (
+              <EmptyState icon="wallet-outline" title="Sin pagos" message="Tocá + para registrar lo que pagó un inquilino." />
+            )}
+          </>
+        )}
+      </ScrollView>
     </Screen>
   );
 }
 
-function SummaryTotal({
-  label,
-  color,
-  totals,
-  rate,
-  meta,
+function FilterPills<T extends string>({
+  options,
+  value,
+  onChange,
 }: {
-  label: string;
-  color: string;
-  totals: MoneyTotals;
-  rate?: number;
-  meta: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
 }) {
   const styles = useStyles();
-  const described = describeTotals(totals, rate);
   return (
-    <View>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryBig, { color }]}>{described.main}</Text>
-      <Text style={styles.summaryMeta}>
-        {meta}
-        {described.detail ? ` · ${described.detail}` : ''}
-      </Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills}>
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <TouchableOpacity
+            key={option.value}
+            onPress={() => onChange(option.value)}
+            style={[styles.pill, active && styles.pillActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+          >
+            <Text style={[styles.pillText, active && styles.pillTextActive]}>{option.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function Total({ label, value, detail, danger }: { label: string; value: string; detail: string; danger?: boolean }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <View style={styles.total}>
+      <Text style={styles.totalLabel}>{label}</Text>
+      <Text style={[styles.totalValue, danger && { color: colors.danger }]}>{value}</Text>
+      <Text style={styles.totalDetail}>{detail}</Text>
     </View>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xxl,
   },
-  summaryCard: {
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  summaryRow: {
+  toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.md,
   },
-  summaryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  summaryInfo: {
+  toolbarPills: {
     flex: 1,
     minWidth: 0,
   },
-  summaryLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  summaryMeta: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  summaryAmount: {
-    fontSize: fontSize.md,
-    fontWeight: '800',
-  },
-  summaryBig: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
+  pills: {
     gap: spacing.sm,
-    marginBottom: spacing.sm,
   },
-  filterChip: {
+  pill: {
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    minHeight: 32,
+    justifyContent: 'center',
     borderRadius: radius.round,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.neutralMuted,
   },
-  filterChipActive: {
+  pillActive: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
-  filterText: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-    color: colors.textMuted,
+  pillText: {
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+    color: colors.text,
   },
-  filterTextActive: {
+  pillTextActive: {
     color: colors.primary,
+    fontWeight: '600',
   },
-  listContent: {
-    padding: spacing.lg,
-    paddingTop: 0,
-    paddingBottom: FAB_CLEARANCE,
+  total: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl - 4,
+    marginBottom: spacing.xl,
   },
-  card: {
-    marginBottom: spacing.md,
+  totalLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-    gap: spacing.sm,
+  totalValue: {
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: -0.8,
+    color: colors.text,
+    marginTop: spacing.sm,
+    fontVariant: ['tabular-nums'],
   },
-  cardTitle: {
+  totalDetail: {
     fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text,
-    flex: 1,
-  },
-  dateText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
     color: colors.textMuted,
-  },
-  subText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
-  },
-  periodText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  metaText: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  periodsText: {
-    flex: 1,
-  },
-  amountColumn: {
-    alignItems: 'flex-end',
-  },
-  amountText: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
+    marginTop: spacing.xs,
   },
 }));

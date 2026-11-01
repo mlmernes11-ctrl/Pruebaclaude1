@@ -1,117 +1,118 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
-import Badge from '../../components/Badge';
-import Card from '../../components/Card';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
-import MoneyText from '../../components/MoneyText';
+import ListRow, { ValueTone } from '../../components/ListRow';
+import ListSection from '../../components/ListSection';
 import SearchLauncher from '../../components/SearchSheet';
-import { PROPERTY_STATUS_LABEL, PROPERTY_STATUS_TONE, PROPERTY_TYPE_LABEL } from '../../constants';
+import StatusDot, { DotTone } from '../../components/StatusDot';
 import { useData } from '../../context/DataContext';
-import { compareTitles } from '../../utils/text';
-import FAB, { FAB_CLEARANCE } from '../../components/FAB';
-import { fontSize, spacing } from '../../theme';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useRefresh } from '../../hooks/useRefresh';
+import { fontSize, spacing } from '../../theme';
+import { formatMoney, formatTotals } from '../../utils/format';
+import { PropertySummary, summarizeProperty } from '../../utils/propertySummary';
+import { compareTitles } from '../../utils/text';
+import { COLLECTION_DOT } from './rentalStatus';
+
+const LEGEND: { tone: DotTone; label: string }[] = [
+  { tone: 'danger', label: 'Con deuda' },
+  { tone: 'warning', label: 'Por vencer' },
+  { tone: 'success', label: 'Al día' },
+  { tone: 'empty', label: 'Sin inquilino' },
+];
+
+// Strong red = money owed; grey = reference (the monthly rent or the property's situation).
+function rightValue(summary: PropertySummary): { value: string; tone: ValueTone } {
+  const { property, activeContract, collection, overdue } = summary;
+  if (collection === 'deuda') return { value: `Debe ${formatTotals(overdue.totals)}`, tone: 'danger' };
+  if (collection === 'sin-contrato') return { value: 'Disponible', tone: 'primary' };
+  if (collection === 'mantenimiento') return { value: 'En mantenimiento', tone: 'muted' };
+  const amount = activeContract?.rentAmount ?? property.rentAmount;
+  const currency = activeContract?.currency ?? property.rentCurrency;
+  return { value: `${formatMoney(amount, currency)}/mes`, tone: 'muted' };
+}
 
 export default function PropertiesList() {
-  const { colors } = useTheme();
   const styles = useStyles();
-  const { properties } = useData();
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
-  const sorted = [...properties].sort((a, b) => compareTitles(a.title, b.title));
+  const { properties, contracts, chargeViews, tenants } = useData();
+  const { refreshing, onRefresh } = useRefresh();
+  const summaries = [...properties]
+    .sort((a, b) => compareTitles(a.title, b.title))
+    .map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
 
   return (
-    <>
+    <ScrollView
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
+    >
       {properties.length ? <SearchLauncher scope="propiedades" /> : null}
-      <FlatList
-        data={sorted}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="business-outline"
-            title="Sin propiedades"
-            message="Agregá tu primera propiedad para empezar a gestionar alquileres."
-          />
-        }
-        renderItem={({ item }) => (
-          <Card
-            style={styles.card}
-            onPress={() => navigation.navigate('PropertyDetail', { propertyId: item.id })}
+      {summaries.length ? (
+        <View style={styles.body}>
+          <ListSection
+            footer={
+              <View style={styles.legend}>
+                {LEGEND.map((item) => (
+                  <View key={item.label} style={styles.legendItem}>
+                    <StatusDot tone={item.tone} size={8} />
+                    <Text style={styles.legendText}>{item.label}</Text>
+                  </View>
+                ))}
+              </View>
+            }
           >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <Badge label={PROPERTY_STATUS_LABEL[item.status]} tone={PROPERTY_STATUS_TONE[item.status]} />
-            </View>
-            <View style={styles.addressRow}>
-              <Ionicons name="location-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.address} numberOfLines={1}>
-                {item.neighborhood ? `${item.address} · ${item.neighborhood}` : item.address}
-              </Text>
-            </View>
-            <View style={styles.footerRow}>
-              <Text style={styles.typeText}>{PROPERTY_TYPE_LABEL[item.type]}</Text>
-              <MoneyText amount={item.rentAmount} currency={item.rentCurrency} suffix="/mes" style={styles.rentText} />
-            </View>
-          </Card>
-        )}
-      />
-      <FAB onPress={() => navigation.navigate('PropertyForm')} />
-    </>
+            {summaries.map((summary) => {
+              const { value, tone } = rightValue(summary);
+              const { property } = summary;
+              return (
+                <ListRow
+                  key={property.id}
+                  dot={COLLECTION_DOT[summary.collection]}
+                  title={property.title}
+                  subtitle={[property.address, property.neighborhood].filter(Boolean).join(' · ')}
+                  value={value}
+                  valueTone={tone}
+                  onPress={() => navigation.navigate('PropertyDetail', { propertyId: property.id })}
+                />
+              );
+            })}
+          </ListSection>
+        </View>
+      ) : (
+        <EmptyState
+          icon="business-outline"
+          title="Sin propiedades"
+          message="Tocá + para agregar tu primera propiedad."
+        />
+      )}
+    </ScrollView>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
-  listContent: {
-    padding: spacing.lg,
-    paddingTop: 0,
-    paddingBottom: FAB_CLEARANCE,
+  content: {
+    paddingBottom: spacing.xxl,
   },
-  card: {
-    marginBottom: spacing.md,
+  body: {
+    paddingHorizontal: spacing.lg,
   },
-  cardHeader: {
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+    rowGap: 6,
+    marginTop: spacing.sm,
+    marginHorizontal: spacing.lg,
+  },
+  legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    gap: 5,
   },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: spacing.sm,
-  },
-  address: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-  },
-  typeText: {
+  legendText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
-  },
-  rentText: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.primary,
   },
 }));
