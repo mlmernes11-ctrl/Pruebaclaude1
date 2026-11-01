@@ -1,5 +1,5 @@
 import { Charge, ChargeConcept, Contract, Payment, Property, Tenant } from '../types';
-import { addMonthsToPeriod, currentPeriod, periodToDueDate } from './format';
+import { addMonthsToPeriod, currentPeriod, periodToDueDate, todayISO } from './format';
 import { generateId } from './id';
 
 export interface SampleData {
@@ -166,7 +166,7 @@ export function buildSampleData(): SampleData {
   const charges: Charge[] = [];
   const payments: Payment[] = [];
 
-  // paidAmount: undefined = unpaid, 'full' = paid in full on the due date, number = partial.
+  // paidAmount: undefined = unpaid, 'full' = paid in full, number = partial; paid on the due date or today if earlier.
   const addCharge = (
     target: Contract,
     concept: ChargeConcept,
@@ -196,7 +196,7 @@ export function buildSampleData(): SampleData {
       id: generateId(),
       contractId: target.id,
       concept,
-      date: dueDate,
+      date: dueDate > todayISO() ? todayISO() : dueDate,
       amount: paid,
       currency,
       method,
@@ -205,36 +205,23 @@ export function buildSampleData(): SampleData {
     });
   };
 
-  // Two months back everything is settled; last month has an unpaid charge and a partial
-  // payment; the current month is open (pending or overdue depending on today's date).
-  addCharge(contractPalermo, 'alquiler', palermo.rentAmount, -2, 'full');
-  addCharge(contractPalermo, 'expensas', palermo.expensasAmount!, -2, 'full');
-  addCharge(contractPalermo, 'servicios', palermo.serviciosAmount!, -2, 'full');
+  // Each active contract shows a different collection state on any day of the month:
+  // Palermo has only next month's rent pending, Urquiza owes money, Cabildo is fully paid.
+  for (const offset of [-2, -1, 0]) {
+    addCharge(contractPalermo, 'alquiler', palermo.rentAmount, offset, 'full');
+    addCharge(contractPalermo, 'expensas', palermo.expensasAmount!, offset, 'full');
+    addCharge(contractPalermo, 'servicios', palermo.serviciosAmount!, offset, 'full');
+    addCharge(contractCabildo, 'alquiler', cabildo.rentAmount, offset, 'full');
+    addCharge(contractCabildo, 'expensas', cabildo.expensasAmount!, offset, 'full');
+  }
+  addCharge(contractPalermo, 'alquiler', palermo.rentAmount, 1);
+
   addCharge(contractUrquiza, 'alquiler', urquiza.rentAmount, -2, 'full', 'Efectivo');
   addCharge(contractUrquiza, 'servicios', urquiza.serviciosAmount!, -2, 'full');
-  addCharge(contractCabildo, 'alquiler', cabildo.rentAmount, -2, 'full');
-  addCharge(contractCabildo, 'expensas', cabildo.expensasAmount!, -2, 'full');
-
-  addCharge(contractPalermo, 'alquiler', palermo.rentAmount, -1, 'full');
-  addCharge(contractPalermo, 'expensas', palermo.expensasAmount!, -1, 'full');
-  addCharge(contractPalermo, 'servicios', palermo.serviciosAmount!, -1);
   addCharge(contractUrquiza, 'alquiler', urquiza.rentAmount, -1, 600, 'Efectivo');
   addCharge(contractUrquiza, 'servicios', urquiza.serviciosAmount!, -1, 'full');
-  addCharge(contractCabildo, 'alquiler', cabildo.rentAmount, -1, 'full');
-  addCharge(contractCabildo, 'expensas', cabildo.expensasAmount!, -1, 'full');
-
-  addCharge(contractPalermo, 'alquiler', palermo.rentAmount, 0);
-  addCharge(contractPalermo, 'expensas', palermo.expensasAmount!, 0);
-  addCharge(contractPalermo, 'servicios', palermo.serviciosAmount!, 0);
   addCharge(contractUrquiza, 'alquiler', urquiza.rentAmount, 0);
   addCharge(contractUrquiza, 'servicios', urquiza.serviciosAmount!, 0);
-  addCharge(contractCabildo, 'alquiler', cabildo.rentAmount, 0);
-  addCharge(contractCabildo, 'expensas', cabildo.expensasAmount!, 0);
-
-  // Next month's rent is always ahead of today, so the sample always shows upcoming charges.
-  addCharge(contractPalermo, 'alquiler', palermo.rentAmount, 1);
-  addCharge(contractUrquiza, 'alquiler', urquiza.rentAmount, 1);
-  addCharge(contractCabildo, 'alquiler', cabildo.rentAmount, 1);
 
   return {
     properties: [palermo, urquiza, cabildo, caballito, microcentro],

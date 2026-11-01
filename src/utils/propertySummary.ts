@@ -1,8 +1,18 @@
 import { Contract, MoneyTotals, Property, Tenant } from '../types';
-import { addToTotals, emptyTotals, parseLocalDate, startOfToday } from './format';
+import { addToTotals, emptyTotals, formatDate, parseLocalDate, startOfToday } from './format';
 import { ChargeView } from './ledger';
 
-export type AttentionLevel = 'danger' | 'warning' | 'ok' | 'idle';
+// How the rent collection of a property stands; drives its color on the dashboard.
+export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato';
+
+export const COLLECTION_ORDER: CollectionState[] = ['deuda', 'por-vencer', 'al-dia', 'sin-contrato'];
+
+export const COLLECTION_LABEL: Record<CollectionState, string> = {
+  deuda: 'Con deuda',
+  'por-vencer': 'Pago por vencer',
+  'al-dia': 'Al día',
+  'sin-contrato': 'Sin contrato',
+};
 
 export const CONTRACT_ENDING_SOON_DAYS = 60;
 
@@ -18,12 +28,11 @@ export interface PropertySummary {
   overdue: PaymentBucket;
   pending: PaymentBucket;
   paid: PaymentBucket;
+  nextDueDate?: string;
   daysToContractEnd?: number;
-  level: AttentionLevel;
-  alerts: string[];
+  collection: CollectionState;
+  notes: string[];
 }
-
-const LEVEL_ORDER: Record<AttentionLevel, number> = { danger: 0, warning: 1, ok: 2, idle: 3 };
 
 function plural(count: number, singular: string, pluralForm: string) {
   return `${count} ${count === 1 ? singular : pluralForm}`;
@@ -47,6 +56,7 @@ export function summarizeProperty(
   const overdue = bucket();
   const pending = bucket();
   const paid = bucket();
+  let nextDueDate: string | undefined;
   chargeViews
     .filter((view) => contractIds.has(view.charge.contractId))
     .forEach((view) => {
@@ -54,6 +64,9 @@ export function summarizeProperty(
         paid.count += 1;
         addToTotals(paid.totals, view.paid, view.charge.currency);
         return;
+      }
+      if (view.status === 'pendiente' && (!nextDueDate || view.charge.dueDate < nextDueDate)) {
+        nextDueDate = view.charge.dueDate;
       }
       const target = view.status === 'vencido' ? overdue : pending;
       target.count += 1;
@@ -66,30 +79,27 @@ export function summarizeProperty(
       )
     : undefined;
 
-  const alerts: string[] = [];
-  let level: AttentionLevel = activeContract ? 'ok' : 'idle';
-  const raise = (next: AttentionLevel) => {
-    if (LEVEL_ORDER[next] < LEVEL_ORDER[level]) level = next;
-  };
+  let collection: CollectionState = 'al-dia';
+  if (!activeContract) collection = 'sin-contrato';
+  else if (overdue.count) collection = 'deuda';
+  else if (pending.count) collection = 'por-vencer';
 
-  if (overdue.count) {
-    alerts.push(plural(overdue.count, 'cuota vencida', 'cuotas vencidas'));
-    raise('danger');
+  const notes: string[] = [];
+  if (!activeContract) {
+    notes.push(property.status === 'mantenimiento' ? 'En mantenimiento' : 'Disponible para alquilar');
+  }
+  if (overdue.count) notes.push(plural(overdue.count, 'cuota vencida', 'cuotas vencidas'));
+  if (pending.count && nextDueDate) {
+    notes.push(
+      `${plural(pending.count, 'cuota por vencer', 'cuotas por vencer')} · vence el ${formatDate(nextDueDate).slice(0, 5)}`,
+    );
   }
   if (daysToContractEnd !== undefined && daysToContractEnd < 0) {
-    alerts.push('Contrato vencido sin renovar');
-    raise('danger');
+    notes.push('Contrato vencido sin renovar');
   } else if (daysToContractEnd !== undefined && daysToContractEnd <= CONTRACT_ENDING_SOON_DAYS) {
-    alerts.push(`Contrato vence en ${plural(daysToContractEnd, 'día', 'días')}`);
-    raise('warning');
+    notes.push(`Contrato vence en ${plural(daysToContractEnd, 'día', 'días')}`);
   }
-  if (!alerts.length) {
-    if (activeContract) alerts.push('Al día');
-    else alerts.push(property.status === 'mantenimiento' ? 'En mantenimiento' : 'Sin contrato activo');
-  }
-  if (pending.count) {
-    alerts.push(plural(pending.count, 'cuota por vencer', 'cuotas por vencer'));
-  }
+  if (collection === 'al-dia' && notes.length === 0) notes.push('Todas las cuotas pagas');
 
   return {
     property,
@@ -98,12 +108,15 @@ export function summarizeProperty(
     overdue,
     pending,
     paid,
+    nextDueDate,
     daysToContractEnd,
-    level,
-    alerts,
+    collection,
+    notes,
   };
 }
 
-export function sortByAttention(summaries: PropertySummary[]): PropertySummary[] {
-  return [...summaries].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
+export function sortByCollection(summaries: PropertySummary[]): PropertySummary[] {
+  return [...summaries].sort(
+    (a, b) => COLLECTION_ORDER.indexOf(a.collection) - COLLECTION_ORDER.indexOf(b.collection),
+  );
 }

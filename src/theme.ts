@@ -14,6 +14,7 @@ export const colors = {
   danger: '#DC2626',
   dangerMuted: '#FEE2E2',
   neutralMuted: '#E2E8F0',
+  neutralTint: '#F1F5F9',
   white: '#FFFFFF',
 };
 

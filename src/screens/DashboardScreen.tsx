@@ -7,7 +7,7 @@ import Card from '../components/Card';
 import { showConfirm } from '../components/DialogHost';
 import MoneyText from '../components/MoneyText';
 import Screen from '../components/Screen';
-import { CONCEPT_LABEL, PROPERTY_STATUS_LABEL } from '../constants';
+import { CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -21,9 +21,11 @@ import {
 } from '../utils/format';
 import { isOutstanding, sortOldestFirst } from '../utils/ledger';
 import {
-  AttentionLevel,
+  COLLECTION_LABEL,
+  COLLECTION_ORDER,
+  CollectionState,
   PropertySummary,
-  sortByAttention,
+  sortByCollection,
   summarizeProperty,
 } from '../utils/propertySummary';
 
@@ -34,6 +36,8 @@ function describeTotals(totals: MoneyTotals, rate?: number) {
   if (pesos === undefined) return { main: formatTotals(totals), detail: undefined };
   return { main: `≈\u00A0${formatMoney(pesos, 'ARS')}`, detail: formatTotals(totals) };
 }
+
+const countCuotas = (n: number) => `${n} ${n === 1 ? 'cuota' : 'cuotas'}`;
 
 export default function DashboardScreen() {
   const {
@@ -57,7 +61,7 @@ export default function DashboardScreen() {
   const income = describeTotals(stats.monthlyExpectedIncome, rate);
   const pending = describeTotals(stats.pendingAmount, rate);
   const overdue = describeTotals(stats.overdueAmount, rate);
-  const summaries = sortByAttention(
+  const summaries = sortByCollection(
     properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants)),
   );
 
@@ -174,7 +178,7 @@ export default function DashboardScreen() {
             icon="time-outline"
             label="Cuotas por vencer"
             value={pending.main}
-            sublabel={[`${stats.pendingCount} cuotas`, pending.detail].filter(Boolean).join(' · ')}
+            sublabel={[countCuotas(stats.pendingCount), pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
@@ -182,7 +186,7 @@ export default function DashboardScreen() {
             icon="alert-circle-outline"
             label="Cuotas vencidas"
             value={overdue.main}
-            sublabel={[`${stats.overdueCount} cuotas`, overdue.detail].filter(Boolean).join(' · ')}
+            sublabel={[countCuotas(stats.overdueCount), overdue.detail].filter(Boolean).join(' · ')}
             tone={colors.danger}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
@@ -191,6 +195,20 @@ export default function DashboardScreen() {
         {summaries.length ? (
           <>
             <Text style={styles.sectionTitle}>Estado por propiedad</Text>
+            <View style={styles.legend}>
+              {COLLECTION_ORDER.map((state) => {
+                const count = summaries.filter((s) => s.collection === state).length;
+                if (!count) return null;
+                return (
+                  <View key={state} style={[styles.legendItem, { backgroundColor: COLLECTION_COLORS[state].chip }]}>
+                    <View style={[styles.legendDot, { backgroundColor: COLLECTION_COLORS[state].strong }]} />
+                    <Text style={[styles.legendText, { color: COLLECTION_COLORS[state].text }]}>
+                      {count} {COLLECTION_LABEL[state].toLowerCase()}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
             {summaries.map((summary) => (
               <PropertyStatusCard
                 key={summary.property.id}
@@ -278,37 +296,62 @@ export default function DashboardScreen() {
   );
 }
 
-const LEVEL_COLOR: Record<AttentionLevel, string> = {
-  danger: colors.danger,
-  warning: colors.warning,
-  ok: colors.success,
-  idle: colors.textMuted,
+const COLLECTION_COLORS: Record<
+  CollectionState,
+  { strong: string; tint: string; chip: string; text: string }
+> = {
+  deuda: { strong: colors.danger, tint: colors.dangerMuted, chip: colors.dangerMuted, text: colors.danger },
+  'por-vencer': {
+    strong: colors.warning,
+    tint: colors.warningMuted,
+    chip: colors.warningMuted,
+    text: colors.warning,
+  },
+  'al-dia': { strong: colors.success, tint: colors.successMuted, chip: colors.successMuted, text: colors.success },
+  'sin-contrato': {
+    strong: colors.textMuted,
+    tint: colors.neutralTint,
+    chip: colors.neutralMuted,
+    text: colors.textMuted,
+  },
 };
 
 function PropertyStatusCard({ summary, onPress }: { summary: PropertySummary; onPress: () => void }) {
-  const { property, activeContract, tenant, overdue, level, alerts } = summary;
+  const { property, activeContract, tenant, overdue, pending, collection, notes } = summary;
+  const palette = COLLECTION_COLORS[collection];
   const rentAmount = activeContract?.rentAmount ?? property.rentAmount;
   const rentCurrency = activeContract?.currency ?? property.rentCurrency;
-  const levelColor = LEVEL_COLOR[level];
+  const owed = collection === 'deuda' ? overdue.totals : collection === 'por-vencer' ? pending.totals : undefined;
 
   return (
-    <Card style={styles.propertyCard} onPress={onPress}>
+    <Card
+      style={[styles.propertyCard, { backgroundColor: palette.tint, borderColor: palette.strong }]}
+      onPress={onPress}
+    >
       <View style={styles.propertyHeader}>
-        <View style={[styles.levelDot, { backgroundColor: levelColor }]} />
         <View style={styles.propertyInfo}>
           <Text style={styles.propertyTitle} numberOfLines={1}>
             {property.title}
           </Text>
           <Text style={styles.propertyTenant} numberOfLines={1}>
-            {tenant ? tenant.name : PROPERTY_STATUS_LABEL[property.status]}
+            {tenant ? tenant.name : 'Sin inquilino'}
           </Text>
         </View>
-        <MoneyText amount={rentAmount} currency={rentCurrency} suffix="/mes" style={styles.propertyRent} />
+        <View style={[styles.statusPill, { backgroundColor: palette.strong }]}>
+          <Text style={styles.statusPillText}>{COLLECTION_LABEL[collection]}</Text>
+        </View>
       </View>
-      <Text style={[styles.propertyAlerts, { color: levelColor }]}>{alerts.join(' · ')}</Text>
-      {overdue.count ? (
-        <Text style={styles.propertyDebt}>Adeuda {formatTotals(overdue.totals)}</Text>
-      ) : null}
+      <View style={styles.propertyFooter}>
+        <Text style={[styles.propertyNotes, { color: palette.text }]}>{notes.join(' · ')}</Text>
+        {owed ? (
+          <Text style={styles.propertyOwed}>
+            {collection === 'deuda' ? 'Debe ' : 'A cobrar '}
+            {formatTotals(owed)}
+          </Text>
+        ) : (
+          <MoneyText amount={rentAmount} currency={rentCurrency} suffix="/mes" style={styles.propertyRent} />
+        )}
+      </View>
     </Card>
   );
 }
@@ -526,19 +569,37 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.round,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+  },
   propertyCard: {
     marginBottom: spacing.sm,
+    borderWidth: 1.5,
   },
   propertyHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-  },
-  levelDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 6,
   },
   propertyInfo: {
     flex: 1,
@@ -554,21 +615,36 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  propertyRent: {
+  statusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.round,
+  },
+  statusPillText: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  propertyFooter: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  propertyNotes: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+  propertyOwed: {
     fontSize: fontSize.sm,
     fontWeight: '700',
     color: colors.text,
   },
-  propertyAlerts: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-    marginTop: spacing.sm,
-    marginLeft: 18,
-  },
-  propertyDebt: {
-    fontSize: fontSize.xs,
+  propertyRent: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
     color: colors.text,
-    marginTop: 2,
-    marginLeft: 18,
   },
 });
