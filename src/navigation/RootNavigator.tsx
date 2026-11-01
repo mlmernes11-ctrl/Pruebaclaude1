@@ -18,6 +18,8 @@ import ContractsListScreen from '../screens/contracts/ContractsListScreen';
 import ContractFormScreen from '../screens/contracts/ContractFormScreen';
 import ContractDetailScreen from '../screens/contracts/ContractDetailScreen';
 import PaymentsListScreen from '../screens/payments/PaymentsListScreen';
+import ChargeFormScreen from '../screens/payments/ChargeFormScreen';
+import PaymentDetailScreen from '../screens/payments/PaymentDetailScreen';
 import PaymentFormScreen from '../screens/payments/PaymentFormScreen';
 
 const Tab = createBottomTabNavigator();
@@ -140,8 +142,18 @@ function PaymentsStackNavigator() {
       <PaymentsStack.Screen
         name="PaymentForm"
         component={PaymentFormScreen}
+        options={{ title: 'Registrar cobro' }}
+      />
+      <PaymentsStack.Screen
+        name="PaymentDetail"
+        component={PaymentDetailScreen}
+        options={{ title: 'Cobro' }}
+      />
+      <PaymentsStack.Screen
+        name="ChargeForm"
+        component={ChargeFormScreen}
         options={({ route }: any) => ({
-          title: route.params?.paymentId ? 'Editar pago' : 'Registrar pago',
+          title: route.params?.chargeId ? 'Cuota' : 'Nueva cuota',
         })}
       />
     </PaymentsStack.Navigator>

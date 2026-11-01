@@ -40,7 +40,7 @@ export default function PropertyDetailScreen() {
     contractsForProperty,
     getTenantById,
     contracts: allContracts,
-    payments,
+    chargeViews,
     tenants,
   } = useData();
   const property = getPropertyById(propertyId);
@@ -54,7 +54,7 @@ export default function PropertyDetailScreen() {
   }
 
   const contracts = contractsForProperty(property.id);
-  const summary = summarizeProperty(property, allContracts, payments, tenants);
+  const summary = summarizeProperty(property, allContracts, chargeViews, tenants);
 
   const handleDelete = () => {
     showConfirm({
@@ -113,10 +113,23 @@ export default function PropertyDetailScreen() {
         <Text style={styles.sectionTitle}>Pagos</Text>
         <Card style={styles.card}>
           <View style={styles.paymentStats}>
-            <PaymentStat label="Vencidos" bucket={summary.overdue} color={colors.danger} />
+            <PaymentStat label="Vencidas" bucket={summary.overdue} color={colors.danger} />
             <PaymentStat label="Por vencer" bucket={summary.pending} color={colors.warning} />
-            <PaymentStat label="Pagados" bucket={summary.paid} color={colors.success} />
+            <PaymentStat label="Pagadas" bucket={summary.paid} color={colors.success} />
           </View>
+          {summary.activeContract ? (
+            <Button
+              label="Registrar cobro"
+              onPress={() =>
+                navigation.navigate('PaymentsTab', {
+                  screen: 'PaymentForm',
+                  params: { contractId: summary.activeContract!.id },
+                  initial: false,
+                })
+              }
+              style={styles.collectButton}
+            />
+          ) : null}
           <Button
             label="Ver historial de pagos"
             variant="secondary"
@@ -301,6 +314,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  collectButton: {
+    marginBottom: spacing.sm,
   },
   paymentStats: {
     flexDirection: 'row',

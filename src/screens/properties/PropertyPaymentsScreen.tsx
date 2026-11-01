@@ -7,98 +7,94 @@ import EmptyState from '../../components/EmptyState';
 import MoneyText from '../../components/MoneyText';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
-import { PAYMENT_CONCEPT_LABEL } from '../../constants';
+import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-import { PaymentStatus } from '../../types';
-import { formatDate, formatPeriod } from '../../utils/format';
-import { getPaymentStatus, PAYMENT_STATUS_LABEL } from '../../utils/payments';
+import { ChargeStatus } from '../../types';
+import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
+import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
 
-const PAYMENT_TONE = {
-  pagado: 'success',
-  pendiente: 'warning',
-  vencido: 'danger',
-} as const;
-
-type FilterValue = 'todos' | PaymentStatus;
+type FilterValue = 'todos' | ChargeStatus;
 
 const FILTERS: { value: FilterValue; label: string }[] = [
-  { value: 'todos', label: 'Todos' },
-  { value: 'vencido', label: 'Vencidos' },
+  { value: 'todos', label: 'Todas' },
+  { value: 'vencido', label: 'Vencidas' },
   { value: 'pendiente', label: 'Por vencer' },
-  { value: 'pagado', label: 'Pagados' },
+  { value: 'pagado', label: 'Pagadas' },
 ];
 
 export default function PropertyPaymentsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
-  const { getPropertyById, paymentsForProperty, getContractById, getTenantById } = useData();
+  const { getPropertyById, chargeViewsForProperty, getContractById, getTenantById } = useData();
   const [filter, setFilter] = useState<FilterValue>('todos');
   const property = getPropertyById(propertyId);
 
-  const rows = paymentsForProperty(propertyId)
-    .map((payment) => ({ payment, status: getPaymentStatus(payment) }))
-    .filter((row) => filter === 'todos' || row.status === filter);
+  const rows = chargeViewsForProperty(propertyId).filter(
+    (view) => filter === 'todos' || view.status === filter,
+  );
 
   return (
     <Screen>
       <FlatList
         data={rows}
-        keyExtractor={(row) => row.payment.id}
+        keyExtractor={(view) => view.charge.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View>
             <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
-            <Text style={styles.subtitle}>Historial de pagos de todos sus contratos</Text>
+            <Text style={styles.subtitle}>Cuotas y pagos de todos sus contratos</Text>
             <OptionChips label="Mostrar" options={FILTERS} value={filter} onChange={setFilter} />
           </View>
         }
         ListEmptyComponent={
           <EmptyState
             icon="receipt-outline"
-            title="Sin pagos"
+            title="Sin cuotas"
             message={
               filter === 'todos'
-                ? 'Todavía no hay pagos registrados para esta propiedad.'
-                : 'No hay pagos con este estado.'
+                ? 'Todavía no hay cuotas para esta propiedad.'
+                : 'No hay cuotas con este estado.'
             }
           />
         }
         renderItem={({ item }) => {
-          const { payment, status } = item;
-          const tenant = getTenantById(getContractById(payment.contractId)?.tenantId);
+          const { charge, status, paid, balance, lastPaymentDate, lastMethod } = item;
+          const tenant = getTenantById(getContractById(charge.contractId)?.tenantId);
+          let detail = `Vence el ${formatDate(charge.dueDate)}`;
+          if (status === 'pagado' && lastPaymentDate) {
+            detail = `Pagada el ${formatDate(lastPaymentDate)}${lastMethod ? ` · ${lastMethod}` : ''}`;
+          } else if (paid > 0) {
+            detail = `Pagó ${formatMoney(paid, charge.currency)} · vence el ${formatDate(charge.dueDate)}`;
+          }
           return (
             <Card
               style={styles.card}
               onPress={() =>
                 navigation.navigate('PaymentsTab', {
-                  screen: 'PaymentForm',
-                  params: { paymentId: payment.id },
+                  screen: 'ChargeForm',
+                  params: { chargeId: charge.id },
+                  initial: false,
                 })
               }
             >
               <View style={styles.row}>
                 <View style={styles.info}>
                   <Text style={styles.period}>
-                    {formatPeriod(payment.period)} · {PAYMENT_CONCEPT_LABEL[payment.concept]}
+                    {formatPeriod(charge.period)} · {CONCEPT_LABEL[charge.concept]}
                   </Text>
                   <Text style={styles.meta}>{tenant?.name ?? 'Inquilino'}</Text>
-                  <Text style={styles.meta}>
-                    {payment.paidDate
-                      ? `Pagado el ${formatDate(payment.paidDate)}${payment.method ? ` · ${payment.method}` : ''}`
-                      : `Vence el ${formatDate(payment.dueDate)}`}
-                  </Text>
+                  <Text style={styles.meta}>{detail}</Text>
                 </View>
                 <View style={styles.amountColumn}>
                   <MoneyText
-                    amount={payment.amount}
-                    currency={payment.currency}
-                    settledRate={payment.paidDate ? payment.exchangeRate : undefined}
+                    amount={status === 'pagado' ? charge.amount : balance}
+                    currency={charge.currency}
                     style={styles.amount}
                   />
                   <View style={styles.badge}>
-                    <Badge label={PAYMENT_STATUS_LABEL[status]} tone={PAYMENT_TONE[status]} />
+                    <Badge label={CHARGE_STATUS_LABEL[status]} tone={CHARGE_STATUS_TONE[status]} />
                   </View>
                 </View>
               </View>

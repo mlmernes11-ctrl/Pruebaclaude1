@@ -7,7 +7,7 @@ import Card from '../components/Card';
 import { showConfirm } from '../components/DialogHost';
 import MoneyText from '../components/MoneyText';
 import Screen from '../components/Screen';
-import { PAYMENT_CONCEPT_LABEL, PROPERTY_STATUS_LABEL } from '../constants';
+import { CONCEPT_LABEL, PROPERTY_STATUS_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { colors, fontSize, radius, spacing } from '../theme';
@@ -19,7 +19,7 @@ import {
   formatTotals,
   totalsInPesos,
 } from '../utils/format';
-import { getPaymentStatus } from '../utils/payments';
+import { isOutstanding, sortOldestFirst } from '../utils/ledger';
 import {
   AttentionLevel,
   PropertySummary,
@@ -42,6 +42,8 @@ export default function DashboardScreen() {
     tenants,
     payments,
     contracts,
+    chargeViews,
+    getContractById,
     getPropertyById,
     getTenantById,
     loadSampleData,
@@ -56,13 +58,10 @@ export default function DashboardScreen() {
   const pending = describeTotals(stats.pendingAmount, rate);
   const overdue = describeTotals(stats.overdueAmount, rate);
   const summaries = sortByAttention(
-    properties.map((p) => summarizeProperty(p, contracts, payments, tenants)),
+    properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants)),
   );
 
-  const upcomingPayments = payments
-    .filter((p) => getPaymentStatus(p) !== 'pagado')
-    .sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1))
-    .slice(0, 5);
+  const upcomingCharges = sortOldestFirst(chargeViews.filter(isOutstanding)).slice(0, 5);
 
   const handleLoadSamples = () => {
     if (isEmpty) {
@@ -173,17 +172,17 @@ export default function DashboardScreen() {
         <View style={styles.grid}>
           <StatCard
             icon="time-outline"
-            label="Pagos por vencer"
+            label="Cuotas por vencer"
             value={pending.main}
-            sublabel={[`${stats.pendingCount} pagos`, pending.detail].filter(Boolean).join(' · ')}
+            sublabel={[`${stats.pendingCount} cuotas`, pending.detail].filter(Boolean).join(' · ')}
             tone={colors.warning}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
           <StatCard
             icon="alert-circle-outline"
-            label="Pagos vencidos"
+            label="Cuotas vencidas"
             value={overdue.main}
-            sublabel={[`${stats.overdueCount} pagos`, overdue.detail].filter(Boolean).join(' · ')}
+            sublabel={[`${stats.overdueCount} cuotas`, overdue.detail].filter(Boolean).join(' · ')}
             tone={colors.danger}
             onPress={() => navigation.navigate('PaymentsTab')}
           />
@@ -208,35 +207,44 @@ export default function DashboardScreen() {
           </>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Próximos cobros</Text>
-        {upcomingPayments.length === 0 ? (
+        <Text style={styles.sectionTitle}>Cuotas a cobrar</Text>
+        {upcomingCharges.length === 0 ? (
           <Card>
-            <Text style={styles.emptyText}>No hay pagos pendientes registrados.</Text>
+            <Text style={styles.emptyText}>No hay cuotas pendientes.</Text>
           </Card>
         ) : (
-          upcomingPayments.map((payment) => {
-            const contract = contracts.find((c) => c.id === payment.contractId);
+          upcomingCharges.map(({ charge, balance, status }) => {
+            const contract = getContractById(charge.contractId);
             const property = getPropertyById(contract?.propertyId);
             const tenant = getTenantById(contract?.tenantId);
-            const status = getPaymentStatus(payment);
             return (
-              <Card key={payment.id} style={styles.paymentRow}>
+              <Card
+                key={charge.id}
+                style={styles.paymentRow}
+                onPress={() =>
+                  navigation.navigate('PaymentsTab', {
+                    screen: 'ChargeForm',
+                    params: { chargeId: charge.id },
+                    initial: false,
+                  })
+                }
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.paymentTitle}>{property?.title ?? 'Propiedad'}</Text>
                   <Text style={styles.paymentSubtitle}>
-                    {tenant?.name ?? 'Inquilino'} · {PAYMENT_CONCEPT_LABEL[payment.concept]} ·{' '}
-                    {formatPeriod(payment.period)}
+                    {tenant?.name ?? 'Inquilino'} · {CONCEPT_LABEL[charge.concept]} ·{' '}
+                    {formatPeriod(charge.period)}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <MoneyText amount={payment.amount} currency={payment.currency} style={styles.paymentAmount} />
+                  <MoneyText amount={balance} currency={charge.currency} style={styles.paymentAmount} />
                   <Text
                     style={[
                       styles.paymentStatus,
                       { color: status === 'vencido' ? colors.danger : colors.warning },
                     ]}
                   >
-                    {status === 'vencido' ? 'Vencido' : 'Por vencer'}
+                    {status === 'vencido' ? 'Vencida' : 'Por vencer'}
                   </Text>
                 </View>
               </Card>

@@ -8,7 +8,8 @@ Aplicación móvil (Expo + React Native + TypeScript) para la gestión de una ca
 - **Propiedades**: alta, edición, eliminación y ficha con tipo, dirección, ambientes, superficie, alquiler (en dólares o pesos), expensas y servicios (en pesos). El estado (disponible / alquilada / mantenimiento) se actualiza automáticamente según los contratos activos. Cada ficha tiene su historial de pagos.
 - **Inquilinos**: alta, edición, eliminación y ficha con datos de contacto y sus contratos asociados.
 - **Contratos**: vinculan una propiedad con un inquilino, con fechas de inicio/fin, moneda, alquiler, depósito, día de pago y estado.
-- **Pagos**: registro por período y concepto (alquiler, expensas o servicios), con vencimiento, monto y método; se calculan automáticamente como por vencer, vencidos o pagados. En los pagos en dólares se puede anotar la cotización usada.
+- **Cuotas**: cada mes se generan solas las cuotas de cada contrato activo (alquiler, y expensas y servicios si la propiedad los tiene). Se pueden editar, anular o crear a mano, y figuran como por vencer, vencidas o pagadas según lo cobrado.
+- **Cobros**: al registrar un cobro se elige el concepto y cuánto paga (lo del mes, el total adeudado u otro monto); el sistema muestra a qué cuotas se aplica, acepta pagos parciales y deja el excedente a favor del inquilino. En los cobros en dólares se puede anotar la cotización usada. Las fechas se eligen con un calendario.
 - **Cotización del dólar**: se descarga de [DolarAPI](https://dolarapi.com) (blue, oficial o MEP, promedio entre compra y venta) o se carga a mano. Los montos en dólares muestran su estimado en pesos.
 
 Los datos se guardan localmente en el dispositivo con `AsyncStorage`, por lo que la app funciona sin backend. Solo la descarga de la cotización necesita conexión.

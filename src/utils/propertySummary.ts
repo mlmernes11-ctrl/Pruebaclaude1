@@ -1,6 +1,6 @@
-import { Contract, MoneyTotals, Payment, Property, Tenant } from '../types';
+import { Contract, MoneyTotals, Property, Tenant } from '../types';
 import { addToTotals, emptyTotals, parseLocalDate, startOfToday } from './format';
-import { getPaymentStatus } from './payments';
+import { ChargeView } from './ledger';
 
 export type AttentionLevel = 'danger' | 'warning' | 'ok' | 'idle';
 
@@ -36,7 +36,7 @@ function bucket(): PaymentBucket {
 export function summarizeProperty(
   property: Property,
   contracts: Contract[],
-  payments: Payment[],
+  chargeViews: ChargeView[],
   tenants: Tenant[],
 ): PropertySummary {
   const propertyContracts = contracts.filter((c) => c.propertyId === property.id);
@@ -47,13 +47,17 @@ export function summarizeProperty(
   const overdue = bucket();
   const pending = bucket();
   const paid = bucket();
-  payments
-    .filter((p) => contractIds.has(p.contractId))
-    .forEach((payment) => {
-      const status = getPaymentStatus(payment);
-      const target = status === 'vencido' ? overdue : status === 'pendiente' ? pending : paid;
+  chargeViews
+    .filter((view) => contractIds.has(view.charge.contractId))
+    .forEach((view) => {
+      if (view.status === 'pagado') {
+        paid.count += 1;
+        addToTotals(paid.totals, view.paid, view.charge.currency);
+        return;
+      }
+      const target = view.status === 'vencido' ? overdue : pending;
       target.count += 1;
-      addToTotals(target.totals, payment.amount, payment.currency);
+      addToTotals(target.totals, view.balance, view.charge.currency);
     });
 
   const daysToContractEnd = activeContract
@@ -69,7 +73,7 @@ export function summarizeProperty(
   };
 
   if (overdue.count) {
-    alerts.push(plural(overdue.count, 'pago vencido', 'pagos vencidos'));
+    alerts.push(plural(overdue.count, 'cuota vencida', 'cuotas vencidas'));
     raise('danger');
   }
   if (daysToContractEnd !== undefined && daysToContractEnd < 0) {
@@ -84,7 +88,7 @@ export function summarizeProperty(
     else alerts.push(property.status === 'mantenimiento' ? 'En mantenimiento' : 'Sin contrato activo');
   }
   if (pending.count) {
-    alerts.push(plural(pending.count, 'pago por vencer', 'pagos por vencer'));
+    alerts.push(plural(pending.count, 'cuota por vencer', 'cuotas por vencer'));
   }
 
   return {

@@ -7,30 +7,24 @@ import Card from '../../components/Card';
 import { showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
-import { CONTRACT_STATUS_LABEL, PAYMENT_CONCEPT_LABEL } from '../../constants';
-import { useData } from '../../context/DataContext';
+import { CONTRACT_STATUS_LABEL, CONCEPT_LABEL } from '../../constants';
+import { unallocatedAmount, useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 import {
-  addMonthsToPeriod,
-  currentPeriod,
+  addToTotals,
+  emptyTotals,
   formatDate,
   formatMoney,
   formatPeriod,
-  periodToDueDate,
+  formatTotals,
 } from '../../utils/format';
+import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
-import { getPaymentStatus, PAYMENT_STATUS_LABEL } from '../../utils/payments';
 
 const CONTRACT_TONE = {
   activo: 'success',
   finalizado: 'neutral',
   cancelado: 'danger',
-} as const;
-
-const PAYMENT_TONE = {
-  pagado: 'success',
-  pendiente: 'warning',
-  vencido: 'danger',
 } as const;
 
 export default function ContractDetailScreen() {
@@ -42,6 +36,7 @@ export default function ContractDetailScreen() {
     deleteContract,
     getPropertyById,
     getTenantById,
+    chargeViewsForContract,
     paymentsForContract,
   } = useData();
   const contract = getContractById(contractId);
@@ -56,12 +51,14 @@ export default function ContractDetailScreen() {
 
   const property = getPropertyById(contract.propertyId);
   const tenant = getTenantById(contract.tenantId);
-  const payments = paymentsForContract(contract.id);
+  const charges = chargeViewsForContract(contract.id);
+  const credit = emptyTotals();
+  paymentsForContract(contract.id).forEach((p) => addToTotals(credit, unallocatedAmount(p), p.currency));
 
   const handleDelete = () => {
     showConfirm({
       title: 'Eliminar contrato',
-      message: 'Esto también eliminará los pagos asociados al contrato. ¿Continuar?',
+      message: 'También se eliminan sus cuotas y cobros registrados. ¿Continuar?',
       confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
@@ -71,26 +68,8 @@ export default function ContractDetailScreen() {
     });
   };
 
-  const handleAddPayment = () => {
-    const lastPeriod = payments
-      .filter((p) => p.concept === 'alquiler')
-      .reduce<string | undefined>((max, p) => {
-        if (!max || p.period > max) return p.period;
-        return max;
-      }, undefined);
-    const nextPeriod = lastPeriod ? addMonthsToPeriod(lastPeriod, 1) : currentPeriod();
-    const dueDate = periodToDueDate(nextPeriod, contract.paymentDay);
-
-    navigation.navigate('PaymentsTab', {
-      screen: 'PaymentForm',
-      params: {
-        contractId: contract.id,
-        initialPeriod: nextPeriod,
-        initialDueDate: dueDate,
-        initialAmount: String(contract.rentAmount),
-      },
-    });
-  };
+  const openPayments = (screen: string, params: object) =>
+    navigation.navigate('PaymentsTab', { screen, params, initial: false });
 
   return (
     <Screen>
@@ -119,45 +98,54 @@ export default function ContractDetailScreen() {
         </Card>
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Pagos</Text>
-          <Button label="+ Agregar pago" variant="ghost" onPress={handleAddPayment} />
+          <Text style={styles.sectionTitle}>Cuotas</Text>
+          <Button
+            label="+ Cuota manual"
+            variant="ghost"
+            onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
+          />
         </View>
-        {payments.length === 0 ? (
+        <Button
+          label="Registrar cobro"
+          onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
+          style={styles.collectButton}
+        />
+        {credit.USD || credit.ARS ? (
+          <Text style={styles.creditText}>Saldo a favor del inquilino: {formatTotals(credit)}</Text>
+        ) : null}
+        {charges.length === 0 ? (
           <Card>
-            <Text style={styles.emptyText}>Todavía no hay pagos registrados.</Text>
+            <Text style={styles.emptyText}>
+              Todavía no hay cuotas. Se generan solas cada mes mientras el contrato esté activo.
+            </Text>
           </Card>
         ) : (
-          payments.map((payment) => {
-            const status = getPaymentStatus(payment);
-            return (
-              <Card
-                key={payment.id}
-                style={styles.paymentCard}
-                onPress={() =>
-                  navigation.navigate('PaymentsTab', {
-                    screen: 'PaymentForm',
-                    params: { paymentId: payment.id },
-                  })
-                }
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.paymentPeriod}>
-                    {formatPeriod(payment.period)} · {PAYMENT_CONCEPT_LABEL[payment.concept]}
-                  </Text>
-                  <Text style={styles.paymentDue}>Vence: {formatDate(payment.dueDate)}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <MoneyText
-                    amount={payment.amount}
-                    currency={payment.currency}
-                    settledRate={payment.paidDate ? payment.exchangeRate : undefined}
-                    style={styles.paymentAmount}
-                  />
-                  <Badge label={PAYMENT_STATUS_LABEL[status]} tone={PAYMENT_TONE[status]} />
-                </View>
-              </Card>
-            );
-          })
+          charges.map((view) => (
+            <Card
+              key={view.charge.id}
+              style={styles.paymentCard}
+              onPress={() => openPayments('ChargeForm', { chargeId: view.charge.id })}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.paymentPeriod}>
+                  {formatPeriod(view.charge.period)} · {CONCEPT_LABEL[view.charge.concept]}
+                </Text>
+                <Text style={styles.paymentDue}>
+                  {view.paid > 0 && view.balance > 0
+                    ? `Pagó ${formatMoney(view.paid, view.charge.currency)} de ${formatMoney(view.charge.amount, view.charge.currency)}`
+                    : `Vence: ${formatDate(view.charge.dueDate)}`}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <MoneyText
+                  amount={view.status === 'pagado' ? view.charge.amount : view.balance}
+                  currency={view.charge.currency}
+                  style={styles.paymentAmount}
+                />
+                <Badge label={CHARGE_STATUS_LABEL[view.status]} tone={CHARGE_STATUS_TONE[view.status]} />
+              </View>
+            </Card>
+          ))
         )}
 
         <View style={styles.actionsRow}>
@@ -242,6 +230,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.textMuted,
+  },
+  collectButton: {
+    marginBottom: spacing.md,
+  },
+  creditText: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: spacing.md,
   },
   paymentCard: {
     marginBottom: spacing.sm,

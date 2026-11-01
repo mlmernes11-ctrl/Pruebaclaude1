@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import DateField from '../../components/DateField';
 import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
@@ -9,9 +10,9 @@ import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
 import { CONTRACT_STATUS_OPTIONS, CURRENCY_OPTIONS, DEFAULT_RENT_CURRENCY } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import { ContractStatus, Currency } from '../../types';
-import { CURRENCY_SYMBOL } from '../../utils/format';
+import { CURRENCY_SYMBOL, todayISO } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
 
 function isValidDate(value: string): boolean {
@@ -31,7 +32,7 @@ export default function ContractFormScreen() {
 
   const [propertyId, setPropertyId] = useState(existing?.propertyId ?? presetPropertyId ?? '');
   const [tenantId, setTenantId] = useState(existing?.tenantId ?? presetTenantId ?? '');
-  const [startDate, setStartDate] = useState(existing?.startDate ?? '');
+  const [startDate, setStartDate] = useState(existing?.startDate ?? todayISO());
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
   const presetProperty = getPropertyById(propertyId);
   const [rentAmount, setRentAmount] = useState(
@@ -64,7 +65,7 @@ export default function ContractFormScreen() {
       return;
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
-      showAlert('Fechas inválidas', 'Ingresa las fechas en formato AAAA-MM-DD.');
+      showAlert('Faltan fechas', 'Elegí la fecha de inicio y la de fin del contrato.');
       return;
     }
     if (endDate < startDate) {
@@ -124,9 +125,8 @@ export default function ContractFormScreen() {
           emptyMessage="No hay inquilinos. Crea uno primero."
           options={tenants.map((t) => ({ id: t.id, label: t.name, subtitle: t.phone }))}
         />
-        <Text style={styles.hint}>Formato de fechas: AAAA-MM-DD</Text>
-        <FormField label="Fecha de inicio" value={startDate} onChangeText={setStartDate} placeholder="2024-01-01" required />
-        <FormField label="Fecha de fin" value={endDate} onChangeText={setEndDate} placeholder="2024-12-31" required />
+        <DateField label="Fecha de inicio" value={startDate} onChange={setStartDate} required />
+        <DateField label="Fecha de fin" value={endDate} onChange={setEndDate} required />
         <OptionChips label="Moneda del contrato" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         <FormField
           label={`Monto de alquiler mensual (${CURRENCY_SYMBOL[currency]})`}
@@ -163,11 +163,5 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
-  },
-  hint: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-    marginTop: -spacing.sm,
   },
 });

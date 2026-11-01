@@ -1,4 +1,4 @@
-import { ContractStatus, Currency, PaymentConcept, PropertyStatus, PropertyType } from './types';
+import { ContractStatus, Currency, ChargeConcept, PropertyStatus, PropertyType } from './types';
 
 export const DEFAULT_RENT_CURRENCY: Currency = 'USD';
 
@@ -47,12 +47,12 @@ export const PAYMENT_METHOD_OPTIONS = [
   'Otro',
 ];
 
-export const PAYMENT_CONCEPT_LABEL: Record<PaymentConcept, string> = {
+export const CONCEPT_LABEL: Record<ChargeConcept, string> = {
   alquiler: 'Alquiler',
   expensas: 'Expensas',
   servicios: 'Servicios',
 };
 
-export const PAYMENT_CONCEPT_OPTIONS = Object.entries(PAYMENT_CONCEPT_LABEL).map(
-  ([value, label]) => ({ value: value as PaymentConcept, label }),
+export const CONCEPT_OPTIONS = Object.entries(CONCEPT_LABEL).map(
+  ([value, label]) => ({ value: value as ChargeConcept, label }),
 );

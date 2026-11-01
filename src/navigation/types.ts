@@ -1,4 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
+import { ChargeConcept } from '../types';
 
 export type PropertiesStackParamList = {
   PropertiesList: undefined;
@@ -21,7 +22,9 @@ export type ContractsStackParamList = {
 
 export type PaymentsStackParamList = {
   PaymentsList: undefined;
-  PaymentForm: { paymentId?: string; contractId?: string } | undefined;
+  PaymentForm: { contractId?: string; concept?: ChargeConcept; chargeId?: string } | undefined;
+  PaymentDetail: { paymentId: string };
+  ChargeForm: { chargeId?: string; contractId?: string } | undefined;
 };
 
 export type DashboardStackParamList = {
