@@ -3,7 +3,7 @@ import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContai
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo } from 'react';
-import { ActivityIndicator, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../context/DataContext';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
@@ -11,14 +11,12 @@ import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './b
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import PropertiesListScreen from '../screens/properties/PropertiesListScreen';
+import RentalsScreen from '../screens/rentals/RentalsScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
 import PropertyDetailScreen from '../screens/properties/PropertyDetailScreen';
 import PropertyPaymentsScreen from '../screens/properties/PropertyPaymentsScreen';
-import TenantsListScreen from '../screens/tenants/TenantsListScreen';
 import TenantFormScreen from '../screens/tenants/TenantFormScreen';
 import TenantDetailScreen from '../screens/tenants/TenantDetailScreen';
-import ContractsListScreen from '../screens/contracts/ContractsListScreen';
 import ContractFormScreen from '../screens/contracts/ContractFormScreen';
 import ContractDetailScreen from '../screens/contracts/ContractDetailScreen';
 import PaymentsListScreen from '../screens/payments/PaymentsListScreen';
@@ -31,9 +29,7 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
-const PropertiesStack = createNativeStackNavigator();
-const TenantsStack = createNativeStackNavigator();
-const ContractsStack = createNativeStackNavigator();
+const RentalsStack = createNativeStackNavigator();
 const PaymentsStack = createNativeStackNavigator();
 const SettingsStack = createNativeStackNavigator();
 
@@ -69,88 +65,47 @@ function DashboardStackNavigator() {
   );
 }
 
-function PropertiesStackNavigator() {
+// Properties, tenants and contracts live in one tab ("Alquileres") and share this stack.
+function RentalsStackNavigator() {
   const screenOptions = useScreenOptions();
   return (
-    <PropertiesStack.Navigator screenOptions={screenOptions}>
-      <PropertiesStack.Screen
-        name="PropertiesList"
-        component={PropertiesListScreen}
-        options={{ headerShown: false }}
-      />
-      <PropertiesStack.Screen
+    <RentalsStack.Navigator screenOptions={screenOptions}>
+      <RentalsStack.Screen name="Rentals" component={RentalsScreen} options={{ headerShown: false }} />
+      <RentalsStack.Screen
         name="PropertyForm"
         component={PropertyFormScreen}
         options={({ route }: any) => ({
           title: route.params?.propertyId ? 'Editar propiedad' : 'Nueva propiedad',
         })}
       />
-      <PropertiesStack.Screen
-        name="PropertyDetail"
-        component={PropertyDetailScreen}
-        options={{ title: 'Propiedad' }}
-      />
-      <PropertiesStack.Screen
+      <RentalsStack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Propiedad' }} />
+      <RentalsStack.Screen
         name="PropertyPayments"
         component={PropertyPaymentsScreen}
         options={{ title: 'Historial de pagos' }}
       />
-      <PropertiesStack.Screen
+      <RentalsStack.Screen
         name="MonthDetail"
         component={MonthDetailScreen}
         options={({ route }: any) => ({ title: formatPeriod(route.params.period) })}
       />
-    </PropertiesStack.Navigator>
-  );
-}
-
-function TenantsStackNavigator() {
-  const screenOptions = useScreenOptions();
-  return (
-    <TenantsStack.Navigator screenOptions={screenOptions}>
-      <TenantsStack.Screen
-        name="TenantsList"
-        component={TenantsListScreen}
-        options={{ headerShown: false }}
-      />
-      <TenantsStack.Screen
+      <RentalsStack.Screen
         name="TenantForm"
         component={TenantFormScreen}
         options={({ route }: any) => ({
           title: route.params?.tenantId ? 'Editar inquilino' : 'Nuevo inquilino',
         })}
       />
-      <TenantsStack.Screen
-        name="TenantDetail"
-        component={TenantDetailScreen}
-        options={{ title: 'Inquilino' }}
-      />
-    </TenantsStack.Navigator>
-  );
-}
-
-function ContractsStackNavigator() {
-  const screenOptions = useScreenOptions();
-  return (
-    <ContractsStack.Navigator screenOptions={screenOptions}>
-      <ContractsStack.Screen
-        name="ContractsList"
-        component={ContractsListScreen}
-        options={{ headerShown: false }}
-      />
-      <ContractsStack.Screen
+      <RentalsStack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Inquilino' }} />
+      <RentalsStack.Screen
         name="ContractForm"
         component={ContractFormScreen}
         options={({ route }: any) => ({
           title: route.params?.contractId ? 'Editar contrato' : 'Nuevo contrato',
         })}
       />
-      <ContractsStack.Screen
-        name="ContractDetail"
-        component={ContractDetailScreen}
-        options={{ title: 'Contrato' }}
-      />
-    </ContractsStack.Navigator>
+      <RentalsStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />
+    </RentalsStack.Navigator>
   );
 }
 
@@ -205,9 +160,7 @@ function SettingsStackNavigator() {
 
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   DashboardTab: 'home',
-  PropertiesTab: 'business',
-  TenantsTab: 'people',
-  ContractsTab: 'document-text',
+  RentalsTab: 'business',
   PaymentsTab: 'cash',
   SettingsTab: 'settings',
 };
@@ -280,28 +233,12 @@ export default function RootNavigator() {
             paddingTop: 4,
             paddingBottom: Math.max(insets.bottom, 6),
           },
-          // Six tabs share the width: a compact label that may use the tab's side padding,
-          // so "Propiedades" fits on 360px-wide phones without being cut.
-          tabBarLabel: ({ color, children }) => (
-            <Text numberOfLines={1} style={[styles.tabLabel, { color }]}>
-              {children}
-            </Text>
-          ),
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
           tabBarIcon: ({ color }) => <Ionicons name={TAB_ICONS[route.name]} size={22} color={color} />,
         })}
       >
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
-        <Tab.Screen
-          name="PropertiesTab"
-          component={PropertiesStackNavigator}
-          options={{ title: 'Propiedades' }}
-        />
-        <Tab.Screen name="TenantsTab" component={TenantsStackNavigator} options={{ title: 'Inquilinos' }} />
-        <Tab.Screen
-          name="ContractsTab"
-          component={ContractsStackNavigator}
-          options={{ title: 'Contratos' }}
-        />
+        <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
         <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Pagos' }} />
         <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Ajustes' }} />
       </Tab.Navigator>
@@ -310,17 +247,6 @@ export default function RootNavigator() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-    // Stretch plus negative margins lets the label use the tab's 5px side padding.
-    alignSelf: 'stretch',
-    marginHorizontal: -5,
-    // The web Text caps itself at 100% of the padded box; lift the cap so the margins count.
-    maxWidth: 80,
-    textAlign: 'center',
-  },
   loading: {
     flex: 1,
     alignItems: 'center',

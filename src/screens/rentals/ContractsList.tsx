@@ -5,7 +5,6 @@ import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import MoneyText from '../../components/MoneyText';
-import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -16,7 +15,7 @@ import { contractEndBadge } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
 import { makeStyles } from '../../context/ThemeContext';
 
-export default function ContractsListScreen() {
+export default function ContractsList() {
   const styles = useStyles();
   const { contracts, getPropertyById, getTenantById } = useData();
   const navigation = useNavigation<any>();
@@ -29,10 +28,7 @@ export default function ContractsListScreen() {
   );
 
   return (
-    <Screen>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Contratos</Text>
-      </View>
+    <>
       {contracts.length ? <SearchLauncher scope="contratos" /> : null}
       <FlatList
         data={sorted}
@@ -75,21 +71,11 @@ export default function ContractsListScreen() {
         }}
       />
       <FAB onPress={() => navigation.navigate('ContractForm')} />
-    </Screen>
+    </>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
-  headerRow: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-  },
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,

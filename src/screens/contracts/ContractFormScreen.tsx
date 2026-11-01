@@ -110,7 +110,7 @@ export default function ContractFormScreen() {
       } else {
         addContract(payload);
       }
-      smartGoBack(navigation, 'ContractsList');
+      smartGoBack(navigation, 'Rentals');
     };
 
     // Two active contracts on one property would bill it twice.

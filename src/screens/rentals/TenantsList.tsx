@@ -4,27 +4,25 @@ import React from 'react';
 import { FlatList, Text, View } from 'react-native';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
-import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { useData } from '../../context/DataContext';
+import { compareTitles } from '../../utils/text';
 import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import { fontSize, radius, spacing } from '../../theme';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 
-export default function TenantsListScreen() {
+export default function TenantsList() {
   const { colors } = useTheme();
   const styles = useStyles();
   const { tenants, contractsForTenant } = useData();
   const navigation = useNavigation<any>();
+  const sorted = [...tenants].sort((a, b) => compareTitles(a.name, b.name));
 
   return (
-    <Screen>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Inquilinos</Text>
-      </View>
+    <>
       {tenants.length ? <SearchLauncher scope="inquilinos" /> : null}
       <FlatList
-        data={tenants}
+        data={sorted}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
@@ -66,21 +64,11 @@ export default function TenantsListScreen() {
         }}
       />
       <FAB onPress={() => navigation.navigate('TenantForm')} />
-    </Screen>
+    </>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
-  headerRow: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-  },
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,

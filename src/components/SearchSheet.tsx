@@ -126,7 +126,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         titleFields: [0],
         subtitleFields: [1, 2],
         badge: { label: PROPERTY_STATUS_LABEL[property.status], tone: PROPERTY_STATUS_TONE[property.status] },
-        open: go('PropertiesTab', 'PropertyDetail', { propertyId: property.id }),
+        open: go('RentalsTab', 'PropertyDetail', { propertyId: property.id }),
       };
     });
 
@@ -149,7 +149,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         titleFields: [0],
         subtitleFields: [1, 2],
         badge: hasActive ? undefined : { label: 'Sin contrato activo', tone: 'neutral' },
-        open: go('TenantsTab', 'TenantDetail', { tenantId: tenant.id }),
+        open: go('RentalsTab', 'TenantDetail', { tenantId: tenant.id }),
       };
     });
 
@@ -174,7 +174,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         titleFields: [0, 1],
         subtitleFields: [2],
         badge: { label: CONTRACT_STATUS_LABEL[contract.status], tone: CONTRACT_STATUS_TONE[contract.status] },
-        open: go('ContractsTab', 'ContractDetail', { contractId: contract.id }),
+        open: go('RentalsTab', 'ContractDetail', { contractId: contract.id }),
       };
     });
 

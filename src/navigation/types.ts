@@ -1,22 +1,14 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { ChargeConcept } from '../types';
 
-export type PropertiesStackParamList = {
-  PropertiesList: undefined;
+export type RentalsStackParamList = {
+  Rentals: { view?: 'propiedades' | 'inquilinos' | 'contratos' } | undefined;
   PropertyForm: { propertyId?: string } | undefined;
   PropertyDetail: { propertyId: string };
   PropertyPayments: { propertyId: string };
   MonthDetail: { period: string; propertyId?: string };
-};
-
-export type TenantsStackParamList = {
-  TenantsList: undefined;
   TenantForm: { tenantId?: string } | undefined;
   TenantDetail: { tenantId: string };
-};
-
-export type ContractsStackParamList = {
-  ContractsList: undefined;
   ContractForm: { contractId?: string; propertyId?: string; tenantId?: string } | undefined;
   ContractDetail: { contractId: string };
 };
@@ -43,9 +35,7 @@ export type SettingsStackParamList = {
 
 export type MainTabParamList = {
   DashboardTab: NavigatorScreenParams<DashboardStackParamList>;
-  PropertiesTab: NavigatorScreenParams<PropertiesStackParamList>;
-  TenantsTab: NavigatorScreenParams<TenantsStackParamList>;
-  ContractsTab: NavigatorScreenParams<ContractsStackParamList>;
+  RentalsTab: NavigatorScreenParams<RentalsStackParamList>;
   PaymentsTab: NavigatorScreenParams<PaymentsStackParamList>;
   SettingsTab: NavigatorScreenParams<SettingsStackParamList>;
 };

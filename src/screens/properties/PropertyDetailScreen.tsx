@@ -135,7 +135,7 @@ export default function PropertyDetailScreen() {
         <SectionHeader
           title="Contratos"
           actionLabel="+ Nuevo contrato"
-          onAction={() => openInTab(navigation, 'ContractsTab', 'ContractForm', { propertyId: property.id })}
+          onAction={() => openInTab(navigation, 'RentalsTab', 'ContractForm', { propertyId: property.id })}
         />
         {contracts.length === 0 ? (
           <Card>
@@ -149,7 +149,7 @@ export default function PropertyDetailScreen() {
               <Card
                 key={contract.id}
                 style={styles.contractCard}
-                onPress={() => openInTab(navigation, 'ContractsTab', 'ContractDetail', { contractId: contract.id })}
+                onPress={() => openInTab(navigation, 'RentalsTab', 'ContractDetail', { contractId: contract.id })}
               >
                 <View style={styles.cardHeader}>
                   <Text style={styles.contractTenant}>{tenant?.name ?? 'Inquilino'}</Text>

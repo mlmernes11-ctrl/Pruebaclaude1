@@ -65,7 +65,7 @@ export default function ContractDetailScreen() {
       destructive: true,
       onConfirm: () => {
         deleteContract(contract.id);
-        smartGoBack(navigation, 'ContractsList');
+        smartGoBack(navigation, 'Rentals');
       },
     });
   };
@@ -88,7 +88,7 @@ export default function ContractDetailScreen() {
             value={property ? [property.title, property.address].join(' · ') : 'Propiedad eliminada'}
             onPress={
               property
-                ? () => openInTab(navigation, 'PropertiesTab', 'PropertyDetail', { propertyId: property.id })
+                ? () => openInTab(navigation, 'RentalsTab', 'PropertyDetail', { propertyId: property.id })
                 : undefined
             }
           />
@@ -98,7 +98,7 @@ export default function ContractDetailScreen() {
             label="Inquilino"
             value={tenant ? [tenant.name, tenant.phone].filter(Boolean).join(' · ') : 'Inquilino eliminado'}
             onPress={
-              tenant ? () => openInTab(navigation, 'TenantsTab', 'TenantDetail', { tenantId: tenant.id }) : undefined
+              tenant ? () => openInTab(navigation, 'RentalsTab', 'TenantDetail', { tenantId: tenant.id }) : undefined
             }
           />
         </Card>

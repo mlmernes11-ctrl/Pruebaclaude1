@@ -8,6 +8,7 @@ import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import PropertyFilter from '../../components/PropertyFilter';
+import SegmentedControl from '../../components/SegmentedControl';
 import SortMenu, { SortOption } from '../../components/SortMenu';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
@@ -31,11 +32,11 @@ import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 type View_ = 'pagos' | 'liquidaciones' | 'historial';
 
-const VIEW_LABEL: Record<View_, string> = {
-  pagos: 'Recibidos',
-  liquidaciones: 'Liquidaciones',
-  historial: 'Historial',
-};
+const VIEWS: { value: View_; label: string }[] = [
+  { value: 'pagos', label: 'Recibidos' },
+  { value: 'liquidaciones', label: 'Liquidaciones' },
+  { value: 'historial', label: 'Historial' },
+];
 type FilterValue = 'todos' | ChargeStatus;
 type MonthFilter = 'todos' | 'este' | 'anterior';
 type SortValue = 'reciente' | 'antiguo' | 'propiedad' | 'monto';
@@ -225,19 +226,7 @@ export default function PaymentsListScreen() {
         <Text style={styles.title}>Pagos</Text>
         {view === 'historial' ? null : <SortMenu options={SORT_OPTIONS} value={sort} onChange={setSort} />}
       </View>
-      <View style={styles.segment}>
-        {(['pagos', 'liquidaciones', 'historial'] as View_[]).map((value) => (
-          <TouchableOpacity
-            key={value}
-            style={[styles.segmentItem, view === value && styles.segmentItemActive]}
-            onPress={() => setView(value)}
-          >
-            <Text style={[styles.segmentText, view === value && styles.segmentTextActive]}>
-              {VIEW_LABEL[value]}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SegmentedControl options={VIEWS} value={view} onChange={setView} />
 
       <PropertyFilter value={propertyId} onChange={setPropertyId} />
 
@@ -478,31 +467,6 @@ const useStyles = makeStyles((colors) => ({
   title: {
     fontSize: fontSize.xxl,
     fontWeight: '800',
-    color: colors.text,
-  },
-  segment: {
-    flexDirection: 'row',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: colors.neutralMuted,
-    borderRadius: radius.md,
-    padding: 3,
-  },
-  segmentItem: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-  },
-  segmentItemActive: {
-    backgroundColor: colors.surface,
-  },
-  segmentText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  segmentTextActive: {
     color: colors.text,
   },
   filterRow: {

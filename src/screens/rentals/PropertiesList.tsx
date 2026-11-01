@@ -6,7 +6,6 @@ import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import MoneyText from '../../components/MoneyText';
-import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { PROPERTY_STATUS_LABEL, PROPERTY_STATUS_TONE, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -15,7 +14,7 @@ import FAB, { FAB_CLEARANCE } from '../../components/FAB';
 import { fontSize, spacing } from '../../theme';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 
-export default function PropertiesListScreen() {
+export default function PropertiesList() {
   const { colors } = useTheme();
   const styles = useStyles();
   const { properties } = useData();
@@ -23,10 +22,7 @@ export default function PropertiesListScreen() {
   const sorted = [...properties].sort((a, b) => compareTitles(a.title, b.title));
 
   return (
-    <Screen>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Propiedades</Text>
-      </View>
+    <>
       {properties.length ? <SearchLauncher scope="propiedades" /> : null}
       <FlatList
         data={sorted}
@@ -64,21 +60,11 @@ export default function PropertiesListScreen() {
         )}
       />
       <FAB onPress={() => navigation.navigate('PropertyForm')} />
-    </Screen>
+    </>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
-  headerRow: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-  },
   listContent: {
     padding: spacing.lg,
     paddingTop: 0,

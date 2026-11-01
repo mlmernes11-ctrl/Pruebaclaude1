@@ -152,14 +152,14 @@ export default function DashboardScreen() {
             label="Propiedades"
             value={String(stats.totalProperties)}
             tone={colors.primary}
-            onPress={() => navigation.navigate('PropertiesTab')}
+            onPress={() => navigation.navigate('RentalsTab', { screen: 'Rentals', params: { view: 'propiedades' } })}
           />
           <StatCard
             icon="document-text-outline"
             label="Contratos activos"
             value={String(stats.activeContracts)}
             tone={colors.success}
-            onPress={() => navigation.navigate('ContractsTab')}
+            onPress={() => navigation.navigate('RentalsTab', { screen: 'Rentals', params: { view: 'contratos' } })}
           />
         </View>
 
@@ -276,7 +276,7 @@ export default function DashboardScreen() {
                   <PropertyStatusCard
                     summary={summary}
                     onPress={() =>
-                      navigation.navigate('PropertiesTab', {
+                      navigation.navigate('RentalsTab', {
                         screen: 'PropertyDetail',
                         params: { propertyId: summary.property.id },
                         initial: false,
