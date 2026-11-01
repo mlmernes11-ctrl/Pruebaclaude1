@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -9,14 +9,16 @@ import Screen from '../../components/Screen';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { MoneyTotals } from '../../types';
 import { describeTotals, formatDate, formatMoney } from '../../utils/format';
 import { buildPeriodRow } from '../../utils/history';
 import { compareTitles } from '../../utils/text';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function MonthDetailScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { period, propertyId } = route.params as { period: string; propertyId?: string };
@@ -116,6 +118,7 @@ export default function MonthDetailScreen() {
 }
 
 function SummaryLine({ label, text, strong }: { label: string; text: string; strong?: boolean }) {
+  const styles = useStyles();
   return (
     <View style={styles.summaryLine}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -124,7 +127,7 @@ function SummaryLine({ label, text, strong }: { label: string; text: string; str
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -190,4 +193,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-});
+}));

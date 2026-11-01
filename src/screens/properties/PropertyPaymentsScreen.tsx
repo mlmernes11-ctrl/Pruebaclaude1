@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -10,10 +10,11 @@ import Screen from '../../components/Screen';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { ChargeStatus } from '../../types';
 import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
+import { makeStyles } from '../../context/ThemeContext';
 
 type FilterValue = 'todos' | ChargeStatus;
 
@@ -25,6 +26,7 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 ];
 
 export default function PropertyPaymentsScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
@@ -116,7 +118,7 @@ export default function PropertyPaymentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -171,4 +173,4 @@ const styles = StyleSheet.create({
   badge: {
     marginTop: spacing.xs,
   },
-});
+}));

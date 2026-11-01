@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
@@ -13,7 +13,7 @@ import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
 import { CONCEPT_LABEL, CONCEPT_OPTIONS, CURRENCY_OPTIONS } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { ChargeConcept, Currency } from '../../types';
 import { expectedCharge } from '../../utils/chargeGeneration';
 import {
@@ -27,8 +27,10 @@ import {
 } from '../../utils/format';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function ChargeFormScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const chargeId = route.params?.chargeId as string | undefined;
@@ -293,6 +295,7 @@ function AmountLine({
   currency: Currency;
   strong?: boolean;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.amountLine}>
       <Text style={styles.amountLabel}>{label}</Text>
@@ -305,7 +308,7 @@ function AmountLine({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -381,4 +384,4 @@ const styles = StyleSheet.create({
   voidButton: {
     marginTop: spacing.md,
   },
-});
+}));

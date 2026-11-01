@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { fontSize, radius, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export interface SortOption<T extends string> {
   value: T;
@@ -17,6 +18,8 @@ export default function SortMenu<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.value === value);
 
@@ -64,7 +67,7 @@ export default function SortMenu<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.backdrop,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -115,4 +118,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-});
+}));

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { showAlert } from '../components/DialogHost';
@@ -13,8 +13,9 @@ import {
   RateSource,
   useExchangeRate,
 } from '../context/ExchangeRateContext';
-import { colors, fontSize, spacing } from '../theme';
+import { fontSize, spacing } from '../theme';
 import { formatDateTime, formatMoney, parseAmount } from '../utils/format';
+import { makeStyles } from '../context/ThemeContext';
 
 const SOURCE_OPTIONS = (Object.keys(RATE_SOURCE_LABEL) as RateSource[]).map((value) => ({
   value,
@@ -24,6 +25,7 @@ const SOURCE_OPTIONS = (Object.keys(RATE_SOURCE_LABEL) as RateSource[]).map((val
 const QUOTE_SOURCES: QuoteSource[] = ['blue', 'oficial', 'bolsa'];
 
 export default function ExchangeRateScreen() {
+  const styles = useStyles();
   const {
     source,
     rate,
@@ -120,7 +122,7 @@ export default function ExchangeRateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -196,4 +198,4 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: spacing.lg,
   },
-});
+}));

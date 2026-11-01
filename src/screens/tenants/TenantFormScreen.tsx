@@ -1,14 +1,16 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import Screen from '../../components/Screen';
 import { useData } from '../../context/DataContext';
 import { spacing } from '../../theme';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function TenantFormScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const tenantId = route.params?.tenantId as string | undefined;
@@ -57,9 +59,9 @@ export default function TenantFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-});
+}));

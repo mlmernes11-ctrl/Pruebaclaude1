@@ -1,9 +1,11 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, spacing } from '../theme';
+import { Text, View } from 'react-native';
+import { fontSize, spacing } from '../theme';
+import { makeStyles } from '../context/ThemeContext';
 
 // Label on the left, value on the right; the value can be text or any element (e.g. MoneyText).
 export default function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
@@ -12,13 +14,12 @@ export default function DetailRow({ label, value }: { label: string; value: Reac
   );
 }
 
-export const detailValueStyle = {
-  fontSize: fontSize.sm,
-  fontWeight: '600' as const,
-  color: colors.text,
-};
+// Same text style as a row value, for elements passed as value (e.g. MoneyText).
+export function useDetailValueStyle() {
+  return useStyles().valueText;
+}
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -30,9 +31,16 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
   },
+  valueText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.text,
+  },
   value: {
-    ...detailValueStyle,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.text,
     flexShrink: 1,
     textAlign: 'right',
   },
-});
+}));

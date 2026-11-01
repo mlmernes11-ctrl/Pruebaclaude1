@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { Modal, Text, View } from 'react-native';
+import { fontSize, radius, spacing } from '../theme';
 import Button from './Button';
+import { makeStyles } from '../context/ThemeContext';
 
 interface DialogRequest {
   title: string;
@@ -29,6 +30,7 @@ export function showConfirm(options: {
 }
 
 export default function DialogHost() {
+  const styles = useStyles();
   const [request, setRequest] = useState<DialogRequest | null>(null);
 
   useEffect(() => {
@@ -74,10 +76,10 @@ export default function DialogHost() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
@@ -108,4 +110,4 @@ const styles = StyleSheet.create({
   action: {
     flex: 1,
   },
-});
+}));

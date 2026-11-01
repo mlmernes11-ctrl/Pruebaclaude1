@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { ActivityIndicator, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { fontSize, Palette, radius, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 // dangerOutline: destructive actions that should not be the most prominent button on screen.
 type Variant = 'primary' | 'secondary' | 'danger' | 'dangerOutline' | 'ghost';
@@ -20,7 +21,9 @@ export default function Button({
   loading?: boolean;
   style?: ViewStyle;
 }) {
-  const variantStyle = VARIANT_STYLES[variant];
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const variantStyle = variantStyles(colors)[variant];
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -43,15 +46,15 @@ export default function Button({
   );
 }
 
-const VARIANT_STYLES: Record<Variant, { bg: string; fg: string; border: string }> = {
-  primary: { bg: colors.primary, fg: colors.white, border: colors.primary },
+const variantStyles = (colors: Palette): Record<Variant, { bg: string; fg: string; border: string }> => ({
+  primary: { bg: colors.primarySolid, fg: colors.white, border: colors.primarySolid },
   secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary },
-  danger: { bg: colors.danger, fg: colors.white, border: colors.danger },
+  danger: { bg: colors.dangerSolid, fg: colors.white, border: colors.dangerSolid },
   dangerOutline: { bg: colors.surface, fg: colors.danger, border: colors.danger },
   ghost: { bg: 'transparent', fg: colors.textMuted, border: 'transparent' },
-};
+});
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   base: {
     borderRadius: radius.md,
     paddingVertical: spacing.md,
@@ -67,4 +70,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: '600',
   },
-});
+}));

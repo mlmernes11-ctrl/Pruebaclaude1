@@ -1,16 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import Screen from '../../components/Screen';
 import SearchLauncher from '../../components/SearchSheet';
 import { useData } from '../../context/DataContext';
 import FAB, { FAB_CLEARANCE } from '../../components/FAB';
-import { colors, fontSize, radius, spacing } from '../../theme';
+import { fontSize, radius, spacing } from '../../theme';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 export default function TenantsListScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { tenants, contractsForTenant } = useData();
   const navigation = useNavigation<any>();
 
@@ -67,7 +70,7 @@ export default function TenantsListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   headerRow: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
@@ -122,4 +125,4 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-});
+}));

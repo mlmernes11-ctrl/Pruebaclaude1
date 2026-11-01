@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { StyleProp, Text, TextStyle, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
-import { colors, fontSize } from '../theme';
+import { fontSize } from '../theme';
 import { Currency } from '../types';
 import { formatMoney } from '../utils/format';
+import { makeStyles } from '../context/ThemeContext';
 
 export default function MoneyText({
   amount,
@@ -21,6 +22,7 @@ export default function MoneyText({
   style?: StyleProp<TextStyle>;
   align?: 'left' | 'right';
 }) {
+  const styles = useStyles();
   const { rate } = useExchangeRate();
   const pesoRate = settledRate ?? rate;
   const showPesos = currency === 'USD' && pesoRate !== undefined;
@@ -42,10 +44,10 @@ export default function MoneyText({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   estimate: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: 1,
   },
-});
+}));

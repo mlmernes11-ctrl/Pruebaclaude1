@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import { showAlert } from '../../components/DialogHost';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
@@ -16,8 +16,10 @@ import { useData } from '../../context/DataContext';
 import { Currency, PropertyStatus, PropertyType } from '../../types';
 import { spacing } from '../../theme';
 import { CURRENCY_SYMBOL, parseAmount } from '../../utils/format';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function PropertyFormScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const propertyId = route.params?.propertyId as string | undefined;
@@ -136,9 +138,9 @@ export default function PropertyFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-});
+}));

@@ -1,20 +1,23 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { Text, View } from 'react-native';
+import { fontSize, Palette, radius, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral' | 'primary' | 'info';
 
-const TONE_STYLES: Record<BadgeTone, { bg: string; fg: string }> = {
+const toneStyles = (colors: Palette): Record<BadgeTone, { bg: string; fg: string }> => ({
   success: { bg: colors.successMuted, fg: colors.success },
   warning: { bg: colors.warningMuted, fg: colors.warning },
   danger: { bg: colors.dangerMuted, fg: colors.danger },
   neutral: { bg: colors.neutralMuted, fg: colors.textMuted },
   primary: { bg: colors.primaryMuted, fg: colors.primary },
   info: { bg: colors.infoMuted, fg: colors.info },
-};
+});
 
 export default function Badge({ label, tone = 'neutral' }: { label: string; tone?: BadgeTone }) {
-  const toneStyle = TONE_STYLES[tone];
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const toneStyle = toneStyles(colors)[tone];
   return (
     <View style={[styles.container, { backgroundColor: toneStyle.bg }]}>
       <Text style={[styles.text, { color: toneStyle.fg }]}>{label}</Text>
@@ -22,7 +25,7 @@ export default function Badge({ label, tone = 'neutral' }: { label: string; tone
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -33,4 +36,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
-});
+}));

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, spacing } from '../theme';
+import { Text, View } from 'react-native';
+import { fontSize, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export default function EmptyState({
   icon,
@@ -12,6 +13,8 @@ export default function EmptyState({
   title: string;
   message: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
@@ -23,7 +26,7 @@ export default function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -50,4 +53,4 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
   },
-});
+}));

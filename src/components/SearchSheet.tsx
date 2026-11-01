@@ -6,7 +6,6 @@ import {
   Platform,
   ScrollView,
   SectionList,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -22,12 +21,13 @@ import {
 } from '../constants';
 import { useData } from '../context/DataContext';
 import { pushBackHandler } from '../navigation/browserBack';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing } from '../theme';
 import { formatDate } from '../utils/format';
 import { FieldMatch, matchFields, SearchField, searchWords } from '../utils/search';
 import { compareTitles } from '../utils/text';
 import Badge, { BadgeTone } from './Badge';
 import HighlightText from './HighlightText';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export type SearchScope = 'propiedades' | 'inquilinos' | 'contratos';
 type ScopeFilter = 'todo' | SearchScope;
@@ -68,6 +68,8 @@ interface SearchResult {
 
 // Search bar for list screens: tapping it slides up a full-screen search over everything.
 export default function SearchLauncher({ scope }: { scope: SearchScope }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   return (
@@ -89,6 +91,8 @@ export default function SearchLauncher({ scope }: { scope: SearchScope }) {
 }
 
 function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => void }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const { properties, tenants, contracts, getPropertyById, getTenantById } = useData();
   const [query, setQuery] = useState('');
@@ -297,6 +301,8 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
 }
 
 function ResultRow({ result }: { result: SearchResult }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { record, matches } = result;
   const rangesFor = (index: number) => matches.find((m) => m.index === index)?.ranges ?? [];
   const shown = [...record.titleFields, ...record.subtitleFields];
@@ -336,7 +342,7 @@ function ResultRow({ result }: { result: SearchResult }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   launcher: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -492,4 +498,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-});
+}));

@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { colors, fontSize, spacing } from '../theme';
+import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { fontSize, spacing } from '../theme';
+import { makeStyles } from '../context/ThemeContext';
 
 // Section title with an optional action on the right, both centered on the same line.
 export default function SectionHeader({
@@ -16,6 +17,7 @@ export default function SectionHeader({
   right?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = useStyles();
   return (
     <View style={[styles.row, style]}>
       <Text style={styles.title} numberOfLines={1}>
@@ -31,7 +33,7 @@ export default function SectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -51,4 +53,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-});
+}));

@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -13,7 +13,7 @@ import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
-import { colors, fontSize, radius, spacing } from '../../theme';
+import { fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals } from '../../types';
 import {
   addMonthsToPeriod,
@@ -27,6 +27,7 @@ import {
 } from '../../utils/format';
 import { compareTitles, plural } from '../../utils/text';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, ChargeView, unallocatedAmount } from '../../utils/ledger';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 type View_ = 'pagos' | 'liquidaciones' | 'historial';
 
@@ -59,10 +60,10 @@ const SORT_OPTIONS: SortOption<SortValue>[] = [
   { value: 'monto', label: 'Mayor monto' },
 ];
 
-const STATUS_SUMMARY: { status: ChargeStatus; label: string; color: string }[] = [
-  { status: 'vencido', label: 'En mora', color: colors.danger },
-  { status: 'pendiente', label: 'Por vencer', color: colors.warning },
-  { status: 'pagado', label: 'Pagado', color: colors.success },
+const STATUS_SUMMARY: { status: ChargeStatus; label: string; colorKey: 'danger' | 'warning' | 'success' }[] = [
+  { status: 'vencido', label: 'En mora', colorKey: 'danger' },
+  { status: 'pendiente', label: 'Por vencer', colorKey: 'warning' },
+  { status: 'pagado', label: 'Pagado', colorKey: 'success' },
 ];
 
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -71,6 +72,8 @@ const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const chargeValue = (view: ChargeView) => (view.status === 'pagado' ? view.charge.amount : view.balance);
 
 export default function PaymentsListScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { chargeViews: allChargeViews, payments: allPayments, charges, contracts, getContractById, getPropertyById, getTenantById } =
     useData();
   const { toPesos, rate } = useExchangeRate();
@@ -168,7 +171,8 @@ export default function PaymentsListScreen() {
   const chargesSummary = (
     <Card style={styles.summaryCard}>
       {filter === 'todos' ? (
-        STATUS_SUMMARY.map(({ status, label, color }) => {
+        STATUS_SUMMARY.map(({ status, label, colorKey }) => {
+          const color = colors[colorKey];
           const { count, totals } = chargeTotals[status];
           const described = describeTotals(totals, rate);
           return (
@@ -188,7 +192,7 @@ export default function PaymentsListScreen() {
       ) : (
         <SummaryTotal
           label={`Total ${STATUS_SUMMARY.find((s) => s.status === filter)!.label.toLowerCase()}`}
-          color={STATUS_SUMMARY.find((s) => s.status === filter)!.color}
+          color={colors[STATUS_SUMMARY.find((s) => s.status === filter)!.colorKey]}
           totals={chargeTotals[filter].totals}
           rate={rate}
           meta={plural(chargeTotals[filter].count, 'liquidación', 'liquidaciones')}
@@ -411,6 +415,7 @@ function SummaryTotal({
   rate?: number;
   meta: string;
 }) {
+  const styles = useStyles();
   const described = describeTotals(totals, rate);
   return (
     <View>
@@ -424,7 +429,7 @@ function SummaryTotal({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -588,4 +593,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-});
+}));

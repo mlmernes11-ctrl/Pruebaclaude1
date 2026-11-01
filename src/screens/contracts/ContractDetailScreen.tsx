@@ -1,18 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
-import DetailRow, { detailValueStyle } from '../../components/DetailRow';
+import DetailRow, { useDetailValueStyle } from '../../components/DetailRow';
 import { showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import { CONCEPT_LABEL, CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import {
   addToTotals,
   emptyTotals,
@@ -24,8 +24,11 @@ import {
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, unallocatedAmount } from '../../utils/ledger';
 import { openInTab, smartGoBack } from '../../utils/navigation';
 import { contractEndBadge } from '../../utils/propertySummary';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 export default function ContractDetailScreen() {
+  const styles = useStyles();
+  const detailValue = useDetailValueStyle();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { contractId } = route.params;
@@ -110,7 +113,7 @@ export default function ContractDetailScreen() {
           <DetailRow
             label="Alquiler mensual"
             value={
-              <MoneyText amount={contract.rentAmount} currency={contract.currency} style={detailValueStyle} />
+              <MoneyText amount={contract.rentAmount} currency={contract.currency} style={detailValue} />
             }
           />
           {contract.depositAmount ? (
@@ -193,6 +196,8 @@ function LinkRow({
   value: string;
   onPress?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity style={styles.linkRow} onPress={onPress} disabled={!onPress} accessibilityRole="button">
       <Ionicons name={icon} size={18} color={colors.primary} />
@@ -207,7 +212,7 @@ function LinkRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -317,4 +322,4 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
-});
+}));

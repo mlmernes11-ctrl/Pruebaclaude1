@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
@@ -14,7 +14,7 @@ import SelectField from '../../components/SelectField';
 import { CONCEPT_LABEL, DEFAULT_RENT_CURRENCY, PAYMENT_METHOD_OPTIONS } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
-import { colors, fontSize, radius, spacing } from '../../theme';
+import { fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept, Currency } from '../../types';
 import { CHARGE_CONCEPTS } from '../../utils/chargeGeneration';
 import {
@@ -35,10 +35,13 @@ import {
   sumBalances,
 } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 type AmountOption = 'cuota' | 'total' | 'otro';
 
 export default function PaymentFormScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const presetContractId = route.params?.contractId as string | undefined;
@@ -310,6 +313,7 @@ export default function PaymentFormScreen() {
 }
 
 function DebtRow({ view }: { view: ChargeView }) {
+  const styles = useStyles();
   const { charge, balance, paid, status } = view;
   return (
     <View style={styles.debtRow}>
@@ -342,6 +346,8 @@ function AmountChoice({
   amount?: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       style={[styles.choice, selected && styles.choiceSelected]}
@@ -364,7 +370,7 @@ function AmountChoice({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -484,4 +490,4 @@ const styles = StyleSheet.create({
     marginTop: -spacing.sm,
     marginBottom: spacing.lg,
   },
-});
+}));

@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   KeyboardTypeOptions,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export default function FormField({
   label,
@@ -25,6 +25,8 @@ export default function FormField({
   multiline?: boolean;
   required?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>
@@ -44,7 +46,7 @@ export default function FormField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: spacing.lg,
   },
@@ -71,4 +73,4 @@ const styles = StyleSheet.create({
     minHeight: 90,
     textAlignVertical: 'top',
   },
-});
+}));

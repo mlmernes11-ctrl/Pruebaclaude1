@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../context/DataContext';
-import { colors } from '../theme';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import PropertiesListScreen from '../screens/properties/PropertiesListScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
 import PropertyDetailScreen from '../screens/properties/PropertyDetailScreen';
@@ -27,6 +27,7 @@ import PaymentDetailScreen from '../screens/payments/PaymentDetailScreen';
 import PaymentFormScreen from '../screens/payments/PaymentFormScreen';
 import MonthDetailScreen from '../screens/payments/MonthDetailScreen';
 import { formatPeriod } from '../utils/format';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
@@ -35,15 +36,22 @@ const TenantsStack = createNativeStackNavigator();
 const ContractsStack = createNativeStackNavigator();
 const PaymentsStack = createNativeStackNavigator();
 
-const screenOptions = {
-  headerStyle: { backgroundColor: colors.surface },
-  headerTitleStyle: { color: colors.text, fontWeight: '700' as const },
-  headerTintColor: colors.primary,
-  headerShadowVisible: false,
-  contentStyle: { backgroundColor: colors.background },
-};
+function useScreenOptions() {
+  const { colors } = useTheme();
+  return useMemo(
+    () => ({
+      headerStyle: { backgroundColor: colors.surface },
+      headerTitleStyle: { color: colors.text, fontWeight: '700' as const },
+      headerTintColor: colors.primary,
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: colors.background },
+    }),
+    [colors],
+  );
+}
 
 function DashboardStackNavigator() {
+  const screenOptions = useScreenOptions();
   return (
     <DashboardStack.Navigator screenOptions={screenOptions}>
       <DashboardStack.Screen
@@ -56,11 +64,13 @@ function DashboardStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
+      <DashboardStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Ajustes' }} />
     </DashboardStack.Navigator>
   );
 }
 
 function PropertiesStackNavigator() {
+  const screenOptions = useScreenOptions();
   return (
     <PropertiesStack.Navigator screenOptions={screenOptions}>
       <PropertiesStack.Screen
@@ -95,6 +105,7 @@ function PropertiesStackNavigator() {
 }
 
 function TenantsStackNavigator() {
+  const screenOptions = useScreenOptions();
   return (
     <TenantsStack.Navigator screenOptions={screenOptions}>
       <TenantsStack.Screen
@@ -119,6 +130,7 @@ function TenantsStackNavigator() {
 }
 
 function ContractsStackNavigator() {
+  const screenOptions = useScreenOptions();
   return (
     <ContractsStack.Navigator screenOptions={screenOptions}>
       <ContractsStack.Screen
@@ -143,6 +155,7 @@ function ContractsStackNavigator() {
 }
 
 function PaymentsStackNavigator() {
+  const screenOptions = useScreenOptions();
   return (
     <PaymentsStack.Navigator screenOptions={screenOptions}>
       <PaymentsStack.Screen
@@ -207,9 +220,25 @@ function useBrowserBackButton() {
 }
 
 export default function RootNavigator() {
+  const { colors, scheme } = useTheme();
+  const styles = useStyles();
   useBrowserBackButton();
   const insets = useSafeAreaInsets();
   const { loading } = useData();
+  const navigationTheme = useMemo(() => {
+    const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.border,
+      },
+    };
+  }, [colors, scheme]);
 
   // Saved data loads in a moment; showing screens before that would flash empty states.
   if (loading) {
@@ -221,7 +250,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack}>
+    <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack} theme={navigationTheme}>
       <Tab.Navigator
         backBehavior="history"
         screenOptions={({ route }) => ({
@@ -258,11 +287,11 @@ export default function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
   },
-});
+}));

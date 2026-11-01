@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import { showConfirm } from '../../components/DialogHost';
@@ -9,11 +9,13 @@ import Screen from '../../components/Screen';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { unallocatedAmount } from '../../utils/ledger';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriod } from '../../utils/format';
 import { smartGoBack } from '../../utils/navigation';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function PaymentDetailScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { paymentId } = route.params;
@@ -104,6 +106,7 @@ export default function PaymentDetailScreen() {
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.detailRow}>
       <Text style={styles.label}>{label}</Text>
@@ -112,7 +115,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -188,4 +191,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
   },
-});
+}));

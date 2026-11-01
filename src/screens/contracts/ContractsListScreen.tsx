@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -10,12 +10,14 @@ import SearchLauncher from '../../components/SearchSheet';
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
 import { useData } from '../../context/DataContext';
 import FAB, { FAB_CLEARANCE } from '../../components/FAB';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { formatDate } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
+import { makeStyles } from '../../context/ThemeContext';
 
 export default function ContractsListScreen() {
+  const styles = useStyles();
   const { contracts, getPropertyById, getTenantById } = useData();
   const navigation = useNavigation<any>();
 
@@ -77,7 +79,7 @@ export default function ContractsListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   headerRow: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
@@ -135,4 +137,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-});
+}));

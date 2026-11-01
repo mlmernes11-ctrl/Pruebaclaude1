@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import {
   FlatList,
   Modal,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing } from '../theme';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 export interface SelectOption {
   id: string;
@@ -33,6 +33,8 @@ export default function SelectField({
   required?: boolean;
   emptyMessage?: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [visible, setVisible] = useState(false);
   const selected = options.find((o) => o.id === selectedId);
 
@@ -92,7 +94,7 @@ export default function SelectField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: spacing.lg,
   },
@@ -126,7 +128,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    backgroundColor: colors.backdrop,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -172,4 +174,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textMuted,
   },
-});
+}));

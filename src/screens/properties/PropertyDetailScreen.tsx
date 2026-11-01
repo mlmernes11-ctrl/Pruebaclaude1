@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
-import DetailRow, { detailValueStyle } from '../../components/DetailRow';
+import DetailRow, { useDetailValueStyle } from '../../components/DetailRow';
 import { showAlert, showConfirm } from '../../components/DialogHost';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
@@ -18,12 +18,16 @@ import {
   PROPERTY_TYPE_LABEL,
 } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatTotals } from '../../utils/format';
 import { openInTab } from '../../utils/navigation';
 import { contractEndBadge, PaymentBucket, summarizeProperty } from '../../utils/propertySummary';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 
 export default function PropertyDetailScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const detailValue = useDetailValueStyle();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
@@ -89,7 +93,7 @@ export default function PropertyDetailScreen() {
               <MoneyText
                 amount={property.rentAmount}
                 currency={property.rentCurrency}
-                style={detailValueStyle}
+                style={detailValue}
               />
             }
           />
@@ -188,6 +192,8 @@ function PaymentStat({
   bucket: PaymentBucket;
   color: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.paymentStat}>
       <Text style={[styles.paymentStatCount, { color: bucket.count ? color : colors.textMuted }]}>
@@ -199,7 +205,7 @@ function PaymentStat({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
@@ -303,4 +309,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
-});
+}));

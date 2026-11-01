@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme';
+import { makeStyles } from '../context/ThemeContext';
 
 export default function Screen({
   children,
@@ -10,6 +10,7 @@ export default function Screen({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
+  const styles = useStyles();
   return (
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
       <View style={[styles.container, style]}>{children}</View>
@@ -17,7 +18,7 @@ export default function Screen({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
@@ -26,4 +27,4 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-});
+}));

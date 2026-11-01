@@ -34,6 +34,7 @@ export type PaymentsStackParamList = {
 export type DashboardStackParamList = {
   Dashboard: undefined;
   ExchangeRate: undefined;
+  Settings: undefined;
 };
 
 export type MainTabParamList = {

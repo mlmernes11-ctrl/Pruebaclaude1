@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { fontSize, radius, spacing } from '../theme';
 import {
   addMonthsToPeriod,
   formatDate,
@@ -10,6 +10,7 @@ import {
   todayISO,
   toISODate,
 } from '../utils/format';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -43,6 +44,8 @@ export default function DateField({
   required?: boolean;
   placeholder?: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [visible, setVisible] = useState(false);
   const [visiblePeriod, setVisiblePeriod] = useState(periodOf(value || todayISO()));
   const today = todayISO();
@@ -154,6 +157,8 @@ export function MonthField({
   value: string;
   onChange: (period: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -178,7 +183,7 @@ export function MonthField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: spacing.lg,
   },
@@ -216,7 +221,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
@@ -271,7 +276,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   daySelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primarySolid,
   },
   dayText: {
     fontSize: fontSize.md,
@@ -300,4 +305,4 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textMuted,
   },
-});
+}));

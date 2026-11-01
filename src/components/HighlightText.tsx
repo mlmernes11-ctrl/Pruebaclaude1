@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TextProps } from 'react-native';
-import { colors } from '../theme';
+import { Text, TextProps } from 'react-native';
 import { Range } from '../utils/search';
+import { makeStyles } from '../context/ThemeContext';
 
 // Text with the matched parts marked; nested Text keeps it a single wrapping line.
 export default function HighlightText({
@@ -9,6 +9,7 @@ export default function HighlightText({
   ranges,
   ...props
 }: TextProps & { text: string; ranges: Range[] }) {
+  const styles = useStyles();
   if (!ranges.length) return <Text {...props}>{text}</Text>;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -25,10 +26,10 @@ export default function HighlightText({
   return <Text {...props}>{parts}</Text>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   mark: {
     backgroundColor: colors.highlight,
     color: colors.text,
     fontWeight: '800',
   },
-});
+}));

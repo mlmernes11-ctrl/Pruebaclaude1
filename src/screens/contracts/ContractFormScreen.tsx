@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';
@@ -15,12 +15,14 @@ import { ContractStatus, Currency } from '../../types';
 import { CURRENCY_SYMBOL, parseAmount, todayISO } from '../../utils/format';
 import { compareTitles } from '../../utils/text';
 import { smartGoBack } from '../../utils/navigation';
+import { makeStyles } from '../../context/ThemeContext';
 
 function isValidDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value).getTime());
 }
 
 export default function ContractFormScreen() {
+  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const contractId = route.params?.contractId as string | undefined;
@@ -190,9 +192,9 @@ export default function ContractFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-});
+}));

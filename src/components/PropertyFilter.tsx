@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Modal, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useData } from '../context/DataContext';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing } from '../theme';
 import { compareTitles } from '../utils/text';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const normalize = (text: string) =>
   text
@@ -26,6 +27,8 @@ export default function PropertyFilter({
   value?: string;
   onChange: (propertyId?: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { properties, contracts, getTenantById } = useData();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -151,6 +154,8 @@ function OptionRow({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   return (
     <TouchableOpacity
       style={styles.option}
@@ -167,7 +172,7 @@ function OptionRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -206,7 +211,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: colors.backdrop,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -279,4 +284,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textMuted,
   },
-});
+}));

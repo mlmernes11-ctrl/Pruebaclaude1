@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { fontSize, radius, spacing } from '../theme';
+import { makeStyles } from '../context/ThemeContext';
 
 export interface Option<T extends string> {
   value: T;
@@ -18,6 +19,7 @@ export default function OptionChips<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -42,7 +44,7 @@ export default function OptionChips<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: spacing.lg,
   },
@@ -77,4 +79,4 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: colors.primary,
   },
-});
+}));

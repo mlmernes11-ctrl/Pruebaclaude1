@@ -1,17 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import { showConfirm } from '../components/DialogHost';
 import MoneyText from '../components/MoneyText';
 import Screen from '../components/Screen';
 import SortMenu, { SortOption } from '../components/SortMenu';
 import { CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing, Palette } from '../theme';
 import {
   currentPeriod,
   describeTotals,
@@ -31,6 +30,7 @@ import {
   summarizeProperty,
 } from '../utils/propertySummary';
 import { compareTitles, plural } from '../utils/text';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 
 type PropertySort = 'estado' | 'nombre' | 'barrio';
@@ -67,6 +67,8 @@ function sortSummaries(summaries: PropertySummary[], sort: PropertySort): Proper
 }
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const {
     stats,
     properties,
@@ -78,7 +80,6 @@ export default function DashboardScreen() {
     getPropertyById,
     getTenantById,
     loadSampleData,
-    clearAllData,
   } = useData();
   const { rate, source: rateSource, updatedAt: rateUpdatedAt } = useExchangeRate();
   const navigation = useNavigation<any>();
@@ -105,34 +106,22 @@ export default function DashboardScreen() {
 
   const upcomingCharges = sortOldestFirst(chargeViews.filter(isOutstanding)).slice(0, 5);
 
-  const handleLoadSamples = () => {
-    if (isEmpty) {
-      loadSampleData();
-      return;
-    }
-    showConfirm({
-      title: 'Cargar datos de ejemplo',
-      message: 'Esto reemplaza todo lo que tenés cargado por datos de ejemplo. ¿Continuar?',
-      confirmLabel: 'Reemplazar',
-      destructive: true,
-      onConfirm: loadSampleData,
-    });
-  };
-
-  const handleClearAll = () => {
-    showConfirm({
-      title: 'Borrar todo',
-      message: 'Se eliminan todas las propiedades, inquilinos, contratos y pagos. No se puede deshacer.',
-      confirmLabel: 'Borrar todo',
-      destructive: true,
-      onConfirm: clearAllData,
-    });
-  };
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Resumen</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.header}>Resumen</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Ajustes"
+            hitSlop={8}
+          >
+            <Ionicons name="settings-outline" size={22} color={colors.text} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.subheader}>Vista general de tu cartera de alquileres</Text>
 
         {isEmpty ? (
@@ -142,7 +131,7 @@ export default function DashboardScreen() {
               Cargá 8 propiedades, 7 inquilinos, contratos y pagos de ejemplo para recorrer todas las
               pantallas sin cargar nada a mano.
             </Text>
-            <Button label="Cargar datos de ejemplo" onPress={handleLoadSamples} />
+            <Button label="Cargar datos de ejemplo" onPress={loadSampleData} />
           </Card>
         ) : null}
 
@@ -267,7 +256,7 @@ export default function DashboardScreen() {
               {COLLECTION_ORDER.map((state) => {
                 const count = summaries.filter((s) => s.collection === state).length;
                 if (!count) return null;
-                const palette = COLLECTION_COLORS[state];
+                const palette = collectionColors(colors)[state];
                 const active = collectionFilter === state;
                 return (
                   <TouchableOpacity
@@ -355,37 +344,14 @@ export default function DashboardScreen() {
             );
           })
         )}
-
-        <Text style={styles.sectionTitle}>Datos de prueba</Text>
-        <Card>
-          <Text style={styles.testDataText}>
-            Los datos se guardan solo en este dispositivo. Podés cargar ejemplos o empezar de cero.
-          </Text>
-          <View style={styles.testDataActions}>
-            <Button
-              label="Cargar ejemplos"
-              variant="secondary"
-              onPress={handleLoadSamples}
-              style={styles.testDataButton}
-            />
-            <Button
-              label="Borrar todo"
-              variant="secondary"
-              onPress={handleClearAll}
-              disabled={isEmpty}
-              style={styles.testDataButton}
-            />
-          </View>
-        </Card>
       </ScrollView>
     </Screen>
   );
 }
 
-const COLLECTION_COLORS: Record<
-  CollectionState,
-  { strong: string; tint: string; chip: string; text: string }
-> = {
+const collectionColors = (
+  colors: Palette,
+): Record<CollectionState, { strong: string; tint: string; chip: string; text: string }> => ({
   deuda: { strong: colors.danger, tint: colors.dangerMuted, chip: colors.dangerMuted, text: colors.danger },
   'por-vencer': {
     strong: colors.warning,
@@ -401,11 +367,13 @@ const COLLECTION_COLORS: Record<
     chip: colors.neutralMuted,
     text: colors.textMuted,
   },
-};
+});
 
 function PropertyStatusCard({ summary, onPress }: { summary: PropertySummary; onPress: () => void }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { property, activeContract, tenant, overdue, pending, collection, notes } = summary;
-  const palette = COLLECTION_COLORS[collection];
+  const palette = collectionColors(colors)[collection];
   const rentAmount = activeContract?.rentAmount ?? property.rentAmount;
   const rentCurrency = activeContract?.currency ?? property.rentCurrency;
   const owed = collection === 'deuda' ? overdue.totals : collection === 'por-vencer' ? pending.totals : undefined;
@@ -458,6 +426,7 @@ function StatCard({
   tone: string;
   onPress?: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Card onPress={onPress} style={styles.statCard}>
       <View style={[styles.statIcon, { backgroundColor: `${tone}1A` }]}>
@@ -476,10 +445,25 @@ function StatCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.round,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   header: {
     fontSize: fontSize.xxl,
@@ -647,18 +631,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: spacing.md,
   },
-  testDataText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
-  },
-  testDataActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  testDataButton: {
-    flex: 1,
-  },
   statValueLong: {
     fontSize: fontSize.lg,
   },
@@ -718,7 +690,7 @@ const styles = StyleSheet.create({
     borderColor: colors.text,
   },
   legendAllTextActive: {
-    color: colors.white,
+    color: colors.onAccent,
   },
   legendDot: {
     width: 8,
@@ -761,7 +733,7 @@ const styles = StyleSheet.create({
   statusPillText: {
     fontSize: fontSize.xs,
     fontWeight: '700',
-    color: colors.white,
+    color: colors.onAccent,
   },
   propertyFooter: {
     flexDirection: 'row',
@@ -785,4 +757,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-});
+}));

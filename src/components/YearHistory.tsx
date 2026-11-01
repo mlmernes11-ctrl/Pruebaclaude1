@@ -1,20 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { fontSize, radius, spacing } from '../theme';
 import { MoneyTotals } from '../types';
 import { describeTotals, formatPeriod } from '../utils/format';
 import { buildYearHistory, HistoryRow, yearRange } from '../utils/history';
 import { ChargeView } from '../utils/ledger';
 import Card from './Card';
+import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 const SEGMENTS = [
-  { key: 'paid', label: 'Pagado', color: colors.chartPaid },
-  { key: 'overdue', label: 'En mora', color: colors.chartOverdue },
-  { key: 'pending', label: 'Por vencer', color: colors.chartPending },
+  { key: 'paid', label: 'Pagado', colorKey: 'chartPaid' },
+  { key: 'overdue', label: 'En mora', colorKey: 'chartOverdue' },
+  { key: 'pending', label: 'Por vencer', colorKey: 'chartPending' },
 ] as const;
 
 const hasAmount = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
@@ -30,6 +31,8 @@ export default function YearHistory({
   onChangeYear: (year: number) => void;
   onPressMonth: (period: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { rate, toPesos } = useExchangeRate();
   const currentYear = new Date().getFullYear();
   const range = yearRange(views, currentYear);
@@ -84,7 +87,7 @@ export default function YearHistory({
           <View style={styles.legend}>
             {SEGMENTS.map((segment) => (
               <View key={segment.key} style={styles.legendItem}>
-                <View style={[styles.legendSwatch, { backgroundColor: segment.color }]} />
+                <View style={[styles.legendSwatch, { backgroundColor: colors[segment.colorKey] }]} />
                 <Text style={styles.legendText}>{segment.label}</Text>
               </View>
             ))}
@@ -99,6 +102,8 @@ export default function YearHistory({
 }
 
 function MonthRow({ row, rate, onPress }: { row: HistoryRow; rate?: number; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const billed = describeTotals(row.billed, rate);
   const paid = describeTotals(row.paid, rate);
   const unpaid: MoneyTotals = {
@@ -131,6 +136,8 @@ function MonthRow({ row, rate, onPress }: { row: HistoryRow; rate?: number; onPr
 
 // One whole split into paid / overdue / pending, with a 2px surface gap between segments.
 function SegmentedBar({ row }: { row: HistoryRow }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const parts = SEGMENTS.map((segment) => ({ ...segment, share: row.shares[segment.key] })).filter(
     (part) => part.share > 0.001,
   );
@@ -143,7 +150,7 @@ function SegmentedBar({ row }: { row: HistoryRow }) {
             styles.barSegment,
             {
               flex: part.share,
-              backgroundColor: part.color,
+              backgroundColor: colors[part.colorKey],
               marginLeft: index === 0 ? 0 : 2,
               borderTopLeftRadius: index === 0 ? 4 : 0,
               borderBottomLeftRadius: index === 0 ? 4 : 0,
@@ -170,6 +177,7 @@ function AmountLine({
   swatch?: string;
   strong?: boolean;
 }) {
+  const styles = useStyles();
   const described = describeTotals(totals, rate);
   return (
     <View style={styles.amountLine}>
@@ -185,7 +193,7 @@ function AmountLine({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   yearSelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,4 +331,4 @@ const styles = StyleSheet.create({
   barSegment: {
     height: '100%',
   },
-});
+}));
