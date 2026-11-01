@@ -15,6 +15,10 @@ export const colors = {
   dangerMuted: '#FEE2E2',
   info: '#0284C7',
   infoMuted: '#E0F2FE',
+  // Segmented history bars; validated together for color-vision deficiency separation.
+  chartPaid: '#059669',
+  chartOverdue: '#B91C1C',
+  chartPending: '#F59E0B',
   neutralMuted: '#E2E8F0',
   neutralTint: '#F1F5F9',
   white: '#FFFFFF',

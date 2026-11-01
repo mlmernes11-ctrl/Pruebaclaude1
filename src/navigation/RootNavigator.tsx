@@ -22,6 +22,8 @@ import PaymentsListScreen from '../screens/payments/PaymentsListScreen';
 import ChargeFormScreen from '../screens/payments/ChargeFormScreen';
 import PaymentDetailScreen from '../screens/payments/PaymentDetailScreen';
 import PaymentFormScreen from '../screens/payments/PaymentFormScreen';
+import MonthDetailScreen from '../screens/payments/MonthDetailScreen';
+import { formatPeriod } from '../utils/format';
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
@@ -79,6 +81,11 @@ function PropertiesStackNavigator() {
         name="PropertyPayments"
         component={PropertyPaymentsScreen}
         options={{ title: 'Historial de pagos' }}
+      />
+      <PropertiesStack.Screen
+        name="MonthDetail"
+        component={MonthDetailScreen}
+        options={({ route }: any) => ({ title: formatPeriod(route.params.period) })}
       />
     </PropertiesStack.Navigator>
   );
@@ -156,6 +163,11 @@ function PaymentsStackNavigator() {
         options={({ route }: any) => ({
           title: route.params?.chargeId ? 'Liquidación' : 'Nueva liquidación',
         })}
+      />
+      <PaymentsStack.Screen
+        name="MonthDetail"
+        component={MonthDetailScreen}
+        options={({ route }: any) => ({ title: formatPeriod(route.params.period) })}
       />
     </PaymentsStack.Navigator>
   );

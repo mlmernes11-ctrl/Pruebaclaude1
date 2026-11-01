@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
@@ -8,6 +8,7 @@ import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
 import SortMenu, { SortOption } from '../../components/SortMenu';
+import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { unallocatedAmount, useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
@@ -25,7 +26,13 @@ import {
 } from '../../utils/format';
 import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE, ChargeView } from '../../utils/ledger';
 
-type View_ = 'pagos' | 'liquidaciones';
+type View_ = 'pagos' | 'liquidaciones' | 'historial';
+
+const VIEW_LABEL: Record<View_, string> = {
+  pagos: 'Recibidos',
+  liquidaciones: 'Liquidaciones',
+  historial: 'Historial',
+};
 type FilterValue = 'todos' | ChargeStatus;
 type MonthFilter = 'todos' | 'este' | 'anterior';
 type SortValue = 'reciente' | 'antiguo' | 'propiedad' | 'monto';
@@ -71,6 +78,7 @@ export default function PaymentsListScreen() {
   const [filter, setFilter] = useState<FilterValue>('todos');
   const [month, setMonth] = useState<MonthFilter>('todos');
   const [sort, setSort] = useState<SortValue>('reciente');
+  const [year, setYear] = useState(() => new Date().getFullYear());
 
   // The dashboard opens this screen already filtered (e.g. "Dinero en mora").
   useEffect(() => {
@@ -196,23 +204,32 @@ export default function PaymentsListScreen() {
     <Screen>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Pagos</Text>
-        <SortMenu options={SORT_OPTIONS} value={sort} onChange={setSort} />
+        {view === 'historial' ? null : <SortMenu options={SORT_OPTIONS} value={sort} onChange={setSort} />}
       </View>
       <View style={styles.segment}>
-        {(['pagos', 'liquidaciones'] as View_[]).map((value) => (
+        {(['pagos', 'liquidaciones', 'historial'] as View_[]).map((value) => (
           <TouchableOpacity
             key={value}
             style={[styles.segmentItem, view === value && styles.segmentItemActive]}
             onPress={() => setView(value)}
           >
             <Text style={[styles.segmentText, view === value && styles.segmentTextActive]}>
-              {value === 'pagos' ? 'Pagos recibidos' : 'Liquidaciones'}
+              {VIEW_LABEL[value]}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {view === 'liquidaciones' ? (
+      {view === 'historial' ? (
+        <ScrollView contentContainerStyle={styles.listContent}>
+          <YearHistory
+            views={chargeViews}
+            year={year}
+            onChangeYear={setYear}
+            onPressMonth={(period) => navigation.navigate('MonthDetail', { period })}
+          />
+        </ScrollView>
+      ) : view === 'liquidaciones' ? (
         <>
           <View style={styles.filterRow}>
             {FILTERS.map((item) => {

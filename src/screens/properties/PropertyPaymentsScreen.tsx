@@ -7,6 +7,7 @@ import EmptyState from '../../components/EmptyState';
 import MoneyText from '../../components/MoneyText';
 import OptionChips from '../../components/OptionChips';
 import Screen from '../../components/Screen';
+import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
@@ -29,10 +30,12 @@ export default function PropertyPaymentsScreen() {
   const { propertyId } = route.params;
   const { getPropertyById, chargeViewsForProperty, getContractById, getTenantById } = useData();
   const [filter, setFilter] = useState<FilterValue>('todos');
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const property = getPropertyById(propertyId);
 
-  const rows = chargeViewsForProperty(propertyId).filter(
-    (view) => filter === 'todos' || view.status === filter,
+  const views = chargeViewsForProperty(propertyId);
+  const rows = views.filter(
+    (view) => view.charge.period.startsWith(`${year}-`) && (filter === 'todos' || view.status === filter),
   );
 
   return (
@@ -45,6 +48,13 @@ export default function PropertyPaymentsScreen() {
           <View>
             <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
             <Text style={styles.subtitle}>Liquidaciones y pagos de todos sus contratos</Text>
+            <YearHistory
+              views={views}
+              year={year}
+              onChangeYear={setYear}
+              onPressMonth={(period) => navigation.navigate('MonthDetail', { period, propertyId })}
+            />
+            <Text style={styles.sectionTitle}>Liquidaciones de {year}</Text>
             <OptionChips label="Mostrar" options={FILTERS} value={filter} onChange={setFilter} />
           </View>
         }
@@ -54,7 +64,7 @@ export default function PropertyPaymentsScreen() {
             title="Sin liquidaciones"
             message={
               filter === 'todos'
-                ? 'Todavía no hay liquidaciones para esta propiedad.'
+                ? `No hay liquidaciones de esta propiedad en ${year}.`
                 : 'No hay liquidaciones con este estado.'
             }
           />
@@ -121,6 +131,13 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
     marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   card: {
     marginBottom: spacing.sm,

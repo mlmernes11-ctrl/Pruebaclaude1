@@ -6,6 +6,7 @@ export type PropertiesStackParamList = {
   PropertyForm: { propertyId?: string } | undefined;
   PropertyDetail: { propertyId: string };
   PropertyPayments: { propertyId: string };
+  MonthDetail: { period: string; propertyId?: string };
 };
 
 export type TenantsStackParamList = {
@@ -21,10 +22,11 @@ export type ContractsStackParamList = {
 };
 
 export type PaymentsStackParamList = {
-  PaymentsList: undefined;
+  PaymentsList: { view?: 'pagos' | 'liquidaciones' | 'historial'; filter?: string; month?: string } | undefined;
   PaymentForm: { contractId?: string; concept?: ChargeConcept; chargeId?: string } | undefined;
   PaymentDetail: { paymentId: string };
   ChargeForm: { chargeId?: string; contractId?: string } | undefined;
+  MonthDetail: { period: string; propertyId?: string };
 };
 
 export type DashboardStackParamList = {
