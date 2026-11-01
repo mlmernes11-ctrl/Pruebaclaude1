@@ -248,6 +248,8 @@ const useStyles = makeStyles((colors) => ({
   },
   searchInput: {
     flex: 1,
+    // Lets the field shrink on the web (inputs keep a native minimum width) so the clear button fits.
+    minWidth: 0,
     paddingVertical: 10,
     fontSize: fontSize.md,
     color: colors.text,
