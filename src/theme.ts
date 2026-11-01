@@ -19,6 +19,8 @@ export const colors = {
   chartPaid: '#059669',
   chartOverdue: '#B91C1C',
   chartPending: '#F59E0B',
+  // Search matches, like a highlighter pen over the text.
+  highlight: '#FDE68A',
   neutralMuted: '#E2E8F0',
   neutralTint: '#F1F5F9',
   white: '#FFFFFF',

@@ -56,3 +56,15 @@ export const CONCEPT_LABEL: Record<ChargeConcept, string> = {
 export const CONCEPT_OPTIONS = Object.entries(CONCEPT_LABEL).map(
   ([value, label]) => ({ value: value as ChargeConcept, label }),
 );
+
+export const PROPERTY_STATUS_TONE = {
+  disponible: 'info',
+  alquilada: 'success',
+  mantenimiento: 'neutral',
+} as const;
+
+export const CONTRACT_STATUS_TONE = {
+  activo: 'success',
+  finalizado: 'neutral',
+  cancelado: 'danger',
+} as const;

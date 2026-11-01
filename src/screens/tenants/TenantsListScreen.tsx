@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
 import Screen from '../../components/Screen';
+import SearchLauncher from '../../components/SearchSheet';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, radius, spacing } from '../../theme';
 
@@ -18,6 +19,7 @@ export default function TenantsListScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Inquilinos</Text>
       </View>
+      {tenants.length ? <SearchLauncher scope="inquilinos" /> : null}
       <FlatList
         data={tenants}
         keyExtractor={(item) => item.id}
@@ -48,7 +50,11 @@ export default function TenantsListScreen() {
                   </View>
                 ) : null}
                 <Text style={styles.contractsText}>
-                  {activeContracts.length} contrato(s) activo(s)
+                  {activeContracts.length === 0
+                    ? 'Sin contrato activo'
+                    : activeContracts.length === 1
+                      ? '1 contrato activo'
+                      : `${activeContracts.length} contratos activos`}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />

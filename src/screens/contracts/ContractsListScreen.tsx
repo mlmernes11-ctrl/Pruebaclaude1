@@ -7,16 +7,11 @@ import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
-import { CONTRACT_STATUS_LABEL } from '../../constants';
+import SearchLauncher from '../../components/SearchSheet';
+import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
 import { formatDate } from '../../utils/format';
-
-const CONTRACT_TONE = {
-  activo: 'success',
-  finalizado: 'neutral',
-  cancelado: 'danger',
-} as const;
 
 export default function ContractsListScreen() {
   const { contracts, getPropertyById, getTenantById } = useData();
@@ -29,6 +24,7 @@ export default function ContractsListScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Contratos</Text>
       </View>
+      {contracts.length ? <SearchLauncher scope="contratos" /> : null}
       <FlatList
         data={sorted}
         keyExtractor={(item) => item.id}
@@ -52,7 +48,7 @@ export default function ContractsListScreen() {
                 <Text style={styles.cardTitle} numberOfLines={1}>
                   {property?.title ?? 'Propiedad'}
                 </Text>
-                <Badge label={CONTRACT_STATUS_LABEL[item.status]} tone={CONTRACT_TONE[item.status]} />
+                <Badge label={CONTRACT_STATUS_LABEL[item.status]} tone={CONTRACT_STATUS_TONE[item.status]} />
               </View>
               <Text style={styles.tenantText}>{tenant?.name ?? 'Inquilino'}</Text>
               <View style={styles.footerRow}>

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { colors } from '../theme';
+import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
@@ -183,25 +184,19 @@ const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 const navigationRef = createNavigationContainerRef();
 
-// On the web the browser's back button would leave the app. One extra history entry is kept
-// while there is somewhere to go back to, and each back press is turned into an in-app back.
-let browserBackArmed = false;
-
 function armBrowserBack() {
-  if (Platform.OS !== 'web' || browserBackArmed || !navigationRef.canGoBack()) return;
-  try {
-    window.history.pushState({ appBack: true }, '');
-    browserBackArmed = true;
-  } catch {
-    // History may be unavailable in some embedded views; the in-app back still works.
-  }
+  if (navigationRef.canGoBack()) armBrowserHistory();
 }
 
 function useBrowserBackButton() {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const onPopState = () => {
-      browserBackArmed = false;
+      markBrowserHistoryPopped();
+      if (runBackHandler()) {
+        armBrowserBack();
+        return;
+      }
       if (navigationRef.isReady() && navigationRef.canGoBack()) navigationRef.goBack();
     };
     window.addEventListener('popstate', onPopState);

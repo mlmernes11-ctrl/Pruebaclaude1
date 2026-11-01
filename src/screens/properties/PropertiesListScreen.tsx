@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Card from '../../components/Card';
@@ -8,23 +8,16 @@ import EmptyState from '../../components/EmptyState';
 import FAB from '../../components/FAB';
 import MoneyText from '../../components/MoneyText';
 import Screen from '../../components/Screen';
-import { PROPERTY_STATUS_LABEL, PROPERTY_TYPE_LABEL } from '../../constants';
+import SearchLauncher from '../../components/SearchSheet';
+import { PROPERTY_STATUS_LABEL, PROPERTY_STATUS_TONE, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { colors, fontSize, spacing } from '../../theme';
-
-const STATUS_TONE = {
-  disponible: 'info',
-  alquilada: 'success',
-  mantenimiento: 'neutral',
-} as const;
 
 export default function PropertiesListScreen() {
   const { properties } = useData();
   const navigation = useNavigation<any>();
-  const [query, setQuery] = useState('');
-
-  const filtered = properties.filter((p) =>
-    `${p.title} ${p.address}`.toLowerCase().includes(query.toLowerCase()),
+  const sorted = [...properties].sort((a, b) =>
+    a.title.localeCompare(b.title, 'es', { numeric: true, sensitivity: 'base' }),
   );
 
   return (
@@ -32,8 +25,9 @@ export default function PropertiesListScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Propiedades</Text>
       </View>
+      {properties.length ? <SearchLauncher scope="propiedades" /> : null}
       <FlatList
-        data={filtered}
+        data={sorted}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
@@ -52,7 +46,7 @@ export default function PropertiesListScreen() {
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Badge label={PROPERTY_STATUS_LABEL[item.status]} tone={STATUS_TONE[item.status]} />
+              <Badge label={PROPERTY_STATUS_LABEL[item.status]} tone={PROPERTY_STATUS_TONE[item.status]} />
             </View>
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={14} color={colors.textMuted} />
