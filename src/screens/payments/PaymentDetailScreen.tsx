@@ -18,7 +18,7 @@ export default function PaymentDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { paymentId } = route.params;
-  const { getPaymentById, getContractById, getPropertyById, getTenantById, charges, deletePayment } = useData();
+  const { getPaymentById, getContractById, getPropertyById, getTenantById, charges, payments, deletePayment } = useData();
   const payment = getPaymentById(paymentId);
 
   if (!payment) {
@@ -33,11 +33,16 @@ export default function PaymentDetailScreen() {
   const property = getPropertyById(contract?.propertyId);
   const tenant = getTenantById(contract?.tenantId);
   const credit = unallocatedAmount(payment);
+  const sameReceipt = payment.receiptId
+    ? payments.filter((p) => p.receiptId === payment.receiptId && p.id !== payment.id)
+    : [];
 
   const handleDelete = () => {
     showConfirm({
       title: 'Anular pago',
-      message: 'Las liquidaciones que cubría este pago vuelven a figurar como deuda. ¿Continuar?',
+      message: sameReceipt.length
+        ? `Se anula solo ${CONCEPT_LABEL[payment.concept].toLowerCase()}; lo demás del recibo queda registrado. Las liquidaciones que cubría vuelven a figurar como deuda. ¿Continuar?`
+        : 'Las liquidaciones que cubría este pago vuelven a figurar como deuda. ¿Continuar?',
       confirmLabel: 'Anular pago',
       destructive: true,
       onConfirm: () => {
@@ -86,6 +91,20 @@ export default function PaymentDetailScreen() {
             <ListRow title="A favor del inquilino" value={formatMoney(credit, payment.currency)} valueTone="primary" />
           ) : null}
         </ListSection>
+
+        {sameReceipt.length ? (
+          <ListSection header="En el mismo recibo">
+            {sameReceipt.map((p) => (
+              <ListRow
+                key={p.id}
+                title={CONCEPT_LABEL[p.concept]}
+                value={formatMoney(p.amount, p.currency)}
+                valueTone="muted"
+                onPress={() => navigation.push('PaymentDetail', { paymentId: p.id })}
+              />
+            ))}
+          </ListSection>
+        ) : null}
 
         <ListSection>
           <ListRow title="Anular pago" destructive onPress={handleDelete} />

@@ -98,5 +98,7 @@ export interface Payment {
   exchangeRate?: number;
   allocations: PaymentAllocation[];
   notes?: string;
+  // Payments registered together in one receipt (e.g. rent + expensas) share this id.
+  receiptId?: string;
   createdAt: string;
 }

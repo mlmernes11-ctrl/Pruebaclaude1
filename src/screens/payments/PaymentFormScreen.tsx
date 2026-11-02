@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Badge from '../../components/Badge';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/Button';
-import Card from '../../components/Card';
 import DateField from '../../components/DateField';
 import { showAlert } from '../../components/DialogHost';
 import FormField from '../../components/FormField';
@@ -14,33 +12,32 @@ import SelectField from '../../components/SelectField';
 import { CONCEPT_LABEL, DEFAULT_RENT_CURRENCY, PAYMENT_METHOD_OPTIONS } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
-import { ChargeConcept, Currency } from '../../types';
+import { ChargeConcept, Currency, MoneyTotals } from '../../types';
 import { CHARGE_CONCEPTS } from '../../utils/chargeGeneration';
 import {
+  addToTotals,
   CURRENCY_SYMBOL,
   currentPeriod,
+  emptyTotals,
   formatMoney,
   formatPeriod,
+  formatTotals,
   parseAmount,
   todayISO,
 } from '../../utils/format';
-import {
-  allocateAmount,
-  CHARGE_STATUS_LABEL,
-  CHARGE_STATUS_TONE,
-  ChargeView,
-  isOutstanding,
-  sortOldestFirst,
-  sumBalances,
-} from '../../utils/ledger';
+import { generateId } from '../../utils/id';
+import { allocateAmount, ChargeView, isOutstanding, sortOldestFirst, sumBalances } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
-import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { compareTitles, plural } from '../../utils/text';
 
 type AmountOption = 'cuota' | 'total' | 'otro';
+type Entry = { option: AmountOption; amount: string };
 
+// One receipt can pay several concepts at once: contract, date and method are entered once,
+// and each chosen concept (alquiler, expensas, servicios) gets its own amount.
 export default function PaymentFormScreen() {
-  const { colors } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -48,18 +45,14 @@ export default function PaymentFormScreen() {
   const presetConcept = route.params?.concept as ChargeConcept | undefined;
   const presetChargeId = route.params?.chargeId as string | undefined;
 
-  const { contracts, chargeViews, getContractById, getPropertyById, getTenantById, addPayment } =
-    useData();
+  const { contracts, chargeViews, getContractById, getPropertyById, getTenantById, addPayment } = useData();
   const { rate } = useExchangeRate();
 
   // Debt of one contract and concept, plus the charge "Lo del mes" refers to.
   const debtFor = (targetContractId: string, targetConcept: ChargeConcept) => {
     const outstanding = sortOldestFirst(
       chargeViews.filter(
-        (v) =>
-          v.charge.contractId === targetContractId &&
-          v.charge.concept === targetConcept &&
-          isOutstanding(v),
+        (v) => v.charge.contractId === targetContractId && v.charge.concept === targetConcept && isOutstanding(v),
       ),
     );
     const reference =
@@ -68,75 +61,60 @@ export default function PaymentFormScreen() {
     return { outstanding, reference, total: sumBalances(outstanding) };
   };
 
-  const defaultsFor = (targetContractId: string, targetConcept: ChargeConcept) => {
+  const defaultsFor = (targetContractId: string, targetConcept: ChargeConcept): Entry => {
     const { outstanding, reference, total } = debtFor(targetContractId, targetConcept);
-    if (reference) return { option: 'cuota' as AmountOption, amount: String(reference.balance) };
-    if (outstanding.length) return { option: 'total' as AmountOption, amount: String(total) };
-    return { option: 'otro' as AmountOption, amount: '' };
+    if (reference) return { option: 'cuota', amount: String(reference.balance) };
+    if (outstanding.length) return { option: 'total', amount: String(total) };
+    return { option: 'otro', amount: '' };
   };
 
-  const initialContractId = presetContractId ?? '';
-  const initialConcept = presetConcept ?? 'alquiler';
-  const initialDefaults = defaultsFor(initialContractId, initialConcept);
+  const allDefaults = (targetContractId: string) =>
+    Object.fromEntries(CHARGE_CONCEPTS.map((c) => [c, defaultsFor(targetContractId, c)])) as Record<ChargeConcept, Entry>;
 
-  const [contractId, setContractId] = useState(initialContractId);
-  const [concept, setConcept] = useState<ChargeConcept>(initialConcept);
-  const [option, setOption] = useState<AmountOption>(initialDefaults.option);
-  const [amount, setAmount] = useState(initialDefaults.amount);
+  const [contractId, setContractId] = useState(presetContractId ?? '');
+  const [selected, setSelected] = useState<ChargeConcept[]>([presetConcept ?? 'alquiler']);
+  const [entries, setEntries] = useState<Record<ChargeConcept, Entry>>(() => allDefaults(presetContractId ?? ''));
   const [date, setDate] = useState(todayISO());
   const [method, setMethod] = useState(PAYMENT_METHOD_OPTIONS[1]);
   const [exchangeRateInput, setExchangeRateInput] = useState(rate ? String(rate) : '');
   const [notes, setNotes] = useState('');
 
   const contract = getContractById(contractId);
-  const { outstanding, reference, total } = debtFor(contractId, concept);
-  const currency: Currency =
-    outstanding[0]?.charge.currency ??
-    (concept === 'alquiler' ? contract?.currency ?? DEFAULT_RENT_CURRENCY : 'ARS');
-  const showCuota = Boolean(reference);
-  const showTotal = outstanding.length > 0 && (!reference || outstanding.length > 1);
+  const currencyOf = (concept: ChargeConcept): Currency =>
+    debtFor(contractId, concept).outstanding[0]?.charge.currency ??
+    (concept === 'alquiler' ? (contract?.currency ?? DEFAULT_RENT_CURRENCY) : 'ARS');
+  const anyDollars = selected.some((c) => currencyOf(c) === 'USD');
 
   useEffect(() => {
-    if (currency === 'USD' && !exchangeRateInput && rate) setExchangeRateInput(String(rate));
-  }, [currency, rate, exchangeRateInput]);
-
-  const resetAmount = (targetContractId: string, targetConcept: ChargeConcept) => {
-    const defaults = defaultsFor(targetContractId, targetConcept);
-    setOption(defaults.option);
-    setAmount(defaults.amount);
-  };
+    if (anyDollars && !exchangeRateInput && rate) setExchangeRateInput(String(rate));
+  }, [anyDollars, rate, exchangeRateInput]);
 
   const handleSelectContract = (id: string) => {
     setContractId(id);
-    resetAmount(id, concept);
+    setEntries(allDefaults(id));
   };
 
-  const handleSelectConcept = (value: ChargeConcept) => {
-    setConcept(value);
-    resetAmount(contractId, value);
-  };
+  const toggleConcept = (concept: ChargeConcept) =>
+    setSelected((prev) =>
+      prev.includes(concept)
+        ? prev.filter((c) => c !== concept)
+        : CHARGE_CONCEPTS.filter((c) => c === concept || prev.includes(c)),
+    );
 
-  const handleSelectOption = (value: AmountOption) => {
-    setOption(value);
-    if (value === 'cuota' && reference) setAmount(String(reference.balance));
-    if (value === 'total') setAmount(String(total));
-    if (value === 'otro') setAmount('');
-  };
+  const setEntry = (concept: ChargeConcept, entry: Entry) => setEntries((prev) => ({ ...prev, [concept]: entry }));
 
-  const parsedAmount = parseAmount(amount) ?? 0;
-  const priority = option === 'cuota' && reference ? [reference] : outstanding;
-  const preview =
-    parsedAmount > 0 ? allocateAmount(parsedAmount, priority, outstanding) : undefined;
   const parsedRate = parseAmount(exchangeRateInput) ?? 0;
-
-  const conceptOptions = CHARGE_CONCEPTS.map((value) => {
-    const count = contractId ? debtFor(contractId, value).outstanding.length : 0;
-    return { value, label: count ? `${CONCEPT_LABEL[value]} · ${count}` : CONCEPT_LABEL[value] };
-  });
+  const amountOf = (concept: ChargeConcept) => parseAmount(entries[concept].amount) ?? 0;
+  const receiptTotals: MoneyTotals = emptyTotals();
+  selected.forEach((c) => addToTotals(receiptTotals, amountOf(c), currencyOf(c)));
 
   const contractOptions = contracts
     .slice()
-    .sort((a, b) => (a.status === 'activo' ? 0 : 1) - (b.status === 'activo' ? 0 : 1))
+    .sort(
+      (a, b) =>
+        Number(b.status === 'activo') - Number(a.status === 'activo') ||
+        compareTitles(getPropertyById(a.propertyId)?.title ?? '', getPropertyById(b.propertyId)?.title ?? ''),
+    )
     .map((c) => ({
       id: c.id,
       label: getPropertyById(c.propertyId)?.title ?? 'Propiedad',
@@ -148,29 +126,43 @@ export default function PaymentFormScreen() {
       showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el pago.');
       return;
     }
-    if (!(parsedAmount > 0)) {
-      showAlert('Monto inválido', 'Ingresá cuánto pagó.');
+    if (!selected.length) {
+      showAlert('¿Qué paga?', 'Elegí si paga alquiler, expensas o servicios.');
+      return;
+    }
+    const missing = selected.find((c) => !(amountOf(c) > 0));
+    if (missing) {
+      showAlert('Monto inválido', `Ingresá cuánto pagó de ${CONCEPT_LABEL[missing].toLowerCase()}.`);
       return;
     }
     if (!date) {
       showAlert('Falta la fecha', 'Elegí la fecha del pago.');
       return;
     }
-    if (currency === 'USD' && exchangeRateInput && !(parsedRate > 0)) {
-      showAlert('Cotización inválida', 'Ingresá cuántos pesos se pagaron por dólar, por ejemplo 1250.');
+    if (anyDollars && exchangeRateInput && !(parsedRate > 0)) {
+      showAlert('Cotización inválida', 'Ingresá cuántos pesos se pagaron por dólar, por ejemplo 1.410.');
       return;
     }
 
-    addPayment({
-      contractId,
-      concept,
-      date,
-      amount: parsedAmount,
-      currency,
-      method,
-      exchangeRate: currency === 'USD' && parsedRate > 0 ? parsedRate : undefined,
-      allocations: preview?.allocations ?? [],
-      notes: notes.trim() || undefined,
+    const receiptId = selected.length > 1 ? generateId() : undefined;
+    selected.forEach((concept) => {
+      const { outstanding, reference } = debtFor(contractId, concept);
+      const entry = entries[concept];
+      const priority = entry.option === 'cuota' && reference ? [reference] : outstanding;
+      const amount = amountOf(concept);
+      const currency = currencyOf(concept);
+      addPayment({
+        contractId,
+        concept,
+        date,
+        amount,
+        currency,
+        method,
+        exchangeRate: currency === 'USD' && parsedRate > 0 ? parsedRate : undefined,
+        allocations: allocateAmount(amount, priority, outstanding).allocations,
+        notes: notes.trim() || undefined,
+        receiptId,
+      });
     });
     smartGoBack(navigation, 'PaymentsList');
   };
@@ -187,96 +179,41 @@ export default function PaymentFormScreen() {
           emptyMessage="No hay contratos. Creá uno primero."
           options={contractOptions}
         />
-        <OptionChips label="¿Qué paga?" options={conceptOptions} value={concept} onChange={handleSelectConcept} />
 
-        {contract ? (
-          <Card style={styles.debtCard}>
-            <Text style={styles.debtTitle}>
-              Deuda de {CONCEPT_LABEL[concept].toLowerCase()}:{' '}
-              <Text style={styles.debtTotal}>{formatMoney(total, currency)}</Text>
-            </Text>
-            {outstanding.length === 0 ? (
-              <Text style={styles.debtEmpty}>
-                No hay liquidaciones pendientes. Si el inquilino adelanta, el monto queda a su favor.
-              </Text>
-            ) : (
-              outstanding.map((view) => <DebtRow key={view.charge.id} view={view} />)
-            )}
-          </Card>
-        ) : null}
-
-        {contract ? (
-          <View style={styles.options}>
-            <Text style={styles.sectionLabel}>¿Cuánto paga?</Text>
-            {showCuota && reference ? (
-              <AmountChoice
-                selected={option === 'cuota'}
-                title={
-                  reference.charge.period === currentPeriod()
-                    ? `Lo del mes (${formatPeriod(reference.charge.period)})`
-                    : `Liquidación de ${formatPeriod(reference.charge.period)}`
-                }
-                amount={formatMoney(reference.balance, currency)}
-                onPress={() => handleSelectOption('cuota')}
-              />
-            ) : null}
-            {showTotal ? (
-              <AmountChoice
-                selected={option === 'total'}
-                title="Total adeudado"
-                subtitle={outstanding.length > 1 ? `Incluye ${outstanding.length} liquidaciones` : undefined}
-                amount={formatMoney(total, currency)}
-                onPress={() => handleSelectOption('total')}
-              />
-            ) : null}
-            <AmountChoice
-              selected={option === 'otro'}
-              title="Otro monto"
-              subtitle="Pago parcial o adelanto"
-              onPress={() => handleSelectOption('otro')}
+        <Text style={styles.label}>¿Qué paga? Podés elegir varios</Text>
+        <View style={styles.conceptRow}>
+          {CHARGE_CONCEPTS.map((concept) => (
+            <ConceptChip
+              key={concept}
+              label={CONCEPT_LABEL[concept]}
+              count={contractId ? debtFor(contractId, concept).outstanding.length : 0}
+              selected={selected.includes(concept)}
+              onPress={() => toggleConcept(concept)}
             />
-          </View>
-        ) : null}
+          ))}
+        </View>
 
-        <FormField
-          label={`Monto pagado (${CURRENCY_SYMBOL[currency]})`}
-          value={amount}
-          onChangeText={setAmount}
-          placeholder="0"
-          keyboardType="numeric"
-          required
-        />
+        {contract
+          ? selected.map((concept) => (
+              <ConceptBlock
+                key={concept}
+                concept={concept}
+                currency={currencyOf(concept)}
+                debt={debtFor(contractId, concept)}
+                entry={entries[concept]}
+                onChange={(entry) => setEntry(concept, entry)}
+              />
+            ))
+          : null}
 
-        {preview && contract ? (
-          <View style={styles.preview}>
-            <Text style={styles.previewTitle}>Se aplica a</Text>
-            {preview.allocations.map((allocation) => {
-              const view = outstanding.find((v) => v.charge.id === allocation.chargeId)!;
-              const rest = Math.round((view.balance - allocation.amount) * 100) / 100;
-              return (
-                <View key={allocation.chargeId} style={styles.previewRow}>
-                  <Ionicons
-                    name={rest > 0 ? 'ellipse-outline' : 'checkmark-circle'}
-                    size={16}
-                    color={rest > 0 ? colors.warning : colors.success}
-                  />
-                  <Text style={styles.previewText}>
-                    {formatPeriod(view.charge.period)}:{' '}
-                    {rest > 0
-                      ? `${formatMoney(allocation.amount, currency)}, quedan ${formatMoney(rest, currency)}`
-                      : `queda saldada (${formatMoney(allocation.amount, currency)})`}
-                  </Text>
-                </View>
-              );
-            })}
-            {preview.unallocated > 0 ? (
-              <View style={styles.previewRow}>
-                <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
-                <Text style={styles.previewText}>
-                  {formatMoney(preview.unallocated, currency)} quedan a favor del inquilino
-                </Text>
-              </View>
-            ) : null}
+        {contract && selected.length > 1 ? (
+          <View style={styles.receipt}>
+            <Text style={styles.receiptLabel}>Total del recibo</Text>
+            <Text style={styles.receiptValue}>{formatTotals(receiptTotals)}</Text>
+            <Text style={styles.receiptDetail}>
+              Se registran {plural(selected.length, 'pago', 'pagos')}:{' '}
+              {selected.map((c) => CONCEPT_LABEL[c].toLowerCase()).join(', ')}
+            </Text>
           </View>
         ) : null}
 
@@ -288,18 +225,18 @@ export default function PaymentFormScreen() {
           onChange={setMethod}
         />
 
-        {currency === 'USD' ? (
+        {anyDollars ? (
           <>
             <FormField
               label="Cotización usada (pesos por dólar)"
               value={exchangeRateInput}
               onChangeText={setExchangeRateInput}
-              placeholder="Ej: 1250"
+              placeholder="Ej: 1.410"
               keyboardType="numeric"
             />
-            {parsedRate > 0 && parsedAmount > 0 ? (
+            {parsedRate > 0 && receiptTotals.USD > 0 ? (
               <Text style={styles.equivalent}>
-                Equivale a {formatMoney(parsedAmount * parsedRate, 'ARS')}
+                {formatMoney(receiptTotals.USD, 'USD')} equivalen a {formatMoney(receiptTotals.USD * parsedRate, 'ARS')}
               </Text>
             ) : null}
           </>
@@ -312,23 +249,147 @@ export default function PaymentFormScreen() {
   );
 }
 
-function DebtRow({ view }: { view: ChargeView }) {
+function ConceptChip({
+  label,
+  count,
+  selected,
+  onPress,
+}: {
+  label: string;
+  count: number;
+  selected: boolean;
+  onPress: () => void;
+}) {
   const styles = useStyles();
-  const { charge, balance, paid, status } = view;
+  const { colors } = useTheme();
   return (
-    <View style={styles.debtRow}>
-      <View style={styles.debtInfo}>
-        <Text style={styles.debtPeriod}>{formatPeriod(charge.period)}</Text>
-        {paid > 0 ? (
-          <Text style={styles.debtMeta}>
-            Pagó {formatMoney(paid, charge.currency)} de {formatMoney(charge.amount, charge.currency)}
-          </Text>
-        ) : null}
+    <TouchableOpacity
+      style={[styles.chip, selected && styles.chipSelected]}
+      onPress={onPress}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={count ? `${label}, ${plural(count, 'deuda', 'deudas')}` : label}
+    >
+      <Ionicons
+        name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+        size={18}
+        color={selected ? colors.primary : colors.textMuted}
+      />
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+      {count ? <Text style={[styles.chipCount, selected && styles.chipTextSelected]}>{count}</Text> : null}
+    </TouchableOpacity>
+  );
+}
+
+// Amount for one concept: quick choices ("Lo del mes", "Total adeudado", "Otro monto") and the
+// resulting split over that concept's liquidaciones.
+function ConceptBlock({
+  concept,
+  currency,
+  debt,
+  entry,
+  onChange,
+}: {
+  concept: ChargeConcept;
+  currency: Currency;
+  debt: { outstanding: ChargeView[]; reference?: ChargeView; total: number };
+  entry: Entry;
+  onChange: (entry: Entry) => void;
+}) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const { outstanding, reference, total } = debt;
+  const overdue = outstanding.some((v) => v.status === 'vencido');
+  const showTotal = outstanding.length > 0 && (!reference || outstanding.length > 1);
+  const amount = parseAmount(entry.amount) ?? 0;
+  const priority = entry.option === 'cuota' && reference ? [reference] : outstanding;
+  const preview = amount > 0 ? allocateAmount(amount, priority, outstanding) : undefined;
+
+  const choose = (option: AmountOption) => {
+    if (option === 'cuota' && reference) onChange({ option, amount: String(reference.balance) });
+    else if (option === 'total') onChange({ option, amount: String(total) });
+    else onChange({ option, amount: '' });
+  };
+
+  return (
+    <View style={styles.block}>
+      <View style={styles.blockHeader}>
+        <Text style={styles.blockTitle}>{CONCEPT_LABEL[concept]}</Text>
+        <Text style={[styles.blockDebt, overdue && { color: colors.danger }]}>
+          {outstanding.length ? `Debe ${formatMoney(total, currency)}` : 'Sin deuda'}
+        </Text>
       </View>
-      <View style={styles.debtRight}>
-        <Text style={styles.debtAmount}>{formatMoney(balance, charge.currency)}</Text>
-        <Badge label={CHARGE_STATUS_LABEL[status]} tone={CHARGE_STATUS_TONE[status]} />
+
+      {reference ? (
+        <AmountChoice
+          selected={entry.option === 'cuota'}
+          title={
+            reference.charge.period === currentPeriod()
+              ? `Lo del mes (${formatPeriod(reference.charge.period)})`
+              : `Liquidación de ${formatPeriod(reference.charge.period)}`
+          }
+          amount={formatMoney(reference.balance, currency)}
+          onPress={() => choose('cuota')}
+        />
+      ) : null}
+      {showTotal ? (
+        <AmountChoice
+          selected={entry.option === 'total'}
+          title="Total adeudado"
+          subtitle={outstanding.length > 1 ? `Incluye ${outstanding.length} liquidaciones` : undefined}
+          amount={formatMoney(total, currency)}
+          onPress={() => choose('total')}
+        />
+      ) : null}
+      <AmountChoice
+        selected={entry.option === 'otro'}
+        title="Otro monto"
+        subtitle={outstanding.length ? 'Pago parcial o adelanto' : 'Si adelanta, queda a su favor'}
+        onPress={() => choose('otro')}
+      />
+
+      <View style={styles.amountRow}>
+        <Text style={styles.amountLabel}>Monto ({CURRENCY_SYMBOL[currency]})</Text>
+        <TextInput
+          value={entry.amount}
+          onChangeText={(text) => onChange({ ...entry, amount: text })}
+          placeholder="0"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="numeric"
+          style={styles.amountInput}
+          accessibilityLabel={`Monto de ${CONCEPT_LABEL[concept].toLowerCase()}`}
+        />
       </View>
+
+      {preview ? (
+        <View style={styles.preview}>
+          {preview.allocations.map((allocation) => {
+            const view = outstanding.find((v) => v.charge.id === allocation.chargeId)!;
+            const rest = Math.round((view.balance - allocation.amount) * 100) / 100;
+            return (
+              <View key={allocation.chargeId} style={styles.previewRow}>
+                <Ionicons
+                  name={rest > 0 ? 'ellipse-outline' : 'checkmark-circle'}
+                  size={15}
+                  color={rest > 0 ? colors.warning : colors.success}
+                />
+                <Text style={styles.previewText}>
+                  {formatPeriod(view.charge.period)}:{' '}
+                  {rest > 0
+                    ? `${formatMoney(allocation.amount, currency)}, quedan ${formatMoney(rest, currency)}`
+                    : `queda saldada`}
+                </Text>
+              </View>
+            );
+          })}
+          {preview.unallocated > 0 ? (
+            <View style={styles.previewRow}>
+              <Ionicons name="add-circle-outline" size={15} color={colors.primary} />
+              <Text style={styles.previewText}>{formatMoney(preview.unallocated, currency)} quedan a su favor</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -375,61 +436,68 @@ const useStyles = makeStyles((colors) => ({
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
   },
-  debtCard: {
-    marginBottom: spacing.lg,
-  },
-  debtTitle: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  debtTotal: {
-    fontWeight: '800',
-  },
-  debtEmpty: {
+  label: {
     fontSize: fontSize.sm,
+    fontWeight: '500',
     color: colors.textMuted,
+    marginLeft: spacing.xs,
+    marginBottom: 6,
   },
-  debtRow: {
+  conceptRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: spacing.md,
-  },
-  debtInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  debtPeriod: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  debtMeta: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  debtRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  debtAmount: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  options: {
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
-  sectionLabel: {
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    minHeight: 40,
+    borderRadius: radius.round,
+    backgroundColor: colors.neutralMuted,
+  },
+  chipSelected: {
+    backgroundColor: colors.primaryMuted,
+  },
+  chipText: {
+    fontSize: fontSize.md,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  chipTextSelected: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  chipCount: {
     fontSize: fontSize.sm,
     fontWeight: '600',
+    color: colors.textMuted,
+  },
+  block: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  blockHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  blockTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
     color: colors.text,
+  },
+  blockDebt: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
   },
   choice: {
     flexDirection: 'row',
@@ -437,12 +505,9 @@ const useStyles = makeStyles((colors) => ({
     gap: spacing.md,
     padding: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.neutralTint,
   },
   choiceSelected: {
-    borderColor: colors.primary,
     backgroundColor: colors.primaryMuted,
   },
   choiceInfo: {
@@ -463,16 +528,35 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.md,
     fontWeight: '700',
     color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    minHeight: 48,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  amountLabel: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+  },
+  amountInput: {
+    flex: 1,
+    minWidth: 0,
+    textAlign: 'right',
+    fontSize: fontSize.lg,
+    fontWeight: '600',
+    color: colors.text,
+    paddingVertical: spacing.sm,
   },
   preview: {
-    marginTop: -spacing.sm,
-    marginBottom: spacing.lg,
-    gap: spacing.xs,
-  },
-  previewTitle: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-    color: colors.textMuted,
+    gap: 4,
+    marginTop: 2,
   },
   previewRow: {
     flexDirection: 'row',
@@ -482,12 +566,38 @@ const useStyles = makeStyles((colors) => ({
   previewText: {
     flex: 1,
     fontSize: fontSize.sm,
+    color: colors.textMuted,
+  },
+  receipt: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  receiptLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  receiptValue: {
+    fontSize: 26,
+    fontWeight: '700',
     color: colors.text,
+    marginTop: spacing.xs,
+    fontVariant: ['tabular-nums'],
+  },
+  receiptDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   equivalent: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginTop: -spacing.sm,
     marginBottom: spacing.lg,
+    marginLeft: spacing.xs,
   },
 }));
