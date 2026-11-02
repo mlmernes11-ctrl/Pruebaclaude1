@@ -11,6 +11,7 @@ import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './b
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AccessScreen from '../screens/auth/AccessScreen';
 import RentalsScreen from '../screens/rentals/RentalsScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
 import PropertyDetailScreen from '../screens/properties/PropertyDetailScreen';
@@ -194,7 +195,7 @@ export default function RootNavigator() {
   const styles = useStyles();
   useBrowserBackButton();
   const insets = useSafeAreaInsets();
-  const { loading } = useData();
+  const { loading, loadError, reload } = useData();
   const navigationTheme = useMemo(() => {
     const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
     return {
@@ -209,6 +210,9 @@ export default function RootNavigator() {
       },
     };
   }, [colors, scheme]);
+
+  // The account's data could not be loaded (no connection): offer to try again.
+  if (!loading && loadError) return <AccessScreen message={loadError} onRetry={reload} />;
 
   // Saved data loads in a moment; showing screens before that would flash empty states.
   if (loading) {

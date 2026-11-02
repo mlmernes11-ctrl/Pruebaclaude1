@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import {
   Charge,
@@ -17,7 +17,10 @@ import { addToTotals, currentPeriod, emptyTotals, todayISO } from '../utils/form
 import { generateId } from '../utils/id';
 import { applyCredits, buildLedger, ChargeView, viewCharge } from '../utils/ledger';
 import { buildSampleData } from '../utils/sampleData';
+import { describeRemoteError, diffData, hasChanges, isConflict, loadRemoteData, pushChanges } from '../lib/remoteStore';
+import { embeddedPreview } from '../utils/platform';
 
+// Demo mode keeps its data on the device under this key; a signed-in account uses Supabase.
 const STORAGE_KEY = 'gestion_alquileres_v1';
 // Unreadable saved data is copied here before anything new overwrites it.
 const BACKUP_KEY = 'gestion_alquileres_v1_respaldo';
@@ -155,8 +158,17 @@ interface DashboardStats {
   collectedThisMonth: MoneyTotals;
 }
 
+export type DataMode = 'demo' | 'remote';
+
 interface DataContextValue extends StoredData {
+  mode: DataMode;
   loading: boolean;
+  // Remote mode: the first load failed (no connection); reload() tries again.
+  loadError?: string;
+  reload: () => void;
+  // Remote mode: changes that could not be saved yet; retrySync() sends them again.
+  syncError?: string;
+  retrySync: () => void;
   // Today's date; changes at midnight or when the app comes back, so statuses stay current.
   today: string;
   // Re-reads today's date (statuses, new month) — used by pull to refresh.
@@ -197,24 +209,70 @@ const DataContext = createContext<DataContextValue | undefined>(undefined);
 const byDueDateDesc = (a: ChargeView, b: ChargeView) =>
   a.charge.dueDate < b.charge.dueDate ? 1 : a.charge.dueDate > b.charge.dueDate ? -1 : 0;
 
-export function DataProvider({ children }: { children: React.ReactNode }) {
+export function DataProvider({ children, mode }: { children: React.ReactNode; mode: DataMode }) {
   const [data, setData] = useState<StoredData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+  const [syncError, setSyncError] = useState<string>();
+  const [reloadKey, setReloadKey] = useState(0);
   const [today, setToday] = useState(todayISO);
+  // Remote mode: what the server is known to hold, and a queue so saves go out in order.
+  const syncedRef = useRef<StoredData>(EMPTY_DATA);
+  const queueRef = useRef<Promise<void>>(Promise.resolve());
+  const dataRef = useRef<StoredData>(EMPTY_DATA);
+  dataRef.current = data;
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     (async () => {
+      if (mode === 'remote') {
+        try {
+          const remote = await loadRemoteData();
+          if (!active) return;
+          syncedRef.current = remote;
+          setData(remote);
+          setLoadError(undefined);
+        } catch (e) {
+          if (active) setLoadError(describeRemoteError(e, embeddedPreview()));
+        } finally {
+          if (active) setLoading(false);
+        }
+        return;
+      }
       let raw: string | null = null;
       try {
         raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) setData(normalizeStoredData(JSON.parse(raw)));
+        // A first visit to demo mode starts with the sample portfolio.
+        setData(raw ? normalizeStoredData(JSON.parse(raw)) : buildSampleData());
       } catch (e) {
         console.warn('No se pudo cargar la información guardada', e);
         if (raw) await AsyncStorage.setItem(BACKUP_KEY, raw).catch(() => undefined);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+    return () => {
+      active = false;
+    };
+  }, [mode, reloadKey]);
+
+  // Sends whatever differs from what the server holds; on failure the changes wait for the next try.
+  const syncNow = useCallback(() => {
+    queueRef.current = queueRef.current.then(async () => {
+      const snapshot = dataRef.current;
+      const changes = diffData(syncedRef.current, snapshot);
+      if (!hasChanges(changes)) return;
+      try {
+        await pushChanges(changes);
+        syncedRef.current = snapshot;
+        setSyncError(undefined);
+      } catch (e) {
+        setSyncError(describeRemoteError(e, embeddedPreview()));
+        // Another device created the same monthly charge: take the server's version.
+        if (isConflict(e)) setReloadKey((k) => k + 1);
+      }
+    });
   }, []);
 
   // An app left open overnight (or reopened days later) recalculates due dates and new months.
@@ -231,27 +289,31 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadError) return;
+    if (mode === 'remote') {
+      syncNow();
+      return;
+    }
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch((e) => {
       console.warn('No se pudo guardar la información', e);
     });
-  }, [data, loading]);
+  }, [data, loading, loadError, mode, syncNow]);
 
   // Creates this month's charges (and any missing month since the contract was loaded).
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadError) return;
     if (buildMissingCharges(data.contracts, data.properties, data.charges).length === 0) return;
     setData((prev) => ({
       ...prev,
       charges: [...prev.charges, ...buildMissingCharges(prev.contracts, prev.properties, prev.charges)],
     }));
-  }, [loading, today, data.contracts, data.properties, data.charges]);
+  }, [loading, loadError, today, data.contracts, data.properties, data.charges]);
 
   // Money left in favor of a tenant pays their next charges automatically.
   useEffect(() => {
-    if (loading || !applyCredits(data.payments, data.charges)) return;
+    if (loading || loadError || !applyCredits(data.payments, data.charges)) return;
     setData((prev) => ({ ...prev, payments: applyCredits(prev.payments, prev.charges) ?? prev.payments }));
-  }, [loading, data.payments, data.charges]);
+  }, [loading, loadError, data.payments, data.charges]);
 
   const ledger = useMemo(() => buildLedger(data.payments), [data.payments]);
 
@@ -410,8 +472,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setData((prev) => ({ ...prev, payments: prev.payments.filter((p) => p.id !== id) }));
   }, []);
 
-  const loadSampleData = useCallback(() => setData(buildSampleData()), []);
-  const clearAllData = useCallback(() => setData(EMPTY_DATA), []);
+  // Sample data and wiping everything only exist in demo mode; a real account is never replaced.
+  const loadSampleData = useCallback(() => {
+    if (mode === 'demo') setData(buildSampleData());
+  }, [mode]);
+  const clearAllData = useCallback(() => {
+    if (mode === 'demo') setData(EMPTY_DATA);
+  }, [mode]);
 
   const getPropertyById = useCallback(
     (id?: string) => data.properties.find((p) => p.id === id),
@@ -505,7 +572,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const value: DataContextValue = {
     ...data,
+    mode,
     loading,
+    loadError,
+    reload: () => setReloadKey((k) => k + 1),
+    syncError,
+    retrySync: syncNow,
     today,
     refreshToday: () => setToday(todayISO()),
     stats,

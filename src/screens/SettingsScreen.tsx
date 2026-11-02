@@ -7,6 +7,7 @@ import LargeTitleHeader from '../components/LargeTitleHeader';
 import ListRow from '../components/ListRow';
 import ListSection from '../components/ListSection';
 import Screen from '../components/Screen';
+import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, THEME_PREFERENCE_LABEL, ThemePreference, useTheme } from '../context/ThemeContext';
@@ -19,7 +20,8 @@ export default function SettingsScreen() {
   const styles = useStyles();
   const { colors, preference, setPreference } = useTheme();
   const navigation = useNavigation<any>();
-  const { properties, tenants, contracts, payments, loadSampleData, clearAllData } = useData();
+  const { mode, properties, tenants, contracts, payments, loadSampleData, clearAllData } = useData();
+  const { email, signOut } = useAuth();
   const { rate, source } = useExchangeRate();
   const isEmpty =
     properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
@@ -45,6 +47,16 @@ export default function SettingsScreen() {
       confirmLabel: 'Borrar todo',
       destructive: true,
       onConfirm: clearAllData,
+    });
+  };
+
+  const handleSignOut = () => {
+    showConfirm({
+      title: 'Cerrar sesión',
+      message: 'Tus datos quedan guardados en la nube. Para volver a verlos, ingresá con tu mail y contraseña.',
+      confirmLabel: 'Cerrar sesión',
+      destructive: true,
+      onConfirm: signOut,
     });
   };
 
@@ -76,12 +88,20 @@ export default function SettingsScreen() {
             />
           </ListSection>
 
-          <ListSection header="Datos" footer="Los datos se guardan solo en este dispositivo.">
-            <ListRow title="Cargar datos de ejemplo" icon="sparkles-outline" onPress={handleLoadSamples} chevron={false} />
-            {isEmpty ? null : (
-              <ListRow title="Borrar todos los datos" icon="trash-outline" destructive onPress={handleClearAll} />
-            )}
-          </ListSection>
+          {mode === 'remote' ? (
+            <ListSection header="Cuenta" footer="Los datos se guardan en la nube y se ven desde cualquier dispositivo con esta cuenta.">
+              <ListRow title="Mail" value={email ?? ''} valueTone="muted" chevron={false} />
+              <ListRow title="Cerrar sesión" icon="log-out-outline" destructive onPress={handleSignOut} chevron={false} />
+            </ListSection>
+          ) : (
+            <ListSection header="Modo demo" footer="Los datos de ejemplo se guardan solo en este dispositivo y no tocan tu cuenta.">
+              <ListRow title="Cargar datos de ejemplo" icon="sparkles-outline" onPress={handleLoadSamples} chevron={false} />
+              {isEmpty ? null : (
+                <ListRow title="Borrar todos los datos" icon="trash-outline" destructive onPress={handleClearAll} />
+              )}
+              <ListRow title="Salir del modo demo" icon="log-out-outline" onPress={signOut} chevron={false} />
+            </ListSection>
+          )}
         </View>
       </ScrollView>
     </Screen>

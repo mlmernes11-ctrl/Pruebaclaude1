@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
 import { Currency } from '../types';
+import { embeddedPreview } from '../utils/platform';
 
 const STORAGE_KEY = 'gestion_alquileres_cotizacion_v1';
 const QUOTES_URL = 'https://dolarapi.com/v1/dolares';
@@ -22,16 +22,6 @@ interface StoredExchange {
 }
 
 const DEFAULT_EXCHANGE: StoredExchange = { source: 'blue', quotes: {} };
-
-// The web preview runs inside another page (claude.ai), which blocks requests to other sites.
-function embeddedPreview(): boolean {
-  if (Platform.OS !== 'web') return false;
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
 
 export const RATE_SOURCE_LABEL: Record<RateSource, string> = {
   blue: 'Blue',
