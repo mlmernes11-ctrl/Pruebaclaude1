@@ -49,8 +49,17 @@ export default function PropertyDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
-  const { getPropertyById, contractsForProperty, getTenantById, contracts: allContracts, chargeViews, tenants, today } =
-    useData();
+  const {
+    getPropertyById,
+    contractsForProperty,
+    getTenantById,
+    contracts: allContracts,
+    chargeViews,
+    chargeViewsForProperty,
+    payments,
+    tenants,
+    today,
+  } = useData();
   const property = getPropertyById(propertyId);
 
   useLayoutEffect(() => {
@@ -75,7 +84,17 @@ export default function PropertyDetailScreen() {
   const active = summary.activeContract;
   const tenant = summary.tenant;
   const endBadge = active ? contractEndBadge(active) : undefined;
-  const pastContracts = contractsForProperty(property.id).filter((c) => c.id !== active?.id);
+  const propertyContracts = contractsForProperty(property.id);
+  const pastContracts = propertyContracts.filter((c) => c.id !== active?.id);
+  const contractIds = new Set(propertyContracts.map((c) => c.id));
+  const chargeCount = chargeViewsForProperty(property.id).length;
+  const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
+  // The Pagos tab, already filtered to this property.
+  const openPayments = (view: 'pagos' | 'liquidaciones') =>
+    navigation.navigate('PaymentsTab', {
+      screen: 'PaymentsList',
+      params: { view, propertyId: property.id, filter: 'todos', month: 'todos' },
+    });
 
   return (
     <Screen>
@@ -146,9 +165,23 @@ export default function PropertyDetailScreen() {
           )}
         </ListSection>
 
-        <ListSection>
+        <ListSection header="Pagos">
           <ListRow
-            title="Historial de pagos"
+            title="Liquidaciones"
+            icon="document-text-outline"
+            value={summary.overdue.count ? `${summary.overdue.count} en mora` : String(chargeCount)}
+            valueTone={summary.overdue.count ? 'danger' : 'muted'}
+            onPress={() => openPayments('liquidaciones')}
+          />
+          <ListRow
+            title="Pagos recibidos"
+            icon="wallet-outline"
+            value={String(paymentCount)}
+            valueTone="muted"
+            onPress={() => openPayments('pagos')}
+          />
+          <ListRow
+            title="Historial por mes"
             icon="time-outline"
             onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
           />

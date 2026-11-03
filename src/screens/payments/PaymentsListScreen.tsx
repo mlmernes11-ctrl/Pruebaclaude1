@@ -7,6 +7,7 @@ import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import PropertyFilter from '../../components/PropertyFilter';
 import Screen from '../../components/Screen';
+import SearchBar from '../../components/SearchBar';
 import SegmentedControl from '../../components/SegmentedControl';
 import SortMenu, { SortOption } from '../../components/SortMenu';
 import { DotTone } from '../../components/StatusDot';
@@ -17,7 +18,7 @@ import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { useRefresh } from '../../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../../theme';
-import { ChargeStatus, Currency, MoneyTotals } from '../../types';
+import { ChargeStatus, Currency, MoneyTotals, Payment } from '../../types';
 import {
   addMonthsToPeriod,
   addToTotals,
@@ -30,6 +31,7 @@ import {
   formatPeriodShort,
 } from '../../utils/format';
 import { ChargeView, unallocatedAmount } from '../../utils/ledger';
+import { matchRow, SearchField, searchWords } from '../../utils/search';
 import { compareTitles, plural } from '../../utils/text';
 
 type View_ = 'pagos' | 'liquidaciones' | 'historial';
@@ -71,6 +73,17 @@ const STATUS_SUMMARY: { status: ChargeStatus; label: string; dot: DotTone }[] = 
 
 const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
 
+const STATUS_TEXT: Record<ChargeStatus, string> = { vencido: 'Vencida', pendiente: 'Por vencer', pagado: 'Pagada' };
+
+// What a list row shows, plus fields only the search looks at.
+interface Row {
+  title: string;
+  subtitle: string;
+  value: string;
+  hidden: SearchField[];
+  detail?: string;
+}
+
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const shortDate = (iso?: string) => formatDate(iso).slice(0, 5);
 
@@ -92,6 +105,8 @@ export default function PaymentsListScreen() {
   const [sort, setSort] = useState<SortValue>('reciente');
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [propertyId, setPropertyId] = useState<string | undefined>();
+  const [query, setQuery] = useState('');
+  const words = useMemo(() => searchWords(query), [query]);
 
   // Everything on this screen (lists, totals and history) follows the property filter.
   const propertyContracts = useMemo(
@@ -102,7 +117,7 @@ export default function PaymentsListScreen() {
     () => (propertyContracts ? allChargeViews.filter((v) => propertyContracts.has(v.charge.contractId)) : allChargeViews),
     [allChargeViews, propertyContracts],
   );
-  const payments = useMemo(
+  const propertyPayments = useMemo(
     () => (propertyContracts ? allPayments.filter((p) => propertyContracts.has(p.contractId)) : allPayments),
     [allPayments, propertyContracts],
   );
@@ -115,6 +130,7 @@ export default function PaymentsListScreen() {
     if (params.filter) setFilter(params.filter);
     if (params.month) setMonth(params.month);
     setPropertyId(params.propertyId);
+    setQuery('');
   }, [route.params]);
 
   const describeContract = (contractId: string) => {
@@ -124,6 +140,61 @@ export default function PaymentsListScreen() {
       tenant: getTenantById(contract?.tenantId)?.name ?? 'Inquilino',
     };
   };
+
+  const chargeRow = (item: ChargeView): Row => {
+    const { property, tenant } = describeContract(item.charge.contractId);
+    const when =
+      item.status === 'pagado'
+        ? `pagada el ${shortDate(item.lastPaymentDate)}`
+        : item.paid > 0
+          ? `pagó ${formatMoney(item.paid, item.charge.currency)}`
+          : `vence el ${shortDate(item.charge.dueDate)}`;
+    return {
+      title: property,
+      subtitle: `${CONCEPT_LABEL[item.charge.concept]} ${formatPeriodShort(item.charge.period)} · ${when}`,
+      value: formatMoney(chargeValue(item), item.charge.currency),
+      hidden: [
+        { label: 'Inquilino', value: tenant },
+        { label: 'Mes', value: formatPeriod(item.charge.period) },
+        { label: 'Estado', value: STATUS_TEXT[item.status] },
+        { label: 'Monto', value: formatMoney(item.charge.amount, item.charge.currency), amount: true },
+        { label: 'Vence', value: formatDate(item.charge.dueDate) },
+        { label: 'Nota', value: item.charge.notes },
+      ],
+    };
+  };
+
+  const paymentRow = (item: Payment): Row => {
+    const { property, tenant } = describeContract(item.contractId);
+    const credit = unallocatedAmount(item) > 0 ? ' · saldo a favor' : '';
+    return {
+      title: property,
+      subtitle: `${tenant} · ${CONCEPT_LABEL[item.concept]} · ${shortDate(item.date)}${credit}`,
+      value: formatMoney(item.amount, item.currency),
+      hidden: [
+        { label: 'Fecha', value: formatDate(item.date) },
+        { label: 'Mes', value: formatPeriod(item.date.slice(0, 7)) },
+        { label: 'Método', value: item.method },
+        { label: 'Nota', value: item.notes },
+      ],
+    };
+  };
+
+  // The search narrows lists and totals alike; rows keep what they show and why they matched.
+  const search = <T,>(items: T[], toRow: (item: T) => Row) =>
+    items.flatMap((item) => {
+      const row = toRow(item);
+      if (!words.length) return [{ item, row }];
+      const visible: SearchField[] = [
+        { label: '', value: row.title },
+        { label: '', value: row.subtitle },
+        { label: '', value: row.value, amount: true },
+      ];
+      const match = matchRow(visible, row.hidden, words);
+      return match ? [{ item, row: { ...row, detail: match.detail } }] : [];
+    });
+  const searchedCharges = search(chargeViews, chargeRow);
+  const searchedPayments = search(propertyPayments, paymentRow);
 
   // Without an exchange rate dollars and pesos cannot be compared, so dollars go first.
   const compareAmounts = (a: number, ca: Currency, b: number, cb: Currency) => {
@@ -136,45 +207,47 @@ export default function PaymentsListScreen() {
   const compareProperties = (contractA: string, contractB: string) =>
     compareTitles(describeContract(contractA).property, describeContract(contractB).property);
 
-  const visibleCharges = (filter === 'todos' ? chargeViews : chargeViews.filter((v) => v.status === filter)).sort(
-    (a, b) => {
+  const visibleCharges = (
+    filter === 'todos' ? searchedCharges : searchedCharges.filter(({ item }) => item.status === filter)
+  ).sort(({ item: a }, { item: b }) => {
       if (sort === 'antiguo') return byDate(a.charge.dueDate, b.charge.dueDate);
       if (sort === 'propiedad') {
         return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
       }
       if (sort === 'monto') return compareAmounts(chargeValue(a), a.charge.currency, chargeValue(b), b.charge.currency);
       return byDate(b.charge.dueDate, a.charge.dueDate);
-    },
-  );
+  });
 
   const thisPeriod = currentPeriod();
   const monthPeriod = month === 'este' ? thisPeriod : month === 'anterior' ? addMonthsToPeriod(thisPeriod, -1) : undefined;
-  const monthPayments = monthPeriod ? payments.filter((p) => p.date.slice(0, 7) === monthPeriod) : payments;
-  const visiblePayments = [...monthPayments].sort((a, b) => {
+  const monthPayments = monthPeriod
+    ? searchedPayments.filter(({ item }) => item.date.slice(0, 7) === monthPeriod)
+    : searchedPayments;
+  const visiblePayments = [...monthPayments].sort(({ item: a }, { item: b }) => {
     if (sort === 'antiguo') return byDate(a.date, b.date);
     if (sort === 'propiedad') return compareProperties(a.contractId, b.contractId) || byDate(b.date, a.date);
     if (sort === 'monto') return compareAmounts(a.amount, a.currency, b.amount, b.currency);
     return byDate(b.date, a.date);
   });
 
-  const chargeTotals = useMemo(() => {
-    const totals: Record<ChargeStatus, { count: number; totals: MoneyTotals }> = {
-      vencido: { count: 0, totals: emptyTotals() },
-      pendiente: { count: 0, totals: emptyTotals() },
-      pagado: { count: 0, totals: emptyTotals() },
-    };
-    chargeViews.forEach((v) => {
-      totals[v.status].count += 1;
-      addToTotals(totals[v.status].totals, chargeValue(v), v.charge.currency);
-    });
-    return totals;
-  }, [chargeViews]);
+  const chargeTotals: Record<ChargeStatus, { count: number; totals: MoneyTotals }> = {
+    vencido: { count: 0, totals: emptyTotals() },
+    pendiente: { count: 0, totals: emptyTotals() },
+    pagado: { count: 0, totals: emptyTotals() },
+  };
+  searchedCharges.forEach(({ item: v }) => {
+    chargeTotals[v.status].count += 1;
+    addToTotals(chargeTotals[v.status].totals, chargeValue(v), v.charge.currency);
+  });
 
   const paymentTotals = emptyTotals();
-  monthPayments.forEach((p) => addToTotals(paymentTotals, p.amount, p.currency));
+  monthPayments.forEach(({ item: p }) => addToTotals(paymentTotals, p.amount, p.currency));
   const received = describeTotals(paymentTotals, rate, false);
 
-  const dollarsInView = chargeViews.some((v) => v.charge.currency === 'USD');
+  const dollarsInView = searchedCharges.some(({ item }) => item.charge.currency === 'USD');
+  const noResults = (what: string) => (
+    <EmptyState icon="search-outline" title="Sin resultados" message={`No hay ${what} que coincidan con «${query.trim()}».`} />
+  );
 
   const registerPayment = () => {
     const active = propertyId ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo') : undefined;
@@ -192,6 +265,9 @@ export default function PaymentsListScreen() {
     <Screen>
       <LargeTitleHeader title="Pagos" onAdd={registerPayment} addLabel="Registrar pago" />
       <SegmentedControl options={VIEWS} value={view} onChange={setView} />
+      {view !== 'historial' ? (
+        <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar carpeta, inquilino, monto, mes…" />
+      ) : null}
       <PropertyFilter value={propertyId} onChange={setPropertyId} />
 
       <ScrollView
@@ -241,28 +317,24 @@ export default function PaymentsListScreen() {
             )}
             {visibleCharges.length ? (
               <ListSection>
-                {visibleCharges.map((item) => {
-                  const { property } = describeContract(item.charge.contractId);
-                  const concept = `${CONCEPT_LABEL[item.charge.concept]} ${formatPeriodShort(item.charge.period)}`;
-                  const when =
-                    item.status === 'pagado'
-                      ? `pagada el ${shortDate(item.lastPaymentDate)}`
-                      : item.paid > 0
-                        ? `pagó ${formatMoney(item.paid, item.charge.currency)}`
-                        : `vence el ${shortDate(item.charge.dueDate)}`;
+                {visibleCharges.map(({ item, row }) => {
                   return (
                     <ListRow
                       key={item.charge.id}
                       dot={STATUS_DOT[item.status]}
-                      title={property}
-                      subtitle={`${concept} · ${when}`}
-                      value={formatMoney(chargeValue(item), item.charge.currency)}
+                      title={row.title}
+                      subtitle={row.subtitle}
+                      value={row.value}
+                      detail={row.detail}
+                      highlight={words}
                       valueTone={item.status === 'vencido' ? 'danger' : item.status === 'pagado' ? 'muted' : 'default'}
                       onPress={() => navigation.navigate('ChargeForm', { chargeId: item.charge.id })}
                     />
                   );
                 })}
               </ListSection>
+            ) : words.length ? (
+              noResults('liquidaciones')
             ) : (
               <EmptyState
                 icon="calendar-outline"
@@ -280,20 +352,22 @@ export default function PaymentsListScreen() {
             />
             {visiblePayments.length ? (
               <ListSection>
-                {visiblePayments.map((item) => {
-                  const { property, tenant } = describeContract(item.contractId);
-                  const credit = unallocatedAmount(item) > 0 ? ' · saldo a favor' : '';
+                {visiblePayments.map(({ item, row }) => {
                   return (
                     <ListRow
                       key={item.id}
-                      title={property}
-                      subtitle={`${tenant} · ${CONCEPT_LABEL[item.concept]} · ${shortDate(item.date)}${credit}`}
-                      value={formatMoney(item.amount, item.currency)}
+                      title={row.title}
+                      subtitle={row.subtitle}
+                      value={row.value}
+                      detail={row.detail}
+                      highlight={words}
                       onPress={() => navigation.navigate('PaymentDetail', { paymentId: item.id })}
                     />
                   );
                 })}
               </ListSection>
+            ) : words.length ? (
+              noResults('pagos')
             ) : (
               <EmptyState icon="wallet-outline" title="Sin pagos" message="Tocá + para registrar lo que pagó un inquilino." />
             )}

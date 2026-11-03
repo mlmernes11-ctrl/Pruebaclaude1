@@ -8,6 +8,9 @@ export interface SearchField {
   value?: string;
   // Phones and documents: "1155551234" also finds "11 5555-1234".
   digits?: boolean;
+  // Amounts: "350000" also finds "$ 350.000", but only from the start of the number
+  // (not "$ 1.350.000"), and only from 4 digits up, so "500" does not mark "$ 5.000".
+  amount?: boolean;
 }
 
 export interface FieldMatch {
@@ -63,14 +66,30 @@ function mergeRanges(ranges: Range[]): Range[] {
   return merged;
 }
 
-export function highlightRanges(value: string | undefined, words: string[], digits = false): Range[] {
+const isDigit = (char?: string) => char !== undefined && char >= '0' && char <= '9';
+
+// Whether an original position starts a number (not its middle, e.g. the "350" in "1.350.000").
+function startsNumber(value: string, index: number): boolean {
+  const previous = value[index - 1];
+  if (isDigit(previous)) return false;
+  return !((previous === '.' || previous === ',') && isDigit(value[index - 2]));
+}
+
+export function highlightRanges(
+  value: string | undefined,
+  words: string[],
+  digits = false,
+  amount = false,
+): Range[] {
   if (!value || !words.length) return [];
   const plain = normalizeWithMap(value);
-  const digitsOnly = digits ? normalizeWithMap(value, true) : undefined;
+  const digitsOnly = digits || amount ? normalizeWithMap(value, true) : undefined;
   const ranges: Range[] = [];
   words.forEach((word) => {
     ranges.push(...findIn(plain, word));
-    if (digitsOnly && /^\d+$/.test(word)) ranges.push(...findIn(digitsOnly, word));
+    if (!digitsOnly || !/^\d+$/.test(word)) return;
+    if (digits) ranges.push(...findIn(digitsOnly, word));
+    else if (word.length >= 4) ranges.push(...findIn(digitsOnly, word).filter(([start]) => startsNumber(value, start)));
   });
   return mergeRanges(ranges);
 }
@@ -82,10 +101,28 @@ export function matchFields(fields: SearchField[], words: string[]): FieldMatch[
   const matches: FieldMatch[] = [];
   fields.forEach((field, index) => {
     if (!field.value) return;
-    const matchedWords = words.filter((word) => highlightRanges(field.value, [word], field.digits).length > 0);
+    const matchedWords = words.filter(
+      (word) => highlightRanges(field.value, [word], field.digits, field.amount).length > 0,
+    );
     if (!matchedWords.length) return;
     matchedWords.forEach((word) => found.add(word));
-    matches.push({ field, index, ranges: highlightRanges(field.value, matchedWords, field.digits) });
+    matches.push({ field, index, ranges: highlightRanges(field.value, matchedWords, field.digits, field.amount) });
   });
   return words.every((word) => found.has(word)) ? matches : undefined;
+}
+
+// A list row searched over what it shows plus hidden fields (notes, method, month…). Returns undefined
+// when some word is missing; otherwise the hidden fields worth showing, because they hold a word the
+// visible text does not.
+export function matchRow(
+  visible: SearchField[],
+  hidden: SearchField[],
+  words: string[],
+): { detail?: string } | undefined {
+  if (!matchFields([...visible, ...hidden], words)) return undefined;
+  const has = (field: SearchField, word: string) =>
+    highlightRanges(field.value, [word], field.digits, field.amount).length > 0;
+  const shown = new Set(words.filter((word) => visible.some((field) => has(field, word))));
+  const extra = hidden.filter((field) => field.value && words.some((word) => !shown.has(word) && has(field, word)));
+  return { detail: extra.map((field) => `${field.label}: ${field.value}`).join(' · ') || undefined };
 }

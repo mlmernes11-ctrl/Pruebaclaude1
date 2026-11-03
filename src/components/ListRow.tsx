@@ -3,6 +3,8 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
+import { highlightRanges } from '../utils/search';
+import HighlightText from './HighlightText';
 import StatusDot, { DotTone } from './StatusDot';
 
 export type ValueTone = 'default' | 'muted' | 'danger' | 'primary' | 'success' | 'warning';
@@ -21,9 +23,15 @@ function ListRow({
   destructive,
   isFirst,
   inset,
+  highlight,
+  detail,
 }: {
   title: string;
   subtitle?: string;
+  // Search words: matches in the title, subtitle, value and detail are marked.
+  highlight?: string[];
+  // Third line, e.g. a note that matched the search.
+  detail?: string;
   value?: React.ReactNode;
   valueTone?: ValueTone;
   dot?: DotTone;
@@ -50,13 +58,18 @@ function ListRow({
   const strongValue = valueTone === 'default' || valueTone === 'danger';
   const separatorInset = inset ?? spacing.lg + (dot ? 22 : icon ? 40 : 0);
 
+  const words = highlight?.length ? highlight : undefined;
+  // Amounts also match typed digits: "350000" marks "$ 350.000".
+  const mark = (text: string, amount = false) =>
+    words ? <HighlightText text={text} ranges={highlightRanges(text, words, false, amount)} /> : text;
+
   const valueNode =
     value === undefined || value === null ? null : typeof value === 'string' ? (
       <Text
         style={[subtitle ? (strongValue ? styles.valueStrong : styles.valueSoft) : styles.valueSetting, { color: toneColor }]}
         numberOfLines={1}
       >
-        {value}
+        {mark(value, true)}
       </Text>
     ) : (
       value
@@ -71,13 +84,19 @@ function ListRow({
         <View style={styles.body}>
           <View style={styles.topLine}>
             <Text style={styles.titleStrong} numberOfLines={1}>
-              {title}
+              {mark(title)}
             </Text>
             {valueNode}
           </View>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {subtitle}
+          {/* While searching the subtitle may wrap, so a match near its end stays visible. */}
+          <Text style={styles.subtitle} numberOfLines={words ? 2 : 1}>
+            {mark(subtitle)}
           </Text>
+          {detail ? (
+            <Text style={styles.subtitle} numberOfLines={2}>
+              {mark(detail)}
+            </Text>
+          ) : null}
         </View>
       ) : (
         <>
