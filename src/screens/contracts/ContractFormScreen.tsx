@@ -146,7 +146,7 @@ export default function ContractFormScreen() {
     .map((t) => ({ id: t.id, label: t.name, subtitle: t.phone }));
 
   return (
-    <Screen>
+    <Screen narrow>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <SelectField
           label="Propiedad"

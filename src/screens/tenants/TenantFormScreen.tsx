@@ -52,7 +52,7 @@ export default function TenantFormScreen() {
   };
 
   return (
-    <Screen>
+    <Screen narrow>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <FormField label="Nombre completo" value={name} onChangeText={setName} placeholder="Ej: Ana Gómez" required />
         <FormField label="Documento" value={document} onChangeText={setDocument} placeholder="DNI / Pasaporte" />

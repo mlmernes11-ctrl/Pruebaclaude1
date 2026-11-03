@@ -7,12 +7,14 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Sidebar from '../components/Sidebar';
 import { useData } from '../context/DataContext';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
 
 import DashboardScreen from '../screens/DashboardScreen';
@@ -213,6 +215,8 @@ export default function RootNavigator() {
   useBrowserBackButton();
   const insets = useSafeAreaInsets();
   const { loading, loadError, reload } = useData();
+  // Pantalla grande: barra lateral a la izquierda; celular: pestañas abajo.
+  const desktop = useIsDesktop();
   const navigationTheme = useMemo(() => {
     const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
     return {
@@ -244,8 +248,10 @@ export default function RootNavigator() {
     <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack} theme={navigationTheme}>
       <Tab.Navigator
         backBehavior="history"
+        tabBar={(props) => (desktop ? <Sidebar {...props} /> : <BottomTabBar {...props} />)}
         screenOptions={({ route }) => ({
           headerShown: false,
+          tabBarPosition: desktop ? 'left' : 'bottom',
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           // Alto fijo para que los nombres de las pestañas nunca se corten.

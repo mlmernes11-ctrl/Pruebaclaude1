@@ -5,6 +5,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 import { fontSize, spacing } from '../theme';
 
 // ── Componente ────────────────────────────────────────────────────────
@@ -16,25 +17,35 @@ export default function LargeTitleHeader({
   onCaptionPress,
   onAdd,
   addLabel = 'Agregar',
+  middle,
 }: {
   title: string;
   caption?: string;
   onCaptionPress?: () => void;
   onAdd?: () => void;
   addLabel?: string;
+  // Algo entre el título y el botón (en pantalla grande, el selector de vistas).
+  middle?: React.ReactNode;
 }) {
   const styles = useStyles();
+  // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar pago").
+  const desktop = useIsDesktop();
   return (
     <View style={styles.row}>
       <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
         {title}
       </Text>
+      {middle}
       {caption ? (
         <TouchableOpacity onPress={onCaptionPress} disabled={!onCaptionPress} hitSlop={8}>
           <Text style={styles.caption}>{caption}</Text>
         </TouchableOpacity>
       ) : null}
-      {onAdd ? (
+      {onAdd && desktop ? (
+        <TouchableOpacity onPress={onAdd} style={styles.addButton} accessibilityRole="button">
+          <Text style={styles.addButtonText}>+ {addLabel}</Text>
+        </TouchableOpacity>
+      ) : onAdd ? (
         <TouchableOpacity
           onPress={onAdd}
           style={styles.addTarget}
@@ -75,6 +86,18 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     paddingRight: spacing.sm,
+  },
+  addButton: {
+    height: 38,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 10,
+    backgroundColor: colors.primarySolid,
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.white,
   },
   addTarget: {
     width: 44,

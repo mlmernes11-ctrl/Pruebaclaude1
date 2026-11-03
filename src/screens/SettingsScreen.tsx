@@ -71,7 +71,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <Screen>
+    <Screen narrow>
       <ScrollView contentContainerStyle={styles.content}>
         <LargeTitleHeader title="Ajustes" />
         <View style={styles.body}>

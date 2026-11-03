@@ -1,0 +1,24 @@
+# Arma el APK de Android en los servidores de Expo (EAS Build).
+# Se corre a mano desde GitHub › Actions › "Armar APK" › Run workflow.
+# Necesita el secreto EXPO_TOKEN (GitHub › Settings › Secrets and variables › Actions).
+# Cuando termina, el enlace para descargar el APK aparece en expo.dev › Builds.
+name: Armar APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: eas build --platform android --profile apk --non-interactive --no-wait

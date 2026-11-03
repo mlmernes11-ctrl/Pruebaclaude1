@@ -62,7 +62,7 @@ export default function ExchangeRateScreen() {
   };
 
   return (
-    <Screen>
+    <Screen narrow>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card style={styles.card}>
           <Text style={styles.label}>Cotización en uso ({RATE_SOURCE_LABEL[source]})</Text>

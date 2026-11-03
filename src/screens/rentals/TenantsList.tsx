@@ -19,7 +19,8 @@ import { COLLECTION_DOT } from '../../utils/status';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-export default function TenantsList() {
+// En pantalla grande, "onSelect" muestra la ficha al costado en vez de abrir otra pantalla.
+export default function TenantsList({ onSelect, selectedId }: { onSelect?: (id: string) => void; selectedId?: string }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -49,7 +50,8 @@ export default function TenantsList() {
                   subtitle={tenant.phone || tenant.email || 'Sin datos de contacto'}
                   value={property ? property.title : 'Sin contrato'}
                   valueTone="muted"
-                  onPress={() => navigation.navigate('TenantDetail', { tenantId: tenant.id })}
+                  selected={tenant.id === selectedId}
+                  onPress={() => (onSelect ? onSelect(tenant.id) : navigation.navigate('TenantDetail', { tenantId: tenant.id }))}
                 />
               );
             })}

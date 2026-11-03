@@ -8,6 +8,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import DataTable, { Column } from '../../components/DataTable';
 import EmptyState from '../../components/EmptyState';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
 import ListRow from '../../components/ListRow';
@@ -18,12 +19,13 @@ import StatusHero from '../../components/StatusHero';
 import SearchBar from '../../components/SearchBar';
 import SegmentedControl from '../../components/SegmentedControl';
 import SortMenu, { SortOption } from '../../components/SortMenu';
-import { DotTone } from '../../components/StatusDot';
+import StatusDot, { DotTone } from '../../components/StatusDot';
 import YearHistory from '../../components/YearHistory';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useIsDesktop } from '../../hooks/useIsDesktop';
 import { useRefresh } from '../../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals, Payment } from '../../types';
@@ -48,7 +50,7 @@ import {
   chargeProgress,
   chargeShownAmount,
 } from '../../utils/status';
-import { compareTitles, plural } from '../../utils/text';
+import { capitalize, compareTitles, plural } from '../../utils/text';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -98,6 +100,24 @@ interface Row {
   detail?: string;
 }
 
+// Columnas de las tablas en pantalla grande.
+const CHARGE_COLUMNS: Column[] = [
+  { key: 'property', label: 'Carpeta', flex: 1.3 },
+  { key: 'tenant', label: 'Inquilino', flex: 1.5 },
+  { key: 'concept', label: 'Concepto', flex: 1 },
+  { key: 'period', label: 'Mes', flex: 0.9 },
+  { key: 'status', label: 'Estado', flex: 2 },
+  { key: 'amount', label: 'Monto', flex: 1.1, align: 'right' },
+];
+const PAYMENT_COLUMNS: Column[] = [
+  { key: 'property', label: 'Carpeta', flex: 1.3 },
+  { key: 'tenant', label: 'Inquilino', flex: 1.5 },
+  { key: 'concept', label: 'Concepto', flex: 1 },
+  { key: 'date', label: 'Fecha', flex: 1 },
+  { key: 'method', label: 'Método', flex: 1.8 },
+  { key: 'amount', label: 'Monto', flex: 1.1, align: 'right' },
+];
+
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 // ── Pantalla ──────────────────────────────────────────────────────────
@@ -105,8 +125,14 @@ const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export default function PaymentsListScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { chargeViews: allChargeViews, payments: allPayments, contracts, getContractById, getPropertyById, getTenantById } =
-    useData();
+  const {
+    chargeViews: allChargeViews,
+    payments: allPayments,
+    contracts,
+    getContractById,
+    getPropertyById,
+    getTenantById,
+  } = useData();
   const { toPesos, rate } = useExchangeRate();
   const { refreshing, onRefresh } = useRefresh();
   const navigation = useNavigation<any>();
@@ -119,6 +145,7 @@ export default function PaymentsListScreen() {
   const [sort, setSort] = useState<SortValue>('reciente');
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [propertyId, setPropertyId] = useState<string | undefined>();
+  const desktop = useIsDesktop();
   const [query, setQuery] = useState('');
   const words = useMemo(() => searchWords(query), [query]);
 
@@ -128,7 +155,8 @@ export default function PaymentsListScreen() {
     [contracts, propertyId],
   );
   const chargeViews = useMemo(
-    () => (propertyContracts ? allChargeViews.filter((v) => propertyContracts.has(v.charge.contractId)) : allChargeViews),
+    () =>
+      propertyContracts ? allChargeViews.filter((v) => propertyContracts.has(v.charge.contractId)) : allChargeViews,
     [allChargeViews, propertyContracts],
   );
   const propertyPayments = useMemo(
@@ -185,7 +213,11 @@ export default function PaymentsListScreen() {
         { label: 'Fecha', value: formatDate(item.date) },
         { label: 'Mes', value: formatPeriod(item.date.slice(0, 7)) },
         { label: 'Método', value: item.method },
-        { label: 'En pesos', value: item.paidAmount ? formatMoney(item.paidAmount, item.paidCurrency ?? 'ARS') : undefined, amount: true },
+        {
+          label: 'En pesos',
+          value: item.paidAmount ? formatMoney(item.paidAmount, item.paidCurrency ?? 'ARS') : undefined,
+          amount: true,
+        },
         { label: 'Nota', value: item.notes },
       ],
     };
@@ -222,16 +254,18 @@ export default function PaymentsListScreen() {
   const visibleCharges = (
     filter === 'todos' ? searchedCharges : searchedCharges.filter(({ item }) => item.status === filter)
   ).sort(({ item: a }, { item: b }) => {
-      if (sort === 'antiguo') return byDate(a.charge.dueDate, b.charge.dueDate);
-      if (sort === 'propiedad') {
-        return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
-      }
-      if (sort === 'monto') return compareAmounts(chargeShownAmount(a), a.charge.currency, chargeShownAmount(b), b.charge.currency);
-      return byDate(b.charge.dueDate, a.charge.dueDate);
+    if (sort === 'antiguo') return byDate(a.charge.dueDate, b.charge.dueDate);
+    if (sort === 'propiedad') {
+      return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
+    }
+    if (sort === 'monto')
+      return compareAmounts(chargeShownAmount(a), a.charge.currency, chargeShownAmount(b), b.charge.currency);
+    return byDate(b.charge.dueDate, a.charge.dueDate);
   });
 
   const thisPeriod = currentPeriod();
-  const monthPeriod = month === 'este' ? thisPeriod : month === 'anterior' ? addMonthsToPeriod(thisPeriod, -1) : undefined;
+  const monthPeriod =
+    month === 'este' ? thisPeriod : month === 'anterior' ? addMonthsToPeriod(thisPeriod, -1) : undefined;
   const monthPayments = monthPeriod
     ? searchedPayments.filter(({ item }) => item.date.slice(0, 7) === monthPeriod)
     : searchedPayments;
@@ -259,7 +293,11 @@ export default function PaymentsListScreen() {
 
   const dollarsInView = searchedCharges.some(({ item }) => item.charge.currency === 'USD');
   const noResults = (what: string) => (
-    <EmptyState icon="search-outline" title="Sin resultados" message={`No hay ${what} que coincidan con «${query.trim()}».`} />
+    <EmptyState
+      icon="search-outline"
+      title="Sin resultados"
+      message={`No hay ${what} que coincidan con «${query.trim()}».`}
+    />
   );
 
   // — Acciones —
@@ -278,12 +316,33 @@ export default function PaymentsListScreen() {
   // — Dibujo de la pantalla —
   return (
     <Screen>
-      <LargeTitleHeader title="Pagos" onAdd={registerPayment} addLabel="Registrar pago" />
-      <SegmentedControl options={VIEWS} value={view} onChange={setView} />
-      {view !== 'historial' ? (
-        <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar carpeta, inquilino, monto, mes…" />
-      ) : null}
-      <PropertyFilter value={propertyId} onChange={setPropertyId} />
+      <LargeTitleHeader
+        title="Pagos"
+        onAdd={registerPayment}
+        addLabel="Registrar pago"
+        middle={
+          desktop ? (
+            <SegmentedControl options={VIEWS} value={view} onChange={setView} style={styles.segmentInline} />
+          ) : null
+        }
+      />
+      {desktop ? null : <SegmentedControl options={VIEWS} value={view} onChange={setView} />}
+      {/* Pantalla grande: buscador y filtro por propiedad en una sola fila. */}
+      <View style={desktop ? styles.filtersRow : undefined}>
+        {view !== 'historial' ? (
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar carpeta, inquilino, monto, mes…"
+            style={desktop ? styles.searchDesktop : undefined}
+          />
+        ) : null}
+        <PropertyFilter
+          value={propertyId}
+          onChange={setPropertyId}
+          style={desktop ? (view === 'historial' ? styles.propertyDesktopFull : styles.propertyDesktop) : undefined}
+        />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -305,7 +364,33 @@ export default function PaymentsListScreen() {
           />
         ) : view === 'liquidaciones' ? (
           <>
-            {filter === 'todos' ? (
+            {filter === 'todos' && desktop ? (
+              <View style={styles.summaryRow}>
+                {STATUS_SUMMARY.map(({ status, label, dot }) => {
+                  const { count, totals } = chargeTotals[status];
+                  return (
+                    <TouchableOpacity
+                      key={status}
+                      style={styles.summaryCard}
+                      onPress={() => setFilter(status)}
+                      accessibilityRole="button"
+                    >
+                      <View style={styles.summaryLabelRow}>
+                        <StatusDot tone={dot} size={8} />
+                        <Text style={styles.summaryLabel}>
+                          {label} · {plural(count, 'liquidación', 'liquidaciones')}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[styles.summaryValue, status === 'vencido' && count ? { color: colors.danger } : null]}
+                      >
+                        {describeTotals(totals, rate, false).main}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : filter === 'todos' ? (
               <ListSection footer={rate && dollarsInView ? 'Totales en pesos con la cotización de hoy.' : undefined}>
                 {STATUS_SUMMARY.map(({ status, label, dot }) => {
                   const { count, totals } = chargeTotals[status];
@@ -331,7 +416,34 @@ export default function PaymentsListScreen() {
                 style={styles.total}
               />
             )}
-            {visibleCharges.length ? (
+            {visibleCharges.length && desktop ? (
+              <DataTable
+                highlight={words}
+                columns={CHARGE_COLUMNS}
+                rows={visibleCharges.map(({ item }) => {
+                  const { property, tenant } = describeContract(item.charge.contractId);
+                  return {
+                    key: item.charge.id,
+                    onPress: () => navigation.navigate('ChargeForm', { chargeId: item.charge.id }),
+                    cells: {
+                      property: { text: property, tone: 'strong', dot: CHARGE_STATUS_DOT[item.status] },
+                      tenant: { text: tenant },
+                      concept: { text: CONCEPT_LABEL[item.charge.concept] },
+                      period: { text: formatPeriodShort(item.charge.period) },
+                      status: {
+                        text: capitalize(chargeProgress(item)),
+                        tone: item.status === 'vencido' ? 'danger' : 'muted',
+                      },
+                      amount: {
+                        text: formatMoney(chargeShownAmount(item), item.charge.currency),
+                        tone: item.status === 'vencido' ? 'danger' : item.status === 'pagado' ? 'muted' : 'strong',
+                        amount: true,
+                      },
+                    },
+                  };
+                })}
+              />
+            ) : visibleCharges.length ? (
               <ListSection>
                 {visibleCharges.map(({ item, row }) => {
                   return (
@@ -367,7 +479,33 @@ export default function PaymentsListScreen() {
               detail={[plural(monthPayments.length, 'pago', 'pagos'), received.detail].filter(Boolean).join(' · ')}
               style={styles.total}
             />
-            {visiblePayments.length ? (
+            {visiblePayments.length && desktop ? (
+              <DataTable
+                highlight={words}
+                columns={PAYMENT_COLUMNS}
+                rows={visiblePayments.map(({ item }) => {
+                  const { property, tenant } = describeContract(item.contractId);
+                  const extra = [
+                    item.paidAmount ? `${formatMoney(item.paidAmount, item.paidCurrency ?? 'ARS')} en pesos` : '',
+                    unallocatedAmount(item) > 0 ? 'saldo a favor' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ');
+                  return {
+                    key: item.id,
+                    onPress: () => navigation.navigate('PaymentDetail', { paymentId: item.id }),
+                    cells: {
+                      property: { text: property, tone: 'strong' },
+                      tenant: { text: tenant },
+                      concept: { text: CONCEPT_LABEL[item.concept] },
+                      date: { text: formatDate(item.date) },
+                      method: { text: [item.method ?? '', extra].filter(Boolean).join(' · '), tone: 'muted' },
+                      amount: { text: formatMoney(item.amount, item.currency), tone: 'strong', amount: true },
+                    },
+                  };
+                })}
+              />
+            ) : visiblePayments.length ? (
               <ListSection>
                 {visiblePayments.map(({ item, row }) => {
                   return (
@@ -386,7 +524,11 @@ export default function PaymentsListScreen() {
             ) : words.length ? (
               noResults('pagos')
             ) : (
-              <EmptyState icon="wallet-outline" title="Sin pagos" message="Tocá + para registrar lo que pagó un inquilino." />
+              <EmptyState
+                icon="wallet-outline"
+                title="Sin pagos"
+                message="Tocá + para registrar lo que pagó un inquilino."
+              />
             )}
           </>
         )}
@@ -468,5 +610,56 @@ const useStyles = makeStyles((colors) => ({
   },
   total: {
     marginBottom: spacing.xl,
+  },
+  segmentInline: {
+    marginHorizontal: 0,
+    marginBottom: 0,
+    width: 380,
+  },
+  filtersRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+  },
+  searchDesktop: {
+    flex: 1,
+    marginHorizontal: 0,
+  },
+  propertyDesktop: {
+    width: 300,
+    marginHorizontal: 0,
+  },
+  propertyDesktopFull: {
+    flex: 1,
+    marginHorizontal: 0,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl - 4,
+  },
+  summaryLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  summaryLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+  },
+  summaryValue: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 6,
+    fontVariant: ['tabular-nums'],
   },
 }));

@@ -6,7 +6,8 @@ create table public.app_admins (
   email text primary key check (email = lower(email))
 );
 alter table public.app_admins enable row level security;
-insert into public.app_admins (email) values ('ml.mernes11@gmail.com');
+-- (Acá se cargaba el mail de la cuenta administradora. La lista se eliminó en la migración
+-- 20261103140000_multi_account: ahora cada cuenta tiene sus propios datos.)
 
 create or replace function public.is_admin()
 returns boolean

@@ -21,7 +21,8 @@ import { compareTitles } from '../../utils/text';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-export default function ContractsList() {
+// En pantalla grande, "onSelect" muestra la ficha al costado en vez de abrir otra pantalla.
+export default function ContractsList({ onSelect, selectedId }: { onSelect?: (id: string) => void; selectedId?: string }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -60,7 +61,8 @@ export default function ContractsList() {
                   subtitle={`${getTenantById(contract.tenantId)?.name ?? 'Inquilino'} · ${term}`}
                   value={`${formatMoney(contract.rentAmount, contract.currency)}/mes`}
                   valueTone="muted"
-                  onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
+                  selected={contract.id === selectedId}
+                  onPress={() => (onSelect ? onSelect(contract.id) : navigation.navigate('ContractDetail', { contractId: contract.id }))}
                 />
               );
             })}

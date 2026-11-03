@@ -31,6 +31,7 @@ function ListRow({
   inset,
   highlight,
   detail,
+  selected,
 }: {
   title: string;
   subtitle?: string;
@@ -38,6 +39,8 @@ function ListRow({
   highlight?: string[];
   // Tercera línea, por ejemplo una nota que coincide con la búsqueda.
   detail?: string;
+  // Fila elegida (en pantalla grande, la que se ve en el panel de al lado).
+  selected?: boolean;
   value?: React.ReactNode;
   valueTone?: ValueTone;
   dot?: DotTone;
@@ -119,7 +122,7 @@ function ListRow({
     </>
   );
 
-  const rowStyle = [styles.row, subtitle ? styles.rowTall : null];
+  const rowStyle = [styles.row, subtitle ? styles.rowTall : null, selected ? styles.rowSelected : null];
   if (!onPress) return <View style={rowStyle}>{content}</View>;
   return (
     <TouchableOpacity style={rowStyle} onPress={onPress} activeOpacity={0.6} accessibilityRole="button">
@@ -143,6 +146,9 @@ const useStyles = makeStyles((colors) => ({
   },
   rowTall: {
     minHeight: 62,
+  },
+  rowSelected: {
+    backgroundColor: colors.primaryMuted,
   },
   separator: {
     position: 'absolute',

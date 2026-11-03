@@ -4,7 +4,18 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Modal,
+  Platform,
+  Pressable,
+  StyleProp,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { useData } from '../context/DataContext';
 import { fontSize, radius, spacing } from '../theme';
 import { matchFields, searchWords } from '../utils/search';
@@ -26,9 +37,11 @@ interface Option {
 export default function PropertyFilter({
   value,
   onChange,
+  style,
 }: {
   value?: string;
   onChange: (propertyId?: string) => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -71,7 +84,7 @@ export default function PropertyFilter({
 
   return (
     <>
-      <View style={[styles.trigger, selected && styles.triggerActive]}>
+      <View style={[styles.trigger, selected && styles.triggerActive, style]}>
         <TouchableOpacity
           style={styles.triggerMain}
           onPress={() => setOpen(true)}

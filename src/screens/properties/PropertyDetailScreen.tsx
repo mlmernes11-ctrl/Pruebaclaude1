@@ -44,7 +44,12 @@ function heroFor(summary: PropertySummary, today: string) {
     };
   }
   if (collection === 'al-dia') {
-    return { tone: 'success' as const, label: 'Al día', value: 'Sin deuda', detail: 'Todas las liquidaciones están pagas' };
+    return {
+      tone: 'success' as const,
+      label: 'Al día',
+      value: 'Sin deuda',
+      detail: 'Todas las liquidaciones están pagas',
+    };
   }
   if (collection === 'sin-contrato') {
     return { tone: 'empty' as const, label: 'Disponible', value: 'Sin inquilino', detail: 'Lista para alquilar' };
@@ -55,10 +60,33 @@ function heroFor(summary: PropertySummary, today: string) {
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PropertyDetailScreen() {
-  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { propertyId } = route.params;
+  const { getPropertyById } = useData();
+  const exists = Boolean(getPropertyById(propertyId));
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: '',
+      headerRight: exists
+        ? () => <HeaderTextButton label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
+        : undefined,
+    });
+  }, [navigation, exists, propertyId]);
+
+  return (
+    <Screen>
+      <PropertyDetail propertyId={propertyId} />
+    </Screen>
+  );
+}
+
+// Contenido de la ficha. En pantalla grande también se muestra como panel al costado de la
+// lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
+export function PropertyDetail({ propertyId, embedded }: { propertyId: string; embedded?: boolean }) {
+  const styles = useStyles();
+  const navigation = useNavigation<any>();
   const {
     getPropertyById,
     contractsForProperty,
@@ -72,22 +100,7 @@ export default function PropertyDetailScreen() {
   } = useData();
   const property = getPropertyById(propertyId);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: '',
-      headerRight: property
-        ? () => <HeaderTextButton label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
-        : undefined,
-    });
-  }, [navigation, property, propertyId]);
-
-  if (!property) {
-    return (
-      <Screen>
-        <Text style={styles.notFound}>Propiedad no encontrada.</Text>
-      </Screen>
-    );
-  }
+  if (!property) return <Text style={styles.notFound}>Propiedad no encontrada.</Text>;
 
   // — Datos de la propiedad —
   const summary = summarizeProperty(property, allContracts, chargeViews, tenants);
@@ -109,130 +122,133 @@ export default function PropertyDetailScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.title} accessibilityRole="header">
-            {property.title}
-          </Text>
-          <Text style={styles.address}>{[property.address, property.neighborhood].filter(Boolean).join(' · ')}</Text>
+    <ScrollView contentContainerStyle={styles.content}>
+      {embedded ? (
+        <View style={styles.embeddedBar}>
+          <HeaderTextButton label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
         </View>
+      ) : null}
+      <View style={styles.titleBlock}>
+        <Text style={styles.title} accessibilityRole="header">
+          {property.title}
+        </Text>
+        <Text style={styles.address}>{[property.address, property.neighborhood].filter(Boolean).join(' · ')}</Text>
+      </View>
 
-        <StatusHero tone={hero.tone} label={hero.label} value={hero.value} detail={hero.detail}>
-          {summary.collection === 'deuda' && summary.pending.count ? (
-            <View style={styles.heroExtra}>
-              <View style={styles.heroExtraRow}>
-                <Text style={styles.heroExtraLabel}>Por vencer</Text>
-                <Text style={styles.heroExtraValue}>{formatTotals(summary.pending.totals)}</Text>
-              </View>
-              <Text style={styles.heroExtraNote}>Vence el {formatDate(summary.nextDueDate)}</Text>
+      <StatusHero tone={hero.tone} label={hero.label} value={hero.value} detail={hero.detail}>
+        {summary.collection === 'deuda' && summary.pending.count ? (
+          <View style={styles.heroExtra}>
+            <View style={styles.heroExtraRow}>
+              <Text style={styles.heroExtraLabel}>Por vencer</Text>
+              <Text style={styles.heroExtraValue}>{formatTotals(summary.pending.totals)}</Text>
             </View>
-          ) : null}
-        </StatusHero>
+            <Text style={styles.heroExtraNote}>Vence el {formatDate(summary.nextDueDate)}</Text>
+          </View>
+        ) : null}
+      </StatusHero>
 
+      {active ? (
+        <Button
+          label="Registrar pago"
+          onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
+          style={styles.primaryAction}
+        />
+      ) : (
+        <View style={styles.heroGap} />
+      )}
+
+      <ListSection header="Contrato">
         {active ? (
-          <Button
-            label="Registrar pago"
-            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
-            style={styles.primaryAction}
+          <ListRow
+            title="Inquilino"
+            value={tenant?.name ?? 'Inquilino'}
+            valueTone="muted"
+            onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
+          />
+        ) : null}
+        {active ? (
+          <ListRow
+            title="Vigencia"
+            value={endBadge ? endBadge.label : `Hasta ${formatDate(active.endDate)}`}
+            valueTone={endBadge ? (endBadge.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
+          />
+        ) : null}
+        {active ? (
+          <ListRow
+            title="Alquiler"
+            value={`${formatMoney(active.rentAmount, active.currency)} · día ${active.paymentDay}`}
+            valueTone="muted"
+          />
+        ) : null}
+        {active ? (
+          <ListRow
+            title="Ver contrato"
+            onPress={() => navigation.navigate('ContractDetail', { contractId: active.id })}
           />
         ) : (
-          <View style={styles.heroGap} />
+          <ListRow
+            title="Nuevo contrato"
+            icon="add-circle-outline"
+            onPress={() => navigation.navigate('ContractForm', { propertyId: property.id })}
+          />
         )}
+      </ListSection>
 
-        <ListSection header="Contrato">
-          {active ? (
-            <ListRow
-              title="Inquilino"
-              value={tenant?.name ?? 'Inquilino'}
-              valueTone="muted"
-              onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
-            />
-          ) : null}
-          {active ? (
-            <ListRow
-              title="Vigencia"
-              value={endBadge ? endBadge.label : `Hasta ${formatDate(active.endDate)}`}
-              valueTone={endBadge ? (endBadge.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
-            />
-          ) : null}
-          {active ? (
-            <ListRow
-              title="Alquiler"
-              value={`${formatMoney(active.rentAmount, active.currency)} · día ${active.paymentDay}`}
-              valueTone="muted"
-            />
-          ) : null}
-          {active ? (
-            <ListRow
-              title="Ver contrato"
-              onPress={() => navigation.navigate('ContractDetail', { contractId: active.id })}
-            />
-          ) : (
-            <ListRow
-              title="Nuevo contrato"
-              icon="add-circle-outline"
-              onPress={() => navigation.navigate('ContractForm', { propertyId: property.id })}
-            />
-          )}
-        </ListSection>
+      <ListSection header="Pagos">
+        <ListRow
+          title="Liquidaciones"
+          icon="document-text-outline"
+          value={summary.overdue.count ? `${summary.overdue.count} en mora` : String(chargeCount)}
+          valueTone={summary.overdue.count ? 'danger' : 'muted'}
+          onPress={() => openPayments('liquidaciones')}
+        />
+        <ListRow
+          title="Pagos recibidos"
+          icon="wallet-outline"
+          value={String(paymentCount)}
+          valueTone="muted"
+          onPress={() => openPayments('pagos')}
+        />
+        <ListRow
+          title="Historial por mes"
+          icon="time-outline"
+          onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
+        />
+      </ListSection>
 
-        <ListSection header="Pagos">
-          <ListRow
-            title="Liquidaciones"
-            icon="document-text-outline"
-            value={summary.overdue.count ? `${summary.overdue.count} en mora` : String(chargeCount)}
-            valueTone={summary.overdue.count ? 'danger' : 'muted'}
-            onPress={() => openPayments('liquidaciones')}
-          />
-          <ListRow
-            title="Pagos recibidos"
-            icon="wallet-outline"
-            value={String(paymentCount)}
-            valueTone="muted"
-            onPress={() => openPayments('pagos')}
-          />
-          <ListRow
-            title="Historial por mes"
-            icon="time-outline"
-            onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
-          />
-        </ListSection>
-
-        <ListSection header="Detalles" footer={property.notes ? `Notas: ${property.notes}` : undefined}>
-          <ListRow title="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} valueTone="muted" />
-          <ListRow
-            title="Alquiler publicado"
-            value={formatMoney(property.rentAmount, property.rentCurrency)}
-            valueTone="muted"
-          />
-          {property.expensasAmount ? (
-            <ListRow title="Expensas" value={formatMoney(property.expensasAmount, 'ARS')} valueTone="muted" />
-          ) : null}
-          {property.serviciosAmount ? (
-            <ListRow title="Servicios" value={formatMoney(property.serviciosAmount, 'ARS')} valueTone="muted" />
-          ) : null}
-          {property.rooms ? <ListRow title="Ambientes" value={String(property.rooms)} valueTone="muted" /> : null}
-          {property.bathrooms ? <ListRow title="Baños" value={String(property.bathrooms)} valueTone="muted" /> : null}
-          {property.area ? <ListRow title="Superficie" value={`${property.area} m²`} valueTone="muted" /> : null}
-        </ListSection>
-
-        {pastContracts.length ? (
-          <ListSection header="Contratos anteriores">
-            {pastContracts.map((contract) => (
-              <ListRow
-                key={contract.id}
-                title={getTenantById(contract.tenantId)?.name ?? 'Inquilino'}
-                subtitle={`${formatDate(contract.startDate)} al ${formatDate(contract.endDate)}`}
-                value={CONTRACT_STATUS_LABEL[contract.status]}
-                valueTone="muted"
-                onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
-              />
-            ))}
-          </ListSection>
+      <ListSection header="Detalles" footer={property.notes ? `Notas: ${property.notes}` : undefined}>
+        <ListRow title="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} valueTone="muted" />
+        <ListRow
+          title="Alquiler publicado"
+          value={formatMoney(property.rentAmount, property.rentCurrency)}
+          valueTone="muted"
+        />
+        {property.expensasAmount ? (
+          <ListRow title="Expensas" value={formatMoney(property.expensasAmount, 'ARS')} valueTone="muted" />
         ) : null}
-      </ScrollView>
-    </Screen>
+        {property.serviciosAmount ? (
+          <ListRow title="Servicios" value={formatMoney(property.serviciosAmount, 'ARS')} valueTone="muted" />
+        ) : null}
+        {property.rooms ? <ListRow title="Ambientes" value={String(property.rooms)} valueTone="muted" /> : null}
+        {property.bathrooms ? <ListRow title="Baños" value={String(property.bathrooms)} valueTone="muted" /> : null}
+        {property.area ? <ListRow title="Superficie" value={`${property.area} m²`} valueTone="muted" /> : null}
+      </ListSection>
+
+      {pastContracts.length ? (
+        <ListSection header="Contratos anteriores">
+          {pastContracts.map((contract) => (
+            <ListRow
+              key={contract.id}
+              title={getTenantById(contract.tenantId)?.name ?? 'Inquilino'}
+              subtitle={`${formatDate(contract.startDate)} al ${formatDate(contract.endDate)}`}
+              value={CONTRACT_STATUS_LABEL[contract.status]}
+              valueTone="muted"
+              onPress={() => navigation.navigate('ContractDetail', { contractId: contract.id })}
+            />
+          ))}
+        </ListSection>
+      ) : null}
+    </ScrollView>
   );
 }
 
@@ -242,6 +258,10 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  embeddedBar: {
+    alignItems: 'flex-end',
+    marginBottom: -spacing.sm,
   },
   notFound: {
     padding: spacing.lg,

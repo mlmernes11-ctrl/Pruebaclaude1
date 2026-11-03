@@ -3,7 +3,7 @@
 // =====================================================================
 
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 
@@ -14,14 +14,16 @@ export default function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  style,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   const styles = useStyles();
   return (
-    <View style={styles.segment} accessibilityRole="tablist">
+    <View style={[styles.segment, style]} accessibilityRole="tablist">
       {options.map((option) => {
         const active = option.value === value;
         return (

@@ -43,7 +43,8 @@ function rightValue(summary: PropertySummary): { value: string; tone: ValueTone 
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-export default function PropertiesList() {
+// En pantalla grande, "onSelect" muestra la ficha al costado en vez de abrir otra pantalla.
+export default function PropertiesList({ onSelect, selectedId }: { onSelect?: (id: string) => void; selectedId?: string }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -84,7 +85,8 @@ export default function PropertiesList() {
                   subtitle={[property.address, property.neighborhood].filter(Boolean).join(' · ')}
                   value={value}
                   valueTone={tone}
-                  onPress={() => navigation.navigate('PropertyDetail', { propertyId: property.id })}
+                  selected={property.id === selectedId}
+                  onPress={() => (onSelect ? onSelect(property.id) : navigation.navigate('PropertyDetail', { propertyId: property.id }))}
                 />
               );
             })}

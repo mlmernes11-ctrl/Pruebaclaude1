@@ -102,7 +102,10 @@ export default function PaymentFormScreen() {
   };
 
   const allDefaults = (targetContractId: string) =>
-    Object.fromEntries(CHARGE_CONCEPTS.map((c) => [c, defaultsFor(targetContractId, c)])) as Record<ChargeConcept, Entry>;
+    Object.fromEntries(CHARGE_CONCEPTS.map((c) => [c, defaultsFor(targetContractId, c)])) as Record<
+      ChargeConcept,
+      Entry
+    >;
 
   // — Lo que se va completando en el formulario —
   const [contractId, setContractId] = useState(presetContractId ?? '');
@@ -212,7 +215,7 @@ export default function PaymentFormScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen>
+    <Screen narrow>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <SelectField
           label="Contrato"
@@ -377,7 +380,12 @@ function ConceptBlock({
       return;
     }
     const value = rateFor(source) ?? 0;
-    onChange({ ...entry, rateSource: source, rate: toInput(value), amount: pesos ? dollarsFrom(pesos, value) : entry.amount });
+    onChange({
+      ...entry,
+      rateSource: source,
+      rate: toInput(value),
+      amount: pesos ? dollarsFrom(pesos, value) : entry.amount,
+    });
   };
 
   // Tocar la cotización a mano la pasa a "Manual".
@@ -395,7 +403,13 @@ function ConceptBlock({
       return;
     }
     setLiveLabel(undefined);
-    onChange({ ...entry, option: 'otro', amount: text, rateSource: 'manual', rate: pesos && dollars ? toInput(pesos / dollars) : entry.rate });
+    onChange({
+      ...entry,
+      option: 'otro',
+      amount: text,
+      rateSource: 'manual',
+      rate: pesos && dollars ? toInput(pesos / dollars) : entry.rate,
+    });
   };
 
   // Valor de este momento para el tipo de dólar elegido (sin cambiar el del día).
@@ -405,7 +419,12 @@ function ConceptBlock({
     const value = live ? rateFor(source, live) : undefined;
     if (!value) return;
     setLiveLabel(`${RATE_SOURCE_LABEL[source]} en vivo`);
-    onChange({ ...entry, rateSource: source, rate: toInput(value), amount: pesos ? dollarsFrom(pesos, value) : entry.amount });
+    onChange({
+      ...entry,
+      rateSource: source,
+      rate: toInput(value),
+      amount: pesos ? dollarsFrom(pesos, value) : entry.amount,
+    });
   };
 
   return (

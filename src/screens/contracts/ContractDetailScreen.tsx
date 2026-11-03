@@ -26,29 +26,37 @@ import { capitalize } from '../../utils/text';
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function ContractDetailScreen() {
-  const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { contractId } = route.params;
-  const { getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract } = useData();
-  const contract = getContractById(contractId);
+  const { getContractById } = useData();
+  const exists = Boolean(getContractById(contractId));
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: '',
-      headerRight: contract
+      headerRight: exists
         ? () => <HeaderTextButton label="Editar" onPress={() => navigation.navigate('ContractForm', { contractId })} />
         : undefined,
     });
-  }, [navigation, contract, contractId]);
+  }, [navigation, exists, contractId]);
 
-  if (!contract) {
-    return (
-      <Screen>
-        <Text style={styles.notFound}>Contrato no encontrado.</Text>
-      </Screen>
-    );
-  }
+  return (
+    <Screen>
+      <ContractDetail contractId={contractId} />
+    </Screen>
+  );
+}
+
+// Contenido de la ficha. En pantalla grande también se muestra como panel al costado de la
+// lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
+export function ContractDetail({ contractId, embedded }: { contractId: string; embedded?: boolean }) {
+  const styles = useStyles();
+  const navigation = useNavigation<any>();
+  const { getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract } = useData();
+  const contract = getContractById(contractId);
+
+  if (!contract) return <Text style={styles.notFound}>Contrato no encontrado.</Text>;
 
   const property = getPropertyById(contract.propertyId);
   const tenant = getTenantById(contract.tenantId);
@@ -59,77 +67,80 @@ export default function ContractDetailScreen() {
   const openPayments = (screen: string, params: object) => openInTab(navigation, 'PaymentsTab', screen, params);
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.title} accessibilityRole="header">
-            {property?.title ?? 'Propiedad'}
-          </Text>
-          <Text style={styles.subtitle}>
-            Contrato {CONTRACT_STATUS_LABEL[contract.status].toLowerCase()} · {tenant?.name ?? 'Inquilino'}
-          </Text>
+    <ScrollView contentContainerStyle={styles.content}>
+      {embedded ? (
+        <View style={styles.embeddedBar}>
+          <HeaderTextButton label="Editar" onPress={() => navigation.navigate('ContractForm', { contractId })} />
         </View>
+      ) : null}
+      <View style={styles.titleBlock}>
+        <Text style={styles.title} accessibilityRole="header">
+          {property?.title ?? 'Propiedad'}
+        </Text>
+        <Text style={styles.subtitle}>
+          Contrato {CONTRACT_STATUS_LABEL[contract.status].toLowerCase()} · {tenant?.name ?? 'Inquilino'}
+        </Text>
+      </View>
 
-        {contract.status === 'activo' ? (
-          <Button
-            label="Registrar pago"
-            onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
-            style={styles.primaryAction}
-          />
+      {contract.status === 'activo' ? (
+        <Button
+          label="Registrar pago"
+          onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
+          style={styles.primaryAction}
+        />
+      ) : null}
+
+      <ListSection>
+        <ListRow
+          title="Propiedad"
+          value={property?.title ?? 'Eliminada'}
+          valueTone="muted"
+          onPress={property ? () => navigation.navigate('PropertyDetail', { propertyId: property.id }) : undefined}
+        />
+        <ListRow
+          title="Inquilino"
+          value={tenant?.name ?? 'Eliminado'}
+          valueTone="muted"
+          onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
+        />
+      </ListSection>
+
+      <ListSection header="Condiciones" footer={contract.notes ? `Notas: ${contract.notes}` : undefined}>
+        <ListRow title="Inicio" value={formatDate(contract.startDate)} valueTone="muted" />
+        <ListRow
+          title="Fin"
+          value={end ? `${formatDate(contract.endDate)} · ${end.label.toLowerCase()}` : formatDate(contract.endDate)}
+          valueTone={end ? (end.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
+        />
+        <ListRow title="Alquiler" value={formatMoney(contract.rentAmount, contract.currency)} valueTone="muted" />
+        {contract.depositAmount ? (
+          <ListRow title="Depósito" value={formatMoney(contract.depositAmount, contract.currency)} valueTone="muted" />
         ) : null}
+        <ListRow title="Día de pago" value={`${contract.paymentDay} de cada mes`} valueTone="muted" />
+      </ListSection>
 
-        <ListSection>
+      <ListSection
+        header="Liquidaciones"
+        footer={credit.USD || credit.ARS ? `Saldo a favor del inquilino: ${formatTotals(credit)}` : undefined}
+      >
+        {charges.map((view) => (
           <ListRow
-            title="Propiedad"
-            value={property?.title ?? 'Eliminada'}
-            valueTone="muted"
-            onPress={property ? () => navigation.navigate('PropertyDetail', { propertyId: property.id }) : undefined}
+            key={view.charge.id}
+            dot={CHARGE_STATUS_DOT[view.status]}
+            title={`${CONCEPT_LABEL[view.charge.concept]} ${formatPeriodShort(view.charge.period)}`}
+            subtitle={capitalize(chargeProgress(view))}
+            value={formatMoney(chargeShownAmount(view), view.charge.currency)}
+            valueTone={CHARGE_VALUE_TONE[view.status]}
+            onPress={() => openPayments('ChargeForm', { chargeId: view.charge.id })}
           />
-          <ListRow
-            title="Inquilino"
-            value={tenant?.name ?? 'Eliminado'}
-            valueTone="muted"
-            onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
-          />
-        </ListSection>
-
-        <ListSection header="Condiciones" footer={contract.notes ? `Notas: ${contract.notes}` : undefined}>
-          <ListRow title="Inicio" value={formatDate(contract.startDate)} valueTone="muted" />
-          <ListRow
-            title="Fin"
-            value={end ? `${formatDate(contract.endDate)} · ${end.label.toLowerCase()}` : formatDate(contract.endDate)}
-            valueTone={end ? (end.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
-          />
-          <ListRow title="Alquiler" value={formatMoney(contract.rentAmount, contract.currency)} valueTone="muted" />
-          {contract.depositAmount ? (
-            <ListRow title="Depósito" value={formatMoney(contract.depositAmount, contract.currency)} valueTone="muted" />
-          ) : null}
-          <ListRow title="Día de pago" value={`${contract.paymentDay} de cada mes`} valueTone="muted" />
-        </ListSection>
-
-        <ListSection
-          header="Liquidaciones"
-          footer={credit.USD || credit.ARS ? `Saldo a favor del inquilino: ${formatTotals(credit)}` : undefined}
-        >
-          {charges.map((view) => (
-            <ListRow
-              key={view.charge.id}
-              dot={CHARGE_STATUS_DOT[view.status]}
-              title={`${CONCEPT_LABEL[view.charge.concept]} ${formatPeriodShort(view.charge.period)}`}
-              subtitle={capitalize(chargeProgress(view))}
-              value={formatMoney(chargeShownAmount(view), view.charge.currency)}
-              valueTone={CHARGE_VALUE_TONE[view.status]}
-              onPress={() => openPayments('ChargeForm', { chargeId: view.charge.id })}
-            />
-          ))}
-          <ListRow
-            title="Nueva liquidación manual"
-            icon="add-circle-outline"
-            onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
-          />
-        </ListSection>
-      </ScrollView>
-    </Screen>
+        ))}
+        <ListRow
+          title="Nueva liquidación manual"
+          icon="add-circle-outline"
+          onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
+        />
+      </ListSection>
+    </ScrollView>
   );
 }
 
@@ -139,6 +150,10 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  embeddedBar: {
+    alignItems: 'flex-end',
+    marginBottom: -spacing.sm,
   },
   notFound: {
     padding: spacing.lg,
