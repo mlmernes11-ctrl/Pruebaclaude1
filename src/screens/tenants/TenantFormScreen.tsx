@@ -82,7 +82,7 @@ export default function TenantFormScreen() {
   );
 }
 
-const useStyles = makeStyles((colors) => ({
+const useStyles = makeStyles(() => ({
   deleteButton: {
     marginTop: spacing.md,
   },

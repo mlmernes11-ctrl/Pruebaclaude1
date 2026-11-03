@@ -5,24 +5,15 @@ import EmptyState from '../../components/EmptyState';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import SearchLauncher from '../../components/SearchSheet';
-import { DotTone } from '../../components/StatusDot';
 import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { useRefresh } from '../../hooks/useRefresh';
 import { spacing } from '../../theme';
-import { Contract } from '../../types';
 import { formatDate, formatMoney } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
+import { contractDot } from '../../utils/status';
 import { compareTitles } from '../../utils/text';
-
-// Contracts use the same colors for their term: red ended without renewal, amber ending soon.
-function contractDot(contract: Contract): DotTone {
-  if (contract.status !== 'activo') return 'empty';
-  const end = contractEndBadge(contract);
-  if (!end) return 'success';
-  return end.tone === 'danger' ? 'danger' : 'warning';
-}
 
 export default function ContractsList() {
   const styles = useStyles();

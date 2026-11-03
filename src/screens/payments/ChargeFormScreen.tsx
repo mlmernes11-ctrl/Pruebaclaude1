@@ -25,7 +25,7 @@ import {
   parseAmount,
   periodToDueDate,
 } from '../../utils/format';
-import { CHARGE_STATUS_LABEL, CHARGE_STATUS_TONE } from '../../utils/ledger';
+import { CHARGE_STATUS_BADGE, CHARGE_STATUS_LABEL } from '../../utils/status';
 import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
 
@@ -178,7 +178,7 @@ export default function ChargeFormScreen() {
                   {property?.title ?? 'Propiedad'} · {tenant?.name ?? 'Inquilino'}
                 </Text>
               </View>
-              <Badge label={CHARGE_STATUS_LABEL[existing.status]} tone={CHARGE_STATUS_TONE[existing.status]} />
+              <Badge label={CHARGE_STATUS_LABEL[existing.status]} tone={CHARGE_STATUS_BADGE[existing.status]} />
             </View>
             <View style={styles.summaryAmounts}>
               <AmountLine label="Liquidado" amount={charge.amount} currency={charge.currency} />

@@ -6,18 +6,16 @@ import HeaderTextButton from '../../components/HeaderTextButton';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
-import { DotTone } from '../../components/StatusDot';
 import { CONCEPT_LABEL, CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
-import { ChargeStatus } from '../../types';
 import { addToTotals, emptyTotals, formatDate, formatMoney, formatPeriodShort, formatTotals } from '../../utils/format';
 import { unallocatedAmount } from '../../utils/ledger';
 import { openInTab } from '../../utils/navigation';
 import { contractEndBadge } from '../../utils/propertySummary';
-
-const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
+import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
+import { capitalize } from '../../utils/text';
 
 export default function ContractDetailScreen() {
   const styles = useStyles();
@@ -108,17 +106,11 @@ export default function ContractDetailScreen() {
           {charges.map((view) => (
             <ListRow
               key={view.charge.id}
-              dot={STATUS_DOT[view.status]}
+              dot={CHARGE_STATUS_DOT[view.status]}
               title={`${CONCEPT_LABEL[view.charge.concept]} ${formatPeriodShort(view.charge.period)}`}
-              subtitle={
-                view.status === 'pagado'
-                  ? `Pagada el ${formatDate(view.lastPaymentDate)}`
-                  : view.paid > 0
-                    ? `Pagó ${formatMoney(view.paid, view.charge.currency)} de ${formatMoney(view.charge.amount, view.charge.currency)}`
-                    : `Vence el ${formatDate(view.charge.dueDate)}`
-              }
-              value={formatMoney(view.status === 'pagado' ? view.charge.amount : view.balance, view.charge.currency)}
-              valueTone={view.status === 'vencido' ? 'danger' : view.status === 'pagado' ? 'muted' : 'default'}
+              subtitle={capitalize(chargeProgress(view))}
+              value={formatMoney(chargeShownAmount(view), view.charge.currency)}
+              valueTone={CHARGE_VALUE_TONE[view.status]}
               onPress={() => openPayments('ChargeForm', { chargeId: view.charge.id })}
             />
           ))}

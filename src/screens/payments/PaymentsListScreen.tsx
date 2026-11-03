@@ -7,6 +7,7 @@ import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import PropertyFilter from '../../components/PropertyFilter';
 import Screen from '../../components/Screen';
+import StatusHero from '../../components/StatusHero';
 import SearchBar from '../../components/SearchBar';
 import SegmentedControl from '../../components/SegmentedControl';
 import SortMenu, { SortOption } from '../../components/SortMenu';
@@ -26,20 +27,28 @@ import {
   describeTotals,
   emptyTotals,
   formatDate,
+  formatDayMonth,
   formatMoney,
   formatPeriod,
   formatPeriodShort,
 } from '../../utils/format';
 import { ChargeView, unallocatedAmount } from '../../utils/ledger';
 import { matchRow, SearchField, searchWords } from '../../utils/search';
+import {
+  CHARGE_STATUS_DOT,
+  CHARGE_STATUS_LABEL,
+  CHARGE_VALUE_TONE,
+  chargeProgress,
+  chargeShownAmount,
+} from '../../utils/status';
 import { compareTitles, plural } from '../../utils/text';
 
-type View_ = 'pagos' | 'liquidaciones' | 'historial';
+type PaymentsView = 'pagos' | 'liquidaciones' | 'historial';
 type FilterValue = 'todos' | ChargeStatus;
 type MonthFilter = 'todos' | 'este' | 'anterior';
 type SortValue = 'reciente' | 'antiguo' | 'propiedad' | 'monto';
 
-const VIEWS: { value: View_; label: string }[] = [
+const VIEWS: { value: PaymentsView; label: string }[] = [
   { value: 'pagos', label: 'Recibidos' },
   { value: 'liquidaciones', label: 'Liquidaciones' },
   { value: 'historial', label: 'Historial' },
@@ -71,10 +80,6 @@ const STATUS_SUMMARY: { status: ChargeStatus; label: string; dot: DotTone }[] = 
   { status: 'pagado', label: 'Pagado', dot: 'success' },
 ];
 
-const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
-
-const STATUS_TEXT: Record<ChargeStatus, string> = { vencido: 'Vencida', pendiente: 'Por vencer', pagado: 'Pagada' };
-
 // What a list row shows, plus fields only the search looks at.
 interface Row {
   title: string;
@@ -85,10 +90,6 @@ interface Row {
 }
 
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const shortDate = (iso?: string) => formatDate(iso).slice(0, 5);
-
-// What a liquidación counts for in totals: the outstanding part, or the full amount once paid.
-const chargeValue = (view: ChargeView) => (view.status === 'pagado' ? view.charge.amount : view.balance);
 
 export default function PaymentsListScreen() {
   const styles = useStyles();
@@ -99,7 +100,7 @@ export default function PaymentsListScreen() {
   const { refreshing, onRefresh } = useRefresh();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const [view, setView] = useState<View_>('pagos');
+  const [view, setView] = useState<PaymentsView>('pagos');
   const [filter, setFilter] = useState<FilterValue>('todos');
   const [month, setMonth] = useState<MonthFilter>('todos');
   const [sort, setSort] = useState<SortValue>('reciente');
@@ -143,20 +144,14 @@ export default function PaymentsListScreen() {
 
   const chargeRow = (item: ChargeView): Row => {
     const { property, tenant } = describeContract(item.charge.contractId);
-    const when =
-      item.status === 'pagado'
-        ? `pagada el ${shortDate(item.lastPaymentDate)}`
-        : item.paid > 0
-          ? `pagó ${formatMoney(item.paid, item.charge.currency)}`
-          : `vence el ${shortDate(item.charge.dueDate)}`;
     return {
       title: property,
-      subtitle: `${CONCEPT_LABEL[item.charge.concept]} ${formatPeriodShort(item.charge.period)} · ${when}`,
-      value: formatMoney(chargeValue(item), item.charge.currency),
+      subtitle: `${CONCEPT_LABEL[item.charge.concept]} ${formatPeriodShort(item.charge.period)} · ${chargeProgress(item)}`,
+      value: formatMoney(chargeShownAmount(item), item.charge.currency),
       hidden: [
         { label: 'Inquilino', value: tenant },
         { label: 'Mes', value: formatPeriod(item.charge.period) },
-        { label: 'Estado', value: STATUS_TEXT[item.status] },
+        { label: 'Estado', value: CHARGE_STATUS_LABEL[item.status] },
         { label: 'Monto', value: formatMoney(item.charge.amount, item.charge.currency), amount: true },
         { label: 'Vence', value: formatDate(item.charge.dueDate) },
         { label: 'Nota', value: item.charge.notes },
@@ -169,7 +164,7 @@ export default function PaymentsListScreen() {
     const credit = unallocatedAmount(item) > 0 ? ' · saldo a favor' : '';
     return {
       title: property,
-      subtitle: `${tenant} · ${CONCEPT_LABEL[item.concept]} · ${shortDate(item.date)}${credit}`,
+      subtitle: `${tenant} · ${CONCEPT_LABEL[item.concept]} · ${formatDayMonth(item.date)}${credit}`,
       value: formatMoney(item.amount, item.currency),
       hidden: [
         { label: 'Fecha', value: formatDate(item.date) },
@@ -214,7 +209,7 @@ export default function PaymentsListScreen() {
       if (sort === 'propiedad') {
         return compareProperties(a.charge.contractId, b.charge.contractId) || byDate(b.charge.dueDate, a.charge.dueDate);
       }
-      if (sort === 'monto') return compareAmounts(chargeValue(a), a.charge.currency, chargeValue(b), b.charge.currency);
+      if (sort === 'monto') return compareAmounts(chargeShownAmount(a), a.charge.currency, chargeShownAmount(b), b.charge.currency);
       return byDate(b.charge.dueDate, a.charge.dueDate);
   });
 
@@ -237,7 +232,7 @@ export default function PaymentsListScreen() {
   };
   searchedCharges.forEach(({ item: v }) => {
     chargeTotals[v.status].count += 1;
-    addToTotals(chargeTotals[v.status].totals, chargeValue(v), v.charge.currency);
+    addToTotals(chargeTotals[v.status].totals, chargeShownAmount(v), v.charge.currency);
   });
 
   const paymentTotals = emptyTotals();
@@ -308,11 +303,12 @@ export default function PaymentsListScreen() {
                 })}
               </ListSection>
             ) : (
-              <Total
+              <StatusHero
                 label={`Total ${STATUS_SUMMARY.find((s) => s.status === filter)!.label.toLowerCase()}`}
                 value={describeTotals(chargeTotals[filter].totals, rate, false).main}
                 detail={plural(chargeTotals[filter].count, 'liquidación', 'liquidaciones')}
                 danger={filter === 'vencido'}
+                style={styles.total}
               />
             )}
             {visibleCharges.length ? (
@@ -321,13 +317,13 @@ export default function PaymentsListScreen() {
                   return (
                     <ListRow
                       key={item.charge.id}
-                      dot={STATUS_DOT[item.status]}
+                      dot={CHARGE_STATUS_DOT[item.status]}
                       title={row.title}
                       subtitle={row.subtitle}
                       value={row.value}
                       detail={row.detail}
                       highlight={words}
-                      valueTone={item.status === 'vencido' ? 'danger' : item.status === 'pagado' ? 'muted' : 'default'}
+                      valueTone={CHARGE_VALUE_TONE[item.status]}
                       onPress={() => navigation.navigate('ChargeForm', { chargeId: item.charge.id })}
                     />
                   );
@@ -345,10 +341,11 @@ export default function PaymentsListScreen() {
           </>
         ) : (
           <>
-            <Total
+            <StatusHero
               label={monthPeriod ? `Recibido en ${formatPeriod(monthPeriod).toLowerCase()}` : 'Total recibido'}
               value={received.main}
               detail={[plural(monthPayments.length, 'pago', 'pagos'), received.detail].filter(Boolean).join(' · ')}
+              style={styles.total}
             />
             {visiblePayments.length ? (
               <ListSection>
@@ -408,18 +405,6 @@ function FilterPills<T extends string>({
   );
 }
 
-function Total({ label, value, detail, danger }: { label: string; value: string; detail: string; danger?: boolean }) {
-  const styles = useStyles();
-  const { colors } = useTheme();
-  return (
-    <View style={styles.total}>
-      <Text style={styles.totalLabel}>{label}</Text>
-      <Text style={[styles.totalValue, danger && { color: colors.danger }]}>{value}</Text>
-      <Text style={styles.totalDetail}>{detail}</Text>
-    </View>
-  );
-}
-
 const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
@@ -458,29 +443,6 @@ const useStyles = makeStyles((colors) => ({
     fontWeight: '600',
   },
   total: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    padding: spacing.xl - 4,
     marginBottom: spacing.xl,
-  },
-  totalLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  totalValue: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: -0.8,
-    color: colors.text,
-    marginTop: spacing.sm,
-    fontVariant: ['tabular-nums'],
-  },
-  totalDetail: {
-    fontSize: fontSize.md,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
   },
 }));

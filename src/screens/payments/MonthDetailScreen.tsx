@@ -5,19 +5,17 @@ import EmptyState from '../../components/EmptyState';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
-import { DotTone } from '../../components/StatusDot';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
-import { ChargeStatus, MoneyTotals } from '../../types';
-import { describeTotals, formatDate, formatMoney } from '../../utils/format';
+import { MoneyTotals } from '../../types';
+import { describeTotals, formatMoney } from '../../utils/format';
 import { buildPeriodRow } from '../../utils/history';
 import { openInTab } from '../../utils/navigation';
+import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { compareTitles, plural } from '../../utils/text';
-
-const STATUS_DOT: Record<ChargeStatus, DotTone> = { vencido: 'danger', pendiente: 'warning', pagado: 'success' };
 
 export default function MonthDetailScreen() {
   const styles = useStyles();
@@ -68,21 +66,15 @@ export default function MonthDetailScreen() {
             </ListSection>
             <ListSection>
               {items.map(({ view, propertyTitle, tenantName }) => {
-                const { charge, status, paid, balance, lastPaymentDate } = view;
-                const when =
-                  status === 'pagado' && lastPaymentDate
-                    ? `pagada el ${formatDate(lastPaymentDate).slice(0, 5)}`
-                    : paid > 0
-                      ? `pagó ${formatMoney(paid, charge.currency)}`
-                      : `vence el ${formatDate(charge.dueDate).slice(0, 5)}`;
+                const { charge, status } = view;
                 return (
                   <ListRow
                     key={charge.id}
-                    dot={STATUS_DOT[status]}
+                    dot={CHARGE_STATUS_DOT[status]}
                     title={propertyTitle}
-                    subtitle={`${tenantName} · ${CONCEPT_LABEL[charge.concept]} · ${when}`}
-                    value={formatMoney(status === 'pagado' ? charge.amount : balance, charge.currency)}
-                    valueTone={status === 'vencido' ? 'danger' : status === 'pagado' ? 'muted' : 'default'}
+                    subtitle={`${tenantName} · ${CONCEPT_LABEL[charge.concept]} · ${chargeProgress(view)}`}
+                    value={formatMoney(chargeShownAmount(view), charge.currency)}
+                    valueTone={CHARGE_VALUE_TONE[status]}
                     onPress={() => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId: charge.id })}
                   />
                 );

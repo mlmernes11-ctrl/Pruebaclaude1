@@ -1,14 +1,15 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import { showConfirm } from '../../components/DialogHost';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
+import StatusHero from '../../components/StatusHero';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
-import { fontSize, radius, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
 import { unallocatedAmount } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
@@ -55,17 +56,16 @@ export default function PaymentDetailScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>
-            {CONCEPT_LABEL[payment.concept]} · {formatDate(payment.date)}
-          </Text>
-          <Text style={styles.heroValue}>{formatMoney(payment.amount, payment.currency)}</Text>
-          {payment.currency === 'USD' && payment.exchangeRate ? (
-            <Text style={styles.heroDetail}>
-              = {formatMoney(payment.amount * payment.exchangeRate, 'ARS')} a {formatMoney(payment.exchangeRate, 'ARS')}
-            </Text>
-          ) : null}
-        </View>
+        <StatusHero
+          label={`${CONCEPT_LABEL[payment.concept]} · ${formatDate(payment.date)}`}
+          value={formatMoney(payment.amount, payment.currency)}
+          detail={
+            payment.currency === 'USD' && payment.exchangeRate
+              ? `= ${formatMoney(payment.amount * payment.exchangeRate, 'ARS')} a ${formatMoney(payment.exchangeRate, 'ARS')}`
+              : undefined
+          }
+          style={styles.hero}
+        />
 
         <ListSection footer={payment.notes ? `Notas: ${payment.notes}` : undefined}>
           <ListRow title="Propiedad" value={property?.title ?? 'Propiedad'} valueTone="muted" />
@@ -124,29 +124,6 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textMuted,
   },
   hero: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    padding: spacing.xl - 4,
     marginBottom: spacing.xl,
-  },
-  heroLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  heroValue: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: -0.8,
-    color: colors.text,
-    marginTop: spacing.sm,
-    fontVariant: ['tabular-nums'],
-  },
-  heroDetail: {
-    fontSize: fontSize.md,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
   },
 }));

@@ -11,7 +11,7 @@ import { useRefresh } from '../../hooks/useRefresh';
 import { spacing } from '../../theme';
 import { summarizeProperty } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
-import { COLLECTION_DOT } from './rentalStatus';
+import { COLLECTION_DOT } from '../../utils/status';
 
 export default function TenantsList() {
   const styles = useStyles();

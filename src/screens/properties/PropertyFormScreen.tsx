@@ -161,7 +161,7 @@ export default function PropertyFormScreen() {
   );
 }
 
-const useStyles = makeStyles((colors) => ({
+const useStyles = makeStyles(() => ({
   deleteButton: {
     marginTop: spacing.md,
   },

@@ -5,14 +5,13 @@ import HeaderTextButton from '../../components/HeaderTextButton';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
-import { DotTone } from '../../components/StatusDot';
 import { CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
-import { Contract } from '../../types';
 import { formatDate } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
+import { contractDot } from '../../utils/status';
 
 // Argentine mobile numbers for WhatsApp links: country code 54 plus the 9 for mobiles.
 function whatsappUrl(phone: string): string {
@@ -22,12 +21,6 @@ function whatsappUrl(phone: string): string {
 }
 
 const openUrl = (url: string) => Linking.openURL(url).catch(() => undefined);
-
-function contractDot(contract: Contract): DotTone {
-  if (contract.status !== 'activo') return 'empty';
-  const end = contractEndBadge(contract);
-  return !end ? 'success' : end.tone === 'danger' ? 'danger' : 'warning';
-}
 
 export default function TenantDetailScreen() {
   const styles = useStyles();

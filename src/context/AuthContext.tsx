@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { hasAdminAccess } from '../lib/remoteStore';
 import { supabase } from '../lib/supabase';
-import { embeddedPreview } from '../utils/platform';
+import { connectionErrorMessage } from '../utils/platform';
 
 const DEMO_KEY = 'gestion_alquileres_modo_demo';
 
@@ -30,11 +30,7 @@ function describeAuthError(message: string): string {
   if (/already registered|already exists/i.test(message)) return 'Ya existe una cuenta con ese mail. Ingresá con tu contraseña.';
   if (/password should be at least|weak password/i.test(message)) return 'La contraseña tiene que tener al menos 6 caracteres.';
   if (/rate limit|too many/i.test(message)) return 'Demasiados intentos. Esperá unos minutos y volvé a probar.';
-  if (/fetch|network/i.test(message)) {
-    return embeddedPreview()
-      ? 'La versión de prueba no puede conectarse al servidor. Usá «Probar con datos de ejemplo».'
-      : 'No se pudo conectar con el servidor. Revisá la conexión a internet.';
-  }
+  if (/fetch|network/i.test(message)) return connectionErrorMessage();
   return 'No se pudo completar. Intentá de nuevo.';
 }
 

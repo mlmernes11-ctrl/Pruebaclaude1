@@ -17,8 +17,8 @@ const SEGMENTS = [
 ] as const;
 
 const hasAmount = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
-// Pesos without "≈": the note under the list says dollars use today's rate.
-const describeTotals_ = (totals: MoneyTotals, rate?: number) => describeTotals(totals, rate, false);
+// Total en pesos sin "≈": la nota de abajo ya aclara que los dólares van a la cotización de hoy.
+const inPesos = (totals: MoneyTotals, rate?: number) => describeTotals(totals, rate, false).main;
 
 // Calendar-year view: how much of what was billed got collected, then one row per month.
 export default function YearHistory({
@@ -69,7 +69,7 @@ export default function YearHistory({
           <>
             <Text style={styles.heroValue}>{Math.round(total.shares.paid * 100)} %</Text>
             <Text style={styles.heroDetail}>
-              {describeTotals_(total.paid, rate).main} de {describeTotals_(total.billed, rate).main}
+              {inPesos(total.paid, rate)} de {inPesos(total.billed, rate)}
             </Text>
             <SegmentedBar row={total} height={8} />
             <View style={styles.stats}>
@@ -82,7 +82,7 @@ export default function YearHistory({
                   <Text
                     style={[styles.statValue, segment.key === 'overdue' && hasAmount(total.overdue) && { color: colors.danger }]}
                   >
-                    {describeTotals_(total[segment.key], rate).main}
+                    {inPesos(total[segment.key], rate)}
                   </Text>
                 </View>
               ))}
@@ -116,10 +116,10 @@ function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: numbe
   let caption = 'Todo cobrado';
   let captionColor = colors.success;
   if (row.overdueCount) {
-    caption = `En mora ${describeTotals_(row.overdue, rate).main} · ${plural(row.overdueCount, 'liquidación', 'liquidaciones')}`;
+    caption = `En mora ${inPesos(row.overdue, rate)} · ${plural(row.overdueCount, 'liquidación', 'liquidaciones')}`;
     captionColor = colors.danger;
   } else if (hasAmount(unpaid)) {
-    caption = `Por cobrar ${describeTotals_(unpaid, rate).main}`;
+    caption = `Por cobrar ${inPesos(unpaid, rate)}`;
     captionColor = colors.textMuted;
   }
 
@@ -134,7 +134,7 @@ function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: numbe
       {!first ? <View style={styles.separator} /> : null}
       <View style={styles.monthTop}>
         <Text style={styles.monthName}>{monthName}</Text>
-        <Text style={styles.monthAmount}>{describeTotals_(row.billed, rate).main}</Text>
+        <Text style={styles.monthAmount}>{inPesos(row.billed, rate)}</Text>
         <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
       </View>
       <SegmentedBar row={row} height={6} />

@@ -102,3 +102,12 @@ export interface Payment {
   receiptId?: string;
   createdAt: string;
 }
+
+// Todos los datos de la app juntos (lo que se guarda en Supabase o, en modo demo, en el celular).
+export interface AppData {
+  properties: Property[];
+  tenants: Tenant[];
+  contracts: Contract[];
+  charges: Charge[];
+  payments: Payment[];
+}

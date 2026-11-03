@@ -13,7 +13,7 @@ import { fontSize, spacing } from '../../theme';
 import { formatMoney, formatTotals } from '../../utils/format';
 import { PropertySummary, summarizeProperty } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
-import { COLLECTION_DOT } from './rentalStatus';
+import { COLLECTION_DOT } from '../../utils/status';
 
 const LEGEND: { tone: DotTone; label: string }[] = [
   { tone: 'danger', label: 'Con deuda' },

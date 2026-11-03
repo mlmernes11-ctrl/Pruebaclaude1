@@ -1,16 +1,8 @@
-import { Charge, Contract, Payment, Property, Tenant } from '../types';
+import { AppData } from '../types';
+import { connectionErrorMessage } from '../utils/platform';
 import { supabase } from './supabase';
 
-// Mirror of the app's data in Supabase: one table per collection, snake_case columns.
-export interface RemoteData {
-  properties: Property[];
-  tenants: Tenant[];
-  contracts: Contract[];
-  charges: Charge[];
-  payments: Payment[];
-}
-
-type Collection = keyof RemoteData;
+type Collection = keyof AppData;
 
 // Parents before children, so foreign keys hold on insert (and the reverse on delete).
 const ORDER: Collection[] = ['properties', 'tenants', 'contracts', 'charges', 'payments'];
@@ -71,9 +63,9 @@ function fromRow<T>(collection: Collection, row: Record<string, unknown>): T {
   return item as T;
 }
 
-export async function loadRemoteData(): Promise<RemoteData> {
+export async function loadRemoteData(): Promise<AppData> {
   const results = await Promise.all(ORDER.map((collection) => supabase.from(collection).select('*')));
-  const data = {} as RemoteData;
+  const data = {} as AppData;
   results.forEach((result, index) => {
     if (result.error) throw result.error;
     const collection = ORDER[index];
@@ -97,7 +89,7 @@ export interface RemoteChanges {
 }
 
 // What changed between what the server has and what the app has now.
-export function diffData(previous: RemoteData, next: RemoteData): RemoteChanges {
+export function diffData(previous: AppData, next: AppData): RemoteChanges {
   const changes: RemoteChanges = { upserts: {}, deletes: {} };
   ORDER.forEach((collection) => {
     // Compared as database rows, so key order or undefined-vs-missing fields never count as a change.
@@ -135,13 +127,9 @@ export async function pushChanges(changes: RemoteChanges): Promise<void> {
 }
 
 // Plain-language message for a failed request.
-export function describeRemoteError(error: unknown, embedded: boolean): string {
+export function describeRemoteError(error: unknown): string {
   const message = (error as { message?: string })?.message ?? '';
-  if (/fetch|network|Failed to fetch|NetworkError/i.test(message)) {
-    return embedded
-      ? 'La versión de prueba no puede conectarse al servidor. Usá «Probar con datos de ejemplo».'
-      : 'No se pudo conectar con el servidor. Revisá la conexión a internet.';
-  }
+  if (/fetch|network/i.test(message)) return connectionErrorMessage();
   return 'El servidor no pudo guardar los cambios. Intentá de nuevo en unos minutos.';
 }
 

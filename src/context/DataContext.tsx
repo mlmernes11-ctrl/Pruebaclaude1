@@ -1,196 +1,81 @@
+// =====================================================================
+// Datos de la app (propiedades, inquilinos, contratos, liquidaciones y pagos)
+// ---------------------------------------------------------------------
+// Este "contexto" guarda todos los datos en memoria y los comparte con todas las pantallas
+// (cualquier pantalla los lee con useData()). También se encarga de:
+//   - Cargarlos al abrir la app: de Supabase (cuenta real) o del celular (modo demo).
+//   - Guardar cada cambio: en Supabase, o en el celular en modo demo.
+//   - Generar solas las liquidaciones de cada mes.
+//   - Aplicar el saldo a favor de un inquilino a sus próximas liquidaciones.
+// =====================================================================
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import {
-  Charge,
-  ChargeConcept,
-  Contract,
-  Currency,
-  MoneyTotals,
-  Payment,
-  Property,
-  PropertyStatus,
-  Tenant,
-} from '../types';
+import { describeRemoteError, diffData, hasChanges, isConflict, loadRemoteData, pushChanges } from '../lib/remoteStore';
+import { AppData, Charge, Contract, Payment, Property, PropertyStatus, Tenant } from '../types';
 import { buildMissingCharges, syncUnpaidAutoCharges } from '../utils/chargeGeneration';
-import { addToTotals, currentPeriod, emptyTotals, todayISO } from '../utils/format';
+import { todayISO } from '../utils/format';
 import { generateId } from '../utils/id';
 import { applyCredits, buildLedger, ChargeView, viewCharge } from '../utils/ledger';
 import { buildSampleData } from '../utils/sampleData';
-import { describeRemoteError, diffData, hasChanges, isConflict, loadRemoteData, pushChanges } from '../lib/remoteStore';
-import { embeddedPreview } from '../utils/platform';
 
-// Demo mode keeps its data on the device under this key; a signed-in account uses Supabase.
-const STORAGE_KEY = 'gestion_alquileres_v1';
-// Unreadable saved data is copied here before anything new overwrites it.
-const BACKUP_KEY = 'gestion_alquileres_v1_respaldo';
+// ── Tipos y constantes ───────────────────────────────────────────────
 
-export interface StoredData {
-  properties: Property[];
-  tenants: Tenant[];
-  contracts: Contract[];
-  charges: Charge[];
-  payments: Payment[];
-}
-
-const EMPTY_DATA: StoredData = {
-  properties: [],
-  tenants: [],
-  contracts: [],
-  charges: [],
-  payments: [],
-};
-
-// Before charges and payments were split, each record was a charge with an optional paidDate.
-interface LegacyPayment {
-  id: string;
-  contractId: string;
-  concept?: ChargeConcept;
-  period: string;
-  amount: number;
-  currency?: Currency;
-  dueDate: string;
-  paidDate?: string;
-  method?: string;
-  exchangeRate?: number;
-  notes?: string;
-  createdAt: string;
-}
-
-function syncPropertyOccupancy(
-  properties: Property[],
-  contracts: Contract[],
-  affectedPropertyIds: string[],
-): Property[] {
-  const idsToSync = new Set(affectedPropertyIds);
-  if (idsToSync.size === 0) return properties;
-
-  return properties.map((property) => {
-    if (!idsToSync.has(property.id) || property.status === 'mantenimiento') {
-      return property;
-    }
-    const hasActiveContract = contracts.some(
-      (c) => c.propertyId === property.id && c.status === 'activo',
-    );
-    const nextStatus: PropertyStatus = hasActiveContract ? 'alquilada' : 'disponible';
-    return property.status === nextStatus ? property : { ...property, status: nextStatus };
-  });
-}
-
-// Records saved before currencies existed were entered in pesos.
-function normalizeStoredData(parsed: Record<string, unknown>): StoredData {
-  const contracts = ((parsed.contracts as Contract[]) ?? []).map((c) => ({
-    ...c,
-    currency: c.currency ?? 'ARS',
-  }));
-  const base = {
-    properties: ((parsed.properties as Property[]) ?? []).map((p) => ({
-      ...p,
-      rentCurrency: p.rentCurrency ?? 'ARS',
-    })),
-    tenants: (parsed.tenants as Tenant[]) ?? [],
-    contracts,
-  };
-
-  if (Array.isArray(parsed.charges)) {
-    return {
-      ...base,
-      charges: parsed.charges as Charge[],
-      payments: ((parsed.payments as Payment[]) ?? []).map((p) => ({
-        ...p,
-        allocations: p.allocations ?? [],
-      })),
-    };
-  }
-
-  // Auto-billing starts this month for existing contracts, so no past debt appears out of nowhere.
-  const migrationPeriod = currentPeriod();
-  base.contracts = contracts.map((c) => ({
-    ...c,
-    billingStartPeriod: c.billingStartPeriod ?? migrationPeriod,
-  }));
-  const legacy = (parsed.payments as LegacyPayment[]) ?? [];
-  const charges: Charge[] = legacy.map((p) => {
-    const concept = p.concept ?? 'alquiler';
-    const contractCurrency = contracts.find((c) => c.id === p.contractId)?.currency ?? 'ARS';
-    return {
-      id: p.id,
-      contractId: p.contractId,
-      concept,
-      period: p.period,
-      amount: p.amount,
-      currency: p.currency ?? (concept === 'alquiler' ? contractCurrency : 'ARS'),
-      dueDate: p.dueDate,
-      notes: p.notes,
-      createdAt: p.createdAt,
-    };
-  });
-  const payments: Payment[] = [];
-  legacy.forEach((p, index) => {
-    if (!p.paidDate) return;
-    const charge = charges[index];
-    payments.push({
-      id: generateId(),
-      contractId: p.contractId,
-      concept: charge.concept,
-      date: p.paidDate,
-      amount: p.amount,
-      currency: charge.currency,
-      method: p.method,
-      exchangeRate: p.exchangeRate,
-      allocations: [{ chargeId: charge.id, amount: p.amount }],
-      createdAt: p.createdAt,
-    });
-  });
-  return { ...base, charges, payments };
-}
-
-interface DashboardStats {
-  totalProperties: number;
-  availableProperties: number;
-  rentedProperties: number;
-  maintenanceProperties: number;
-  activeContracts: number;
-  pendingCount: number;
-  pendingAmount: MoneyTotals;
-  overdueCount: number;
-  overdueAmount: MoneyTotals;
-  collectedThisMonth: MoneyTotals;
-}
-
+// 'remote' = cuenta real (Supabase) · 'demo' = datos de ejemplo guardados solo en el celular.
 export type DataMode = 'demo' | 'remote';
 
-interface DataContextValue extends StoredData {
+const EMPTY_DATA: AppData = { properties: [], tenants: [], contracts: [], charges: [], payments: [] };
+
+// Dónde guarda el modo demo sus datos en el celular.
+const STORAGE_KEY = 'gestion_alquileres_v1';
+// Si lo guardado no se puede leer, se copia acá antes de reemplazarlo (para no perderlo).
+const BACKUP_KEY = 'gestion_alquileres_v1_respaldo';
+
+// Resultado de una acción que puede no estar permitida (por ejemplo, borrar algo con contratos).
+type ActionResult = { ok: boolean; reason?: string };
+
+// Todo lo que las pantallas pueden leer o hacer con los datos.
+interface DataContextValue extends AppData {
   mode: DataMode;
   loading: boolean;
-  // Remote mode: the first load failed (no connection); reload() tries again.
+
+  // Cuenta real: si la primera carga falló (sin conexión), reload() vuelve a intentar.
   loadError?: string;
   reload: () => void;
-  // Remote mode: changes that could not be saved yet; retrySync() sends them again.
+  // Cuenta real: cambios que todavía no se pudieron guardar; retrySync() los vuelve a enviar.
   syncError?: string;
   retrySync: () => void;
-  // Today's date; changes at midnight or when the app comes back, so statuses stay current.
+
+  // Fecha de hoy. Cambia a la medianoche o al volver a la app, así los estados se actualizan.
   today: string;
-  // Re-reads today's date (statuses, new month) — used by pull to refresh.
+  // Vuelve a leer la fecha de hoy (se usa al deslizar hacia abajo para actualizar).
   refreshToday: () => void;
-  stats: DashboardStats;
+
+  // Cada liquidación (sin las anuladas) con lo pagado, lo que falta y su estado.
   chargeViews: ChargeView[];
+
+  // Altas, cambios y bajas.
   addProperty: (data: Omit<Property, 'id' | 'createdAt'>) => Property;
   updateProperty: (id: string, data: Partial<Property>) => void;
-  deleteProperty: (id: string) => { ok: boolean; reason?: string };
+  deleteProperty: (id: string) => ActionResult;
   addTenant: (data: Omit<Tenant, 'id' | 'createdAt'>) => Tenant;
   updateTenant: (id: string, data: Partial<Tenant>) => void;
-  deleteTenant: (id: string) => { ok: boolean; reason?: string };
+  deleteTenant: (id: string) => ActionResult;
   addContract: (data: Omit<Contract, 'id' | 'createdAt'>) => Contract;
   updateContract: (id: string, data: Partial<Contract>) => void;
   deleteContract: (id: string) => void;
   addCharge: (data: Omit<Charge, 'id' | 'createdAt'>) => Charge;
   updateCharge: (id: string, data: Partial<Charge>) => void;
-  voidCharge: (id: string) => { ok: boolean; reason?: string };
+  voidCharge: (id: string) => ActionResult;
   addPayment: (data: Omit<Payment, 'id' | 'createdAt'>) => Payment;
   deletePayment: (id: string) => void;
+
+  // Solo en modo demo: cargar los datos de ejemplo o borrar todo.
   loadSampleData: () => void;
   clearAllData: () => void;
+
+  // Búsquedas frecuentes.
   getPropertyById: (id?: string) => Property | undefined;
   getTenantById: (id?: string) => Tenant | undefined;
   getContractById: (id?: string) => Contract | undefined;
@@ -206,22 +91,54 @@ interface DataContextValue extends StoredData {
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
 
+// ── Funciones auxiliares ─────────────────────────────────────────────
+
 const byDueDateDesc = (a: ChargeView, b: ChargeView) =>
   a.charge.dueDate < b.charge.dueDate ? 1 : a.charge.dueDate > b.charge.dueDate ? -1 : 0;
+const byDateDesc = (a: Payment, b: Payment) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+
+// Lo guardado por el modo demo. Si no tiene la forma esperada (por ejemplo, porque lo guardó
+// una versión muy vieja de la app), el modo demo vuelve a empezar con los datos de ejemplo.
+function readDemoData(raw: string | null): AppData {
+  if (!raw) return buildSampleData();
+  const parsed = JSON.parse(raw);
+  const valid = (Object.keys(EMPTY_DATA) as (keyof AppData)[]).every((key) => Array.isArray(parsed?.[key]));
+  return valid ? (parsed as AppData) : buildSampleData();
+}
+
+// Una propiedad con un contrato activo pasa a "alquilada"; sin contrato, a "disponible".
+// Las que están en mantenimiento no se tocan.
+function syncPropertyOccupancy(properties: Property[], contracts: Contract[], affectedIds: string[]): Property[] {
+  const ids = new Set(affectedIds);
+  if (ids.size === 0) return properties;
+  return properties.map((property) => {
+    if (!ids.has(property.id) || property.status === 'mantenimiento') return property;
+    const rented = contracts.some((c) => c.propertyId === property.id && c.status === 'activo');
+    const status: PropertyStatus = rented ? 'alquilada' : 'disponible';
+    return property.status === status ? property : { ...property, status };
+  });
+}
+
+const newRecordFields = () => ({ id: generateId(), createdAt: new Date().toISOString() });
+
+// ── Proveedor de datos ───────────────────────────────────────────────
 
 export function DataProvider({ children, mode }: { children: React.ReactNode; mode: DataMode }) {
-  const [data, setData] = useState<StoredData>(EMPTY_DATA);
+  const [data, setData] = useState<AppData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [syncError, setSyncError] = useState<string>();
   const [reloadKey, setReloadKey] = useState(0);
   const [today, setToday] = useState(todayISO);
-  // Remote mode: what the server is known to hold, and a queue so saves go out in order.
-  const syncedRef = useRef<StoredData>(EMPTY_DATA);
+
+  // Cuenta real: lo que se sabe que tiene el servidor, y una fila de espera para que los
+  // guardados salgan de a uno y en orden.
+  const syncedRef = useRef<AppData>(EMPTY_DATA);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
-  const dataRef = useRef<StoredData>(EMPTY_DATA);
+  const dataRef = useRef<AppData>(EMPTY_DATA);
   dataRef.current = data;
 
+  // ── Carga inicial ──────────────────────────────────────────────────
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -234,20 +151,21 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
           setData(remote);
           setLoadError(undefined);
         } catch (e) {
-          if (active) setLoadError(describeRemoteError(e, embeddedPreview()));
+          if (active) setLoadError(describeRemoteError(e));
         } finally {
           if (active) setLoading(false);
         }
         return;
       }
+
       let raw: string | null = null;
       try {
         raw = await AsyncStorage.getItem(STORAGE_KEY);
-        // A first visit to demo mode starts with the sample portfolio.
-        setData(raw ? normalizeStoredData(JSON.parse(raw)) : buildSampleData());
+        if (active) setData(readDemoData(raw));
       } catch (e) {
         console.warn('No se pudo cargar la información guardada', e);
         if (raw) await AsyncStorage.setItem(BACKUP_KEY, raw).catch(() => undefined);
+        if (active) setData(buildSampleData());
       } finally {
         if (active) setLoading(false);
       }
@@ -257,7 +175,10 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     };
   }, [mode, reloadKey]);
 
-  // Sends whatever differs from what the server holds; on failure the changes wait for the next try.
+  // ── Guardado ───────────────────────────────────────────────────────
+
+  // Cuenta real: envía al servidor solo lo que cambió. Si falla, los cambios quedan
+  // pendientes y se reintentan con el próximo cambio o con "Reintentar".
   const syncNow = useCallback(() => {
     queueRef.current = queueRef.current.then(async () => {
       const snapshot = dataRef.current;
@@ -268,14 +189,29 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
         syncedRef.current = snapshot;
         setSyncError(undefined);
       } catch (e) {
-        setSyncError(describeRemoteError(e, embeddedPreview()));
-        // Another device created the same monthly charge: take the server's version.
+        setSyncError(describeRemoteError(e));
+        // Otro dispositivo ya creó la misma liquidación del mes: se recarga lo del servidor.
         if (isConflict(e)) setReloadKey((k) => k + 1);
       }
     });
   }, []);
 
-  // An app left open overnight (or reopened days later) recalculates due dates and new months.
+  // Cada vez que cambian los datos, se guardan (en el servidor o en el celular).
+  useEffect(() => {
+    if (loading || loadError) return;
+    if (mode === 'remote') {
+      syncNow();
+      return;
+    }
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch((e) => {
+      console.warn('No se pudo guardar la información', e);
+    });
+  }, [data, loading, loadError, mode, syncNow]);
+
+  // ── Tareas automáticas ─────────────────────────────────────────────
+
+  // Si la app queda abierta de un día para otro (o se vuelve a ella días después), se
+  // actualiza la fecha de hoy para recalcular vencimientos y meses nuevos.
   useEffect(() => {
     const refresh = () => setToday(todayISO());
     const timer = setInterval(refresh, 60_000);
@@ -288,18 +224,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     };
   }, []);
 
-  useEffect(() => {
-    if (loading || loadError) return;
-    if (mode === 'remote') {
-      syncNow();
-      return;
-    }
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch((e) => {
-      console.warn('No se pudo guardar la información', e);
-    });
-  }, [data, loading, loadError, mode, syncNow]);
-
-  // Creates this month's charges (and any missing month since the contract was loaded).
+  // Crea las liquidaciones del mes (y las de meses que falten desde que se cargó el contrato).
   useEffect(() => {
     if (loading || loadError) return;
     if (buildMissingCharges(data.contracts, data.properties, data.charges).length === 0) return;
@@ -309,27 +234,34 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     }));
   }, [loading, loadError, today, data.contracts, data.properties, data.charges]);
 
-  // Money left in favor of a tenant pays their next charges automatically.
+  // El dinero que quedó a favor de un inquilino paga solo sus próximas liquidaciones.
   useEffect(() => {
     if (loading || loadError || !applyCredits(data.payments, data.charges)) return;
     setData((prev) => ({ ...prev, payments: applyCredits(prev.payments, prev.charges) ?? prev.payments }));
   }, [loading, loadError, data.payments, data.charges]);
 
+  // ── Estado de cada liquidación ─────────────────────────────────────
+
+  // Cuánto se pagó de cada liquidación, según los pagos registrados.
   const ledger = useMemo(() => buildLedger(data.payments), [data.payments]);
 
   const chargeViews = useMemo(
     () => data.charges.filter((c) => !c.voided).map((c) => viewCharge(c, ledger)),
-    // today is a dependency so overdue statuses refresh when the date changes.
+    // "today" está para que los estados (vencida / por vencer) se recalculen al cambiar el día.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data.charges, ledger, today],
   );
 
+  // ── Propiedades ────────────────────────────────────────────────────
+
   const addProperty = useCallback<DataContextValue['addProperty']>((values) => {
-    const property: Property = { ...values, id: generateId(), createdAt: new Date().toISOString() };
+    const property: Property = { ...values, ...newRecordFields() };
     setData((prev) => ({ ...prev, properties: [property, ...prev.properties] }));
     return property;
   }, []);
 
+  // Si cambian las expensas o los servicios, las liquidaciones impagas de este mes en adelante
+  // toman el valor nuevo.
   const updateProperty = useCallback<DataContextValue['updateProperty']>((id, values) => {
     setData((prev) => {
       const properties = prev.properties.map((p) => (p.id === id ? { ...p, ...values } : p));
@@ -337,13 +269,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
       return {
         ...prev,
         properties,
-        charges: syncUnpaidAutoCharges(
-          prev.charges,
-          prev.contracts,
-          properties,
-          buildLedger(prev.payments),
-          contractIds,
-        ),
+        charges: syncUnpaidAutoCharges(prev.charges, prev.contracts, properties, buildLedger(prev.payments), contractIds),
       };
     });
   }, []);
@@ -359,17 +285,16 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     [data.contracts],
   );
 
+  // ── Inquilinos ─────────────────────────────────────────────────────
+
   const addTenant = useCallback<DataContextValue['addTenant']>((values) => {
-    const tenant: Tenant = { ...values, id: generateId(), createdAt: new Date().toISOString() };
+    const tenant: Tenant = { ...values, ...newRecordFields() };
     setData((prev) => ({ ...prev, tenants: [tenant, ...prev.tenants] }));
     return tenant;
   }, []);
 
   const updateTenant = useCallback<DataContextValue['updateTenant']>((id, values) => {
-    setData((prev) => ({
-      ...prev,
-      tenants: prev.tenants.map((t) => (t.id === id ? { ...t, ...values } : t)),
-    }));
+    setData((prev) => ({ ...prev, tenants: prev.tenants.map((t) => (t.id === id ? { ...t, ...values } : t)) }));
   }, []);
 
   const deleteTenant = useCallback<DataContextValue['deleteTenant']>(
@@ -383,19 +308,18 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     [data.contracts],
   );
 
+  // ── Contratos ──────────────────────────────────────────────────────
+
   const addContract = useCallback<DataContextValue['addContract']>((values) => {
-    const contract: Contract = { ...values, id: generateId(), createdAt: new Date().toISOString() };
+    const contract: Contract = { ...values, ...newRecordFields() };
     setData((prev) => {
       const contracts = [contract, ...prev.contracts];
-      return {
-        ...prev,
-        contracts,
-        properties: syncPropertyOccupancy(prev.properties, contracts, [contract.propertyId]),
-      };
+      return { ...prev, contracts, properties: syncPropertyOccupancy(prev.properties, contracts, [contract.propertyId]) };
     });
     return contract;
   }, []);
 
+  // Si cambia el alquiler, las liquidaciones impagas de este mes en adelante toman el valor nuevo.
   const updateContract = useCallback<DataContextValue['updateContract']>((id, values) => {
     setData((prev) => {
       const previousPropertyId = prev.contracts.find((c) => c.id === id)?.propertyId;
@@ -405,17 +329,12 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
         ...prev,
         contracts,
         properties: syncPropertyOccupancy(prev.properties, contracts, affected),
-        charges: syncUnpaidAutoCharges(
-          prev.charges,
-          contracts,
-          prev.properties,
-          buildLedger(prev.payments),
-          new Set([id]),
-        ),
+        charges: syncUnpaidAutoCharges(prev.charges, contracts, prev.properties, buildLedger(prev.payments), new Set([id])),
       };
     });
   }, []);
 
+  // Borrar un contrato borra también sus liquidaciones y pagos.
   const deleteContract = useCallback<DataContextValue['deleteContract']>((id) => {
     setData((prev) => {
       const removed = prev.contracts.find((c) => c.id === id);
@@ -425,45 +344,39 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
         contracts,
         charges: prev.charges.filter((c) => c.contractId !== id),
         payments: prev.payments.filter((p) => p.contractId !== id),
-        properties: removed
-          ? syncPropertyOccupancy(prev.properties, contracts, [removed.propertyId])
-          : prev.properties,
+        properties: removed ? syncPropertyOccupancy(prev.properties, contracts, [removed.propertyId]) : prev.properties,
       };
     });
   }, []);
 
+  // ── Liquidaciones ──────────────────────────────────────────────────
+
   const addCharge = useCallback<DataContextValue['addCharge']>((values) => {
-    const charge: Charge = { ...values, id: generateId(), createdAt: new Date().toISOString() };
+    const charge: Charge = { ...values, ...newRecordFields() };
     setData((prev) => ({ ...prev, charges: [...prev.charges, charge] }));
     return charge;
   }, []);
 
   const updateCharge = useCallback<DataContextValue['updateCharge']>((id, values) => {
-    setData((prev) => ({
-      ...prev,
-      charges: prev.charges.map((c) => (c.id === id ? { ...c, ...values } : c)),
-    }));
+    setData((prev) => ({ ...prev, charges: prev.charges.map((c) => (c.id === id ? { ...c, ...values } : c)) }));
   }, []);
 
+  // Anular no borra: la liquidación queda guardada para que la generación mensual no la vuelva a crear.
   const voidCharge = useCallback<DataContextValue['voidCharge']>(
     (id) => {
       if ((ledger.get(id)?.paid ?? 0) > 0) {
-        return {
-          ok: false,
-          reason: 'Esta liquidación tiene pagos registrados. Anulá primero esos pagos.',
-        };
+        return { ok: false, reason: 'Esta liquidación tiene pagos registrados. Anulá primero esos pagos.' };
       }
-      setData((prev) => ({
-        ...prev,
-        charges: prev.charges.map((c) => (c.id === id ? { ...c, voided: true } : c)),
-      }));
+      setData((prev) => ({ ...prev, charges: prev.charges.map((c) => (c.id === id ? { ...c, voided: true } : c)) }));
       return { ok: true };
     },
     [ledger],
   );
 
+  // ── Pagos ──────────────────────────────────────────────────────────
+
   const addPayment = useCallback<DataContextValue['addPayment']>((values) => {
-    const payment: Payment = { ...values, id: generateId(), createdAt: new Date().toISOString() };
+    const payment: Payment = { ...values, ...newRecordFields() };
     setData((prev) => ({ ...prev, payments: [payment, ...prev.payments] }));
     return payment;
   }, []);
@@ -472,7 +385,9 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     setData((prev) => ({ ...prev, payments: prev.payments.filter((p) => p.id !== id) }));
   }, []);
 
-  // Sample data and wiping everything only exist in demo mode; a real account is never replaced.
+  // ── Modo demo ──────────────────────────────────────────────────────
+
+  // Solo existen en modo demo: una cuenta real nunca se reemplaza ni se borra entera.
   const loadSampleData = useCallback(() => {
     if (mode === 'demo') setData(buildSampleData());
   }, [mode]);
@@ -480,23 +395,14 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     if (mode === 'demo') setData(EMPTY_DATA);
   }, [mode]);
 
-  const getPropertyById = useCallback(
-    (id?: string) => data.properties.find((p) => p.id === id),
-    [data.properties],
-  );
+  // ── Búsquedas ──────────────────────────────────────────────────────
+
+  const getPropertyById = useCallback((id?: string) => data.properties.find((p) => p.id === id), [data.properties]);
   const getTenantById = useCallback((id?: string) => data.tenants.find((t) => t.id === id), [data.tenants]);
-  const getContractById = useCallback(
-    (id?: string) => data.contracts.find((c) => c.id === id),
-    [data.contracts],
-  );
-  const getChargeView = useCallback(
-    (id?: string) => chargeViews.find((v) => v.charge.id === id),
-    [chargeViews],
-  );
-  const getPaymentById = useCallback(
-    (id?: string) => data.payments.find((p) => p.id === id),
-    [data.payments],
-  );
+  const getContractById = useCallback((id?: string) => data.contracts.find((c) => c.id === id), [data.contracts]);
+  const getChargeView = useCallback((id?: string) => chargeViews.find((v) => v.charge.id === id), [chargeViews]);
+  const getPaymentById = useCallback((id?: string) => data.payments.find((p) => p.id === id), [data.payments]);
+
   const contractsForProperty = useCallback(
     (propertyId: string) => data.contracts.filter((c) => c.propertyId === propertyId),
     [data.contracts],
@@ -505,70 +411,29 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     (tenantId: string) => data.contracts.filter((c) => c.tenantId === tenantId),
     [data.contracts],
   );
+  // Las listas de liquidaciones y pagos van de la más nueva a la más vieja.
   const chargeViewsForContract = useCallback(
     (contractId: string) => chargeViews.filter((v) => v.charge.contractId === contractId).sort(byDueDateDesc),
     [chargeViews],
   );
   const chargeViewsForProperty = useCallback(
     (propertyId: string) => {
-      const contractIds = new Set(
-        data.contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id),
-      );
+      const contractIds = new Set(data.contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id));
       return chargeViews.filter((v) => contractIds.has(v.charge.contractId)).sort(byDueDateDesc);
     },
     [data.contracts, chargeViews],
   );
   const paymentsForContract = useCallback(
-    (contractId: string) =>
-      data.payments
-        .filter((p) => p.contractId === contractId)
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+    (contractId: string) => data.payments.filter((p) => p.contractId === contractId).sort(byDateDesc),
     [data.payments],
   );
   const paymentsForCharge = useCallback(
     (chargeId: string) =>
-      data.payments
-        .filter((p) => p.allocations.some((a) => a.chargeId === chargeId))
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+      data.payments.filter((p) => p.allocations.some((a) => a.chargeId === chargeId)).sort(byDateDesc),
     [data.payments],
   );
 
-  const stats = useMemo<DashboardStats>(() => {
-    const activeContracts = data.contracts.filter((c) => c.status === 'activo');
-    const thisPeriod = today.slice(0, 7);
-
-    let pendingCount = 0;
-    const pendingAmount = emptyTotals();
-    let overdueCount = 0;
-    const overdueAmount = emptyTotals();
-    const collectedThisMonth = emptyTotals();
-
-    chargeViews.forEach((view) => {
-      if (view.status === 'pendiente') {
-        pendingCount += 1;
-        addToTotals(pendingAmount, view.balance, view.charge.currency);
-      } else if (view.status === 'vencido') {
-        overdueCount += 1;
-        addToTotals(overdueAmount, view.balance, view.charge.currency);
-      }
-    });
-    data.payments
-      .filter((p) => p.date.slice(0, 7) === thisPeriod)
-      .forEach((p) => addToTotals(collectedThisMonth, p.amount, p.currency));
-
-    return {
-      totalProperties: data.properties.length,
-      availableProperties: data.properties.filter((p) => p.status === 'disponible').length,
-      rentedProperties: data.properties.filter((p) => p.status === 'alquilada').length,
-      maintenanceProperties: data.properties.filter((p) => p.status === 'mantenimiento').length,
-      activeContracts: activeContracts.length,
-      pendingCount,
-      pendingAmount,
-      overdueCount,
-      overdueAmount,
-      collectedThisMonth,
-    };
-  }, [data.properties, data.contracts, data.payments, chargeViews, today]);
+  // ── Lo que se comparte con las pantallas ───────────────────────────
 
   const value: DataContextValue = {
     ...data,
@@ -580,7 +445,6 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     retrySync: syncNow,
     today,
     refreshToday: () => setToday(todayISO()),
-    stats,
     chargeViews,
     addProperty,
     updateProperty,
@@ -614,6 +478,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 
+// Para usar los datos desde cualquier pantalla: const { properties } = useData();
 export function useData(): DataContextValue {
   const ctx = useContext(DataContext);
   if (!ctx) throw new Error('useData debe usarse dentro de DataProvider');

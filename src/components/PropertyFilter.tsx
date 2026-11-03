@@ -3,14 +3,9 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useData } from '../context/DataContext';
 import { fontSize, radius, spacing } from '../theme';
+import { matchFields, searchWords } from '../utils/search';
 import { compareTitles } from '../utils/text';
 import { makeStyles, useTheme } from '../context/ThemeContext';
-
-const normalize = (text: string) =>
-  text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
 
 interface Option {
   id: string;
@@ -44,15 +39,17 @@ export default function PropertyFilter({
             id: property.id,
             title: property.title,
             subtitle,
-            searchText: normalize([property.title, property.address, subtitle].join(' ')),
+            searchText: [property.title, property.address, subtitle].join(' '),
           };
         })
         .sort((a, b) => compareTitles(a.title, b.title)),
     [properties, contracts, getTenantById],
   );
 
-  const words = normalize(query).split(/\s+/).filter(Boolean);
-  const visible = words.length ? options.filter((o) => words.every((w) => o.searchText.includes(w))) : options;
+  const words = searchWords(query);
+  const visible = words.length
+    ? options.filter((o) => matchFields([{ label: '', value: o.searchText }], words))
+    : options;
   const selected = options.find((o) => o.id === value);
 
   const close = () => {

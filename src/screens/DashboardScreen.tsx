@@ -14,7 +14,15 @@ import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateConte
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useRefresh } from '../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../theme';
-import { describeTotals, formatDate, formatMoney, formatPeriod, formatTotals } from '../utils/format';
+import {
+  addToTotals,
+  describeTotals,
+  emptyTotals,
+  formatDayMonth,
+  formatMoney,
+  formatPeriod,
+  formatTotals,
+} from '../utils/format';
 import { buildPeriodRow } from '../utils/history';
 import { openInTab } from '../utils/navigation';
 import { daysUntil, summarizeProperty } from '../utils/propertySummary';
@@ -25,7 +33,7 @@ export default function DashboardScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
-  const { stats, properties, tenants, contracts, payments, chargeViews, loadSampleData, today } = useData();
+  const { mode, properties, tenants, contracts, payments, chargeViews, loadSampleData, today } = useData();
   const { rate, source, toPesos } = useExchangeRate();
   const { refreshing, onRefresh } = useRefresh();
   const isEmpty =
@@ -45,8 +53,13 @@ export default function DashboardScreen() {
     [settled.filter((s) => s.collection === 'mantenimiento').length, 'en mantenimiento', 'en mantenimiento'],
   ] as const;
 
-  const hasOverdue = stats.overdueCount > 0;
-  const overdue = describeTotals(stats.overdueAmount, rate, false);
+  // Total en mora: lo que falta pagar de todas las liquidaciones vencidas.
+  const overdueTotals = emptyTotals();
+  chargeViews
+    .filter((v) => v.status === 'vencido')
+    .forEach((v) => addToTotals(overdueTotals, v.balance, v.charge.currency));
+  const hasOverdue = overdueTotals.USD > 0 || overdueTotals.ARS > 0;
+  const overdue = describeTotals(overdueTotals, rate, false);
   const period = today.slice(0, 7);
   const month = buildPeriodRow(chargeViews, period, toPesos);
   const monthName = formatPeriod(period).split(' ')[0];
@@ -68,7 +81,19 @@ export default function DashboardScreen() {
         />
 
         <View style={styles.body}>
-          {isEmpty ? (
+          {isEmpty && mode === 'remote' ? (
+            <Card style={styles.welcome}>
+              <Text style={styles.welcomeTitle}>Empezá por tu primera propiedad</Text>
+              <Text style={styles.welcomeText}>
+                Cargá la propiedad, después el inquilino y el contrato. Desde ahí la app genera sola las
+                liquidaciones de cada mes.
+              </Text>
+              <Button
+                label="Agregar propiedad"
+                onPress={() => openInTab(navigation, 'RentalsTab', 'PropertyForm')}
+              />
+            </Card>
+          ) : isEmpty ? (
             <Card style={styles.welcome}>
               <Text style={styles.welcomeTitle}>¿Querés probar la app?</Text>
               <Text style={styles.welcomeText}>
@@ -161,7 +186,7 @@ export default function DashboardScreen() {
                     key={s.property.id}
                     dot="warning"
                     title={s.property.title}
-                    subtitle={`${s.tenant?.name ?? 'Sin inquilino'} · vence el ${formatDate(s.nextDueDate).slice(0, 5)}`}
+                    subtitle={`${s.tenant?.name ?? 'Sin inquilino'} · vence el ${formatDayMonth(s.nextDueDate)}`}
                     value={formatTotals(s.pending.totals)}
                     onPress={() => openProperty(s.property.id)}
                   />

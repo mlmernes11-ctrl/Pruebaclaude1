@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, ViewStyle } from 'react-native';
-import { fontSize, Palette, radius, spacing } from '../theme';
+import { fontSize, Palette, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
 // dangerOutline: destructive actions that should not be the most prominent button on screen.
@@ -54,7 +54,7 @@ const variantStyles = (colors: Palette): Record<Variant, { bg: string; fg: strin
   ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
 });
 
-const useStyles = makeStyles((colors) => ({
+const useStyles = makeStyles(() => ({
   base: {
     borderRadius: 14,
     minHeight: 50,

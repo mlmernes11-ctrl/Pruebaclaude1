@@ -72,6 +72,11 @@ export function formatDate(iso?: string): string {
   });
 }
 
+// "10/11": día y mes, para listas donde el año se sobreentiende.
+export function formatDayMonth(iso?: string): string {
+  return formatDate(iso).slice(0, 5);
+}
+
 export function formatDateTime(iso?: string): string {
   if (!iso) return '-';
   const d = new Date(iso);

@@ -1,33 +1,41 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 import StatusDot, { DotTone } from './StatusDot';
 
-// The big status block at the top of a detail screen: colored label, one large value, one detail line.
+// Bloque grande de arriba de una pantalla: una etiqueta, un número grande y una línea de detalle.
+// Con "tone" la etiqueta lleva el punto de color del semáforo; sin "tone" es un total neutro.
 export default function StatusHero({
   tone,
   label,
   value,
   detail,
+  danger,
+  style,
   children,
 }: {
-  tone: DotTone;
+  tone?: DotTone;
   label: string;
   value: string;
   detail?: string;
+  // Número en rojo (deuda). Con tone="danger" ya sale en rojo.
+  danger?: boolean;
+  style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const toneColor = { danger: colors.danger, warning: colors.warning, success: colors.success, empty: colors.textMuted }[tone];
+  const toneColor = tone
+    ? { danger: colors.danger, warning: colors.warning, success: colors.success, empty: colors.textMuted }[tone]
+    : colors.textMuted;
   return (
-    <View style={styles.hero}>
+    <View style={[styles.hero, style]}>
       <View style={styles.labelRow}>
-        <StatusDot tone={tone} halo />
+        {tone ? <StatusDot tone={tone} halo /> : null}
         <Text style={[styles.label, { color: toneColor }]}>{label}</Text>
       </View>
-      <Text style={[styles.value, tone === 'danger' && { color: colors.danger }]}>{value}</Text>
+      <Text style={[styles.value, (danger || tone === 'danger') && { color: colors.danger }]}>{value}</Text>
       {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       {children}
     </View>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
-import { fontSize, radius, spacing } from '../theme';
+import { fontSize, spacing } from '../theme';
 
 // Row of mutually exclusive views ("Recibidos | Liquidaciones | Historial").
 export default function SegmentedControl<T extends string>({

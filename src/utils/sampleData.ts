@@ -1,16 +1,8 @@
-import { Charge, ChargeConcept, Contract, Payment, Property, Tenant } from '../types';
+import { AppData, Charge, ChargeConcept, Contract, Payment, Property, Tenant } from '../types';
 import { addMonthsToPeriod, currentPeriod, periodToDueDate, todayISO } from './format';
 import { generateId } from './id';
 
-export interface SampleData {
-  properties: Property[];
-  tenants: Tenant[];
-  contracts: Contract[];
-  charges: Charge[];
-  payments: Payment[];
-}
-
-export function buildSampleData(): SampleData {
+export function buildSampleData(): AppData {
   const now = new Date().toISOString();
   const thisPeriod = currentPeriod();
   const monthStart = (offset: number) => periodToDueDate(addMonthsToPeriod(thisPeriod, offset), 1);

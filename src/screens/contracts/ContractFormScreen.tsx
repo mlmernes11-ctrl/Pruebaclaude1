@@ -211,7 +211,7 @@ export default function ContractFormScreen() {
   );
 }
 
-const useStyles = makeStyles((colors) => ({
+const useStyles = makeStyles(() => ({
   deleteButton: {
     marginTop: spacing.md,
   },

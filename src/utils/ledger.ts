@@ -22,18 +22,6 @@ export interface ChargeView {
   lastMethod?: string;
 }
 
-export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
-  pagado: 'Pagada',
-  pendiente: 'Por vencer',
-  vencido: 'Vencida',
-};
-
-export const CHARGE_STATUS_TONE = {
-  pagado: 'success',
-  pendiente: 'warning',
-  vencido: 'danger',
-} as const;
-
 export function buildLedger(payments: Payment[]): Map<string, ChargePaymentInfo> {
   const ledger = new Map<string, ChargePaymentInfo>();
   [...payments]
