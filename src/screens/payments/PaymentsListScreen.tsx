@@ -176,14 +176,16 @@ export default function PaymentsListScreen() {
   const paymentRow = (item: Payment): Row => {
     const { property, tenant } = describeContract(item.contractId);
     const credit = unallocatedAmount(item) > 0 ? ' · saldo a favor' : '';
+    const inPesos = item.paidCurrency === 'ARS' && item.paidAmount ? ' · en pesos' : '';
     return {
       title: property,
-      subtitle: `${tenant} · ${CONCEPT_LABEL[item.concept]} · ${formatDayMonth(item.date)}${credit}`,
+      subtitle: `${tenant} · ${CONCEPT_LABEL[item.concept]} · ${formatDayMonth(item.date)}${inPesos}${credit}`,
       value: formatMoney(item.amount, item.currency),
       hidden: [
         { label: 'Fecha', value: formatDate(item.date) },
         { label: 'Mes', value: formatPeriod(item.date.slice(0, 7)) },
         { label: 'Método', value: item.method },
+        { label: 'En pesos', value: item.paidAmount ? formatMoney(item.paidAmount, item.paidCurrency ?? 'ARS') : undefined, amount: true },
         { label: 'Nota', value: item.notes },
       ],
     };

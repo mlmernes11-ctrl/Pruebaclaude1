@@ -2,6 +2,7 @@
   "expo": {
     "name": "Gestión de Alquileres",
     "slug": "gestion-alquileres",
+    "scheme": "gestionalquileres",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.mlmernes.gestionalquileres",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

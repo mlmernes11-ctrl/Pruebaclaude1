@@ -12,15 +12,9 @@ import { showAlert } from '../components/DialogHost';
 import FormField from '../components/FormField';
 import OptionChips from '../components/OptionChips';
 import Screen from '../components/Screen';
-import {
-  QuoteSource,
-  quoteMidpoint,
-  RATE_SOURCE_LABEL,
-  RateSource,
-  useExchangeRate,
-} from '../context/ExchangeRateContext';
+import { QUOTE_SOURCES, quoteMidpoint, RATE_SOURCE_LABEL, RateSource, useExchangeRate } from '../context/ExchangeRateContext';
 import { fontSize, spacing } from '../theme';
-import { formatDateTime, formatMoney, parseAmount } from '../utils/format';
+import { formatDate, formatDateTime, formatMoney, parseAmount } from '../utils/format';
 import { makeStyles } from '../context/ThemeContext';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
@@ -30,8 +24,6 @@ const SOURCE_OPTIONS = (Object.keys(RATE_SOURCE_LABEL) as RateSource[]).map((val
   label: RATE_SOURCE_LABEL[value],
 }));
 
-const QUOTE_SOURCES: QuoteSource[] = ['blue', 'oficial', 'bolsa'];
-
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function ExchangeRateScreen() {
@@ -40,15 +32,25 @@ export default function ExchangeRateScreen() {
     source,
     rate,
     quotes,
-    updatedAt,
+    quotesDate,
+    liveQuotes,
+    liveAt,
     manualRate,
     fetching,
     lastError,
     refreshQuotes,
+    fetchLiveQuotes,
     setSource,
     setManualRate,
   } = useExchangeRate();
   const [manualInput, setManualInput] = useState(manualRate ? String(manualRate) : '');
+  const [loadingLive, setLoadingLive] = useState(false);
+
+  const showLive = async () => {
+    setLoadingLive(true);
+    await fetchLiveQuotes();
+    setLoadingLive(false);
+  };
 
   const handleSaveManual = () => {
     const value = parseAmount(manualInput);
@@ -68,13 +70,13 @@ export default function ExchangeRateScreen() {
           <Text style={styles.meta}>
             {source === 'manual'
               ? 'Valor cargado a mano'
-              : updatedAt
-                ? `Actualizada el ${formatDateTime(updatedAt)} · promedio entre compra y venta`
+              : quotesDate
+                ? `Cotización del ${formatDate(quotesDate)} · promedio entre compra y venta`
                 : 'Todavía no se pudo descargar'}
           </Text>
           {lastError ? <Text style={styles.error}>{lastError}</Text> : null}
           <Button
-            label="Actualizar ahora"
+            label="Volver a leer la del día"
             variant="secondary"
             onPress={refreshQuotes}
             loading={fetching}
@@ -109,7 +111,31 @@ export default function ExchangeRateScreen() {
               </View>
             );
           })}
-          <Text style={styles.source}>Fuente: DolarAPI (dolarapi.com)</Text>
+          {liveQuotes
+            ? QUOTE_SOURCES.map((key) => {
+                const quote = liveQuotes[key];
+                return (
+                  <View key={`live-${key}`} style={[styles.tableRow, styles.liveRow]}>
+                    <Text style={[styles.cell, styles.cellName]}>{RATE_SOURCE_LABEL[key]} en vivo</Text>
+                    <Text style={styles.cell}>{quote ? formatMoney(quote.compra, 'ARS') : '-'}</Text>
+                    <Text style={styles.cell}>{quote ? formatMoney(quote.venta, 'ARS') : '-'}</Text>
+                    <Text style={[styles.cell, styles.cellStrong]}>
+                      {quote ? formatMoney(quoteMidpoint(quote)!, 'ARS') : '-'}
+                    </Text>
+                  </View>
+                );
+              })
+            : null}
+          <Text style={styles.source}>
+            {liveAt ? `En vivo: consultado el ${formatDateTime(liveAt)}. ` : ''}
+            La del día se guarda todos los días a las 11 h y es la misma para todos. Fuente: DolarAPI.
+          </Text>
+          <Button
+            label={liveQuotes ? 'Actualizar valores en vivo' : 'Ver en tiempo real'}
+            variant="ghost"
+            onPress={showLive}
+            loading={loadingLive}
+          />
         </Card>
 
         <Text style={styles.sectionTitle}>Cotización manual</Text>
@@ -124,8 +150,8 @@ export default function ExchangeRateScreen() {
 
         <Text style={styles.note}>
           Los montos en pesos que ves al lado de los alquileres en dólares son estimados con esta
-          cotización. Cuando registrás un pago en dólares podés anotar la cotización exacta que se usó
-          ese día.
+          cotización. Cuando registrás un pago de algo en dólares podés elegir que se pague en pesos y
+          con qué cotización.
         </Text>
       </ScrollView>
     </Screen>
@@ -189,6 +215,9 @@ const useStyles = makeStyles((colors) => ({
     flex: 0.8,
     textAlign: 'left',
     fontWeight: '600',
+  },
+  liveRow: {
+    backgroundColor: colors.neutralTint,
   },
   cellStrong: {
     fontWeight: '700',

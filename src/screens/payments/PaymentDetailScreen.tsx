@@ -14,6 +14,7 @@ import Screen from '../../components/Screen';
 import StatusHero from '../../components/StatusHero';
 import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
+import { RATE_SOURCE_LABEL } from '../../context/ExchangeRateContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
@@ -68,9 +69,13 @@ export default function PaymentDetailScreen() {
           label={`${CONCEPT_LABEL[payment.concept]} · ${formatDate(payment.date)}`}
           value={formatMoney(payment.amount, payment.currency)}
           detail={
-            payment.currency === 'USD' && payment.exchangeRate
-              ? `= ${formatMoney(payment.amount * payment.exchangeRate, 'ARS')} a ${formatMoney(payment.exchangeRate, 'ARS')}`
-              : undefined
+            payment.paidAmount && payment.paidCurrency && payment.exchangeRate
+              ? `Pagó ${formatMoney(payment.paidAmount, payment.paidCurrency)} en pesos · ${
+                  payment.rateSource ? RATE_SOURCE_LABEL[payment.rateSource] : 'cotización'
+                } ${formatMoney(payment.exchangeRate, 'ARS')}`
+              : payment.currency === 'USD' && payment.exchangeRate
+                ? `= ${formatMoney(payment.amount * payment.exchangeRate, 'ARS')} a ${formatMoney(payment.exchangeRate, 'ARS')}`
+                : undefined
           }
           style={styles.hero}
         />

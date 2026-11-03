@@ -114,8 +114,13 @@ export interface Payment {
   amount: number;
   currency: Currency;
   method?: string;
-  // Pesos por dólar usados, si el pago fue en dólares.
+  // Cotización usada (pesos por dólar), si hubo dólares de por medio.
   exchangeRate?: number;
+  // Si se pagó en otra moneda (por ejemplo pesos por un alquiler en dólares): lo que se recibió
+  // de verdad y de qué cotización salió. "amount" sigue siendo lo que se descuenta de la deuda.
+  paidAmount?: number;
+  paidCurrency?: Currency;
+  rateSource?: 'blue' | 'oficial' | 'bolsa' | 'manual';
   allocations: PaymentAllocation[];
   notes?: string;
   // Los pagos cargados juntos en un recibo (por ejemplo alquiler + expensas) comparten este valor.

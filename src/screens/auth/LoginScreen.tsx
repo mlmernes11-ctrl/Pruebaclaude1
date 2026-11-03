@@ -15,11 +15,11 @@ import { fontSize, radius, spacing } from '../../theme';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-// Ingreso con mail y contraseña; la primera vez, la cuenta administradora se crea acá.
+// Ingreso con Google o con mail y contraseña; la primera vez, la cuenta se crea acá.
 export default function LoginScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { signIn, signUp, enterDemo } = useAuth();
+  const { signIn, signUp, signInWithGoogle, enterDemo } = useAuth();
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,6 +51,13 @@ export default function LoginScreen() {
     setBusy(false);
   };
 
+  const google = async () => {
+    setError(undefined);
+    setNotice(undefined);
+    const message = await signInWithGoogle();
+    if (message) setError(message);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -62,8 +69,18 @@ export default function LoginScreen() {
             Gestión de Alquileres
           </Text>
           <Text style={styles.subtitle}>
-            {creating ? 'Creá la cuenta de administradora' : 'Ingresá con tu cuenta de administradora'}
+            {creating ? 'Creá tu cuenta para empezar' : 'Ingresá a tu cuenta'}
           </Text>
+
+          <TouchableOpacity style={styles.google} onPress={google} accessibilityRole="button">
+            <Ionicons name="logo-google" size={20} color={colors.text} />
+            <Text style={styles.googleText}>Continuar con Google</Text>
+          </TouchableOpacity>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>o con tu mail</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
           <View style={styles.group}>
             <TextInput
@@ -164,6 +181,37 @@ const useStyles = makeStyles((colors) => ({
     textAlign: 'center',
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
+  },
+  google: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 50,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  googleText: {
+    fontSize: fontSize.lg,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginVertical: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
   group: {
     backgroundColor: colors.surface,

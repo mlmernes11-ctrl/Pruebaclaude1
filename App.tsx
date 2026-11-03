@@ -1,7 +1,7 @@
 // =====================================================================
 // Punto de entrada de la app
 // ---------------------------------------------------------------------
-// Arma las capas que usa toda la app (tema, cotización, sesión) y decide qué se ve:
+// Arma las capas que usa toda la app (tema, sesión, datos y cotización) y decide qué se ve:
 // la pantalla de ingreso, el aviso de "sin acceso" o la app con sus datos.
 // =====================================================================
 
@@ -24,28 +24,30 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <ExchangeRateProvider>
-            <AuthProvider>
-              <Gate />
-              <DialogHost />
-              <ThemedStatusBar />
-            </AuthProvider>
-          </ExchangeRateProvider>
+          <AuthProvider>
+            <Gate />
+            <DialogHost />
+            <ThemedStatusBar />
+          </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-// Con la sesión de la cuenta administradora → datos de Supabase; modo demo → datos de ejemplo del celular; si no, pantalla de ingreso.
+// Con sesión → los datos de esa cuenta en Supabase; modo demo → datos de ejemplo del celular; si no, pantalla de ingreso.
 function Gate() {
   const { status, userId } = useAuth();
   if (status === 'signedOut') return <LoginScreen />;
   if (status === 'demo' || status === 'signedIn') {
+    const mode = status === 'demo' ? 'demo' : 'remote';
+    // "key" hace que al cambiar de cuenta (o pasar a demo) todo arranque de cero.
     return (
-      <DataProvider key={status === 'demo' ? 'demo' : userId} mode={status === 'demo' ? 'demo' : 'remote'}>
-        <RootNavigator />
-        <SyncBanner />
+      <DataProvider key={mode === 'demo' ? 'demo' : userId} mode={mode}>
+        <ExchangeRateProvider key={mode === 'demo' ? 'demo' : userId} mode={mode} userId={userId}>
+          <RootNavigator />
+          <SyncBanner />
+        </ExchangeRateProvider>
       </DataProvider>
     );
   }

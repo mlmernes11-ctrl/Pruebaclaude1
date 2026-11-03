@@ -32,14 +32,14 @@ const COLUMNS: Record<Collection, string[]> = {
   ],
   payments: [
     'id', 'contractId', 'concept', 'date', 'amount', 'currency', 'method', 'exchangeRate', 'allocations', 'notes',
-    'receiptId', 'createdAt',
+    'receiptId', 'paidAmount', 'paidCurrency', 'rateSource', 'createdAt',
   ],
 };
 
 // La base puede devolver los montos como texto; la app trabaja con números.
 const NUMERIC = new Set([
   'rooms', 'bathrooms', 'area', 'rentAmount', 'expensasAmount', 'serviciosAmount', 'depositAmount', 'paymentDay',
-  'amount', 'exchangeRate',
+  'amount', 'exchangeRate', 'paidAmount',
 ]);
 
 // "rentAmount" → "rent_amount".
@@ -92,13 +92,6 @@ export async function loadRemoteData(): Promise<AppData> {
     );
   });
   return data;
-}
-
-// Solo la cuenta administradora puede leer la fila de configuración: así se sabe si tiene acceso.
-export async function hasAdminAccess(): Promise<boolean> {
-  const { data, error } = await supabase.from('settings').select('id').limit(1);
-  if (error) throw error;
-  return (data?.length ?? 0) > 0;
 }
 
 // ── Guardado ──────────────────────────────────────────────────────────

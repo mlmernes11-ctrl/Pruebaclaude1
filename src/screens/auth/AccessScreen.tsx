@@ -1,7 +1,7 @@
 // =====================================================================
 // Pantalla: Acceso
 // ---------------------------------------------------------------------
-// Cargando, "Esta cuenta no tiene acceso" o "Sin conexión con el servidor".
+// Cargando, o "Sin conexión con el servidor" con un botón para reintentar.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -15,13 +15,13 @@ import { fontSize, spacing } from '../../theme';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-// Se muestra mientras se verifica el acceso, si la cuenta no tiene permiso o si no hay conexión.
+// Sin "onRetry": ruedita mientras se lee la sesión. Con "onRetry": no se pudieron cargar los datos.
 export default function AccessScreen({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { status, email, signOut, retry } = useAuth();
+  const { signOut } = useAuth();
 
-  if (status === 'loading' || status === 'checking') {
+  if (!onRetry) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -29,22 +29,13 @@ export default function AccessScreen({ message, onRetry }: { message?: string; o
     );
   }
 
-  const noAccess = status === 'noAccess';
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.content}>
-        <Ionicons
-          name={noAccess ? 'lock-closed-outline' : 'cloud-offline-outline'}
-          size={48}
-          color={colors.textMuted}
-        />
-        <Text style={styles.title}>{noAccess ? 'Esta cuenta no tiene acceso' : 'Sin conexión con el servidor'}</Text>
-        <Text style={styles.text}>
-          {noAccess
-            ? `${email ?? 'Esta cuenta'} no es la cuenta administradora de esta app.`
-            : (message ?? 'No se pudo conectar con el servidor. Revisá la conexión a internet.')}
-        </Text>
-        {noAccess ? null : <Button label="Reintentar" onPress={onRetry ?? retry} style={styles.button} />}
+        <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} />
+        <Text style={styles.title}>Sin conexión con el servidor</Text>
+        <Text style={styles.text}>{message ?? 'No se pudo conectar con el servidor. Revisá la conexión a internet.'}</Text>
+        <Button label="Reintentar" onPress={onRetry} style={styles.button} />
         <Button label="Cerrar sesión" variant="secondary" onPress={signOut} style={styles.button} />
       </View>
     </SafeAreaView>
