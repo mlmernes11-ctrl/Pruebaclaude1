@@ -1,3 +1,10 @@
+// =====================================================================
+// Sesión
+// ---------------------------------------------------------------------
+// Ingreso con mail y contraseña (Supabase), modo demo y cierre de sesión.
+// Después de ingresar, verifica que sea la cuenta administradora antes de mostrar los datos.
+// =====================================================================
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { hasAdminAccess } from '../lib/remoteStore';
@@ -6,8 +13,8 @@ import { connectionErrorMessage } from '../utils/platform';
 
 const DEMO_KEY = 'gestion_alquileres_modo_demo';
 
-// signedIn = the allowlisted administrator; noAccess = a valid account that is not allowed in;
-// offline = signed in but the server could not be reached to confirm access.
+// signedIn = la cuenta administradora; noAccess = una cuenta válida que no tiene permiso;
+// offline = hay sesión pero no se pudo llegar al servidor para confirmar el acceso.
 export type AuthStatus = 'loading' | 'signedOut' | 'demo' | 'checking' | 'noAccess' | 'offline' | 'signedIn';
 
 interface AuthContextValue {
@@ -23,7 +30,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// Supabase error messages, in the app's words.
+// ── Mensajes de error ─────────────────────────────────────────────────
+
+// Los errores de Supabase, explicados con palabras de la app.
 function describeAuthError(message: string): string {
   if (/invalid login credentials/i.test(message)) return 'Mail o contraseña incorrectos.';
   if (/email not confirmed/i.test(message)) return 'Confirmá tu mail desde el correo que te enviamos y volvé a ingresar.';
@@ -33,6 +42,8 @@ function describeAuthError(message: string): string {
   if (/fetch|network/i.test(message)) return connectionErrorMessage();
   return 'No se pudo completar. Intentá de nuevo.';
 }
+
+// ── Proveedor de sesión ───────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
@@ -99,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (address, password) => {
       const { data, error } = await supabase.auth.signUp({ email: address.trim(), password });
       if (error) return { error: describeAuthError(error.message) };
-      // With email confirmation on, there is no session until the link in the email is opened.
+      // Si Supabase pide confirmar el mail, no hay sesión hasta que se abre el enlace del correo.
       if (!data.session) return { needsConfirmation: true };
       setEmail(data.user?.email ?? undefined);
       setUserId(data.user?.id);

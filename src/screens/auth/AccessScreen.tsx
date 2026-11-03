@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Acceso
+// ---------------------------------------------------------------------
+// Cargando, "Esta cuenta no tiene acceso" o "Sin conexión con el servidor".
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -7,7 +13,9 @@ import { useAuth } from '../../context/AuthContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
 
-// Shown while access is checked, when the account is not the administrator, or without connection.
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// Se muestra mientras se verifica el acceso, si la cuenta no tiene permiso o si no hay conexión.
 export default function AccessScreen({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -42,6 +50,8 @@ export default function AccessScreen({ message, onRetry }: { message?: string; o
     </SafeAreaView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   safe: {

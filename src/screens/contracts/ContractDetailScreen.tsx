@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Ficha del contrato
+// ---------------------------------------------------------------------
+// Condiciones, propiedad e inquilino, y todas sus liquidaciones.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useLayoutEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -16,6 +22,8 @@ import { openInTab } from '../../utils/navigation';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { capitalize } from '../../utils/text';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function ContractDetailScreen() {
   const styles = useStyles();
@@ -124,6 +132,8 @@ export default function ContractDetailScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

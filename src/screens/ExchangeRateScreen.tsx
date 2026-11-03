@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Cotización del dólar
+// ---------------------------------------------------------------------
+// Elegir qué dólar usar, ver las cotizaciones del día o cargar un valor a mano.
+// =====================================================================
+
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Button from '../components/Button';
@@ -17,12 +23,16 @@ import { fontSize, spacing } from '../theme';
 import { formatDateTime, formatMoney, parseAmount } from '../utils/format';
 import { makeStyles } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 const SOURCE_OPTIONS = (Object.keys(RATE_SOURCE_LABEL) as RateSource[]).map((value) => ({
   value,
   label: RATE_SOURCE_LABEL[value],
 }));
 
 const QUOTE_SOURCES: QuoteSource[] = ['blue', 'oficial', 'bolsa'];
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function ExchangeRateScreen() {
   const styles = useStyles();
@@ -121,6 +131,8 @@ export default function ExchangeRateScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

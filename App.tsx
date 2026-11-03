@@ -1,3 +1,10 @@
+// =====================================================================
+// Punto de entrada de la app
+// ---------------------------------------------------------------------
+// Arma las capas que usa toda la app (tema, cotización, sesión) y decide qué se ve:
+// la pantalla de ingreso, el aviso de "sin acceso" o la app con sus datos.
+// =====================================================================
+
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,7 +37,7 @@ export default function App() {
   );
 }
 
-// Signed-in administrator → data from Supabase; demo → sample data on this device; else sign in.
+// Con la sesión de la cuenta administradora → datos de Supabase; modo demo → datos de ejemplo del celular; si no, pantalla de ingreso.
 function Gate() {
   const { status, userId } = useAuth();
   if (status === 'signedOut') return <LoginScreen />;

@@ -1,7 +1,15 @@
+// =====================================================================
+// Etiqueta de color
+// ---------------------------------------------------------------------
+// Rectangulito con texto y color de estado (por ejemplo "Vencida" en rojo).
+// =====================================================================
+
 import React from 'react';
 import { Text, View } from 'react-native';
 import { fontSize, Palette, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+
+// ── Constantes y funciones auxiliares ─────────────────────────────────
 
 export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral' | 'primary' | 'info';
 
@@ -14,6 +22,8 @@ const toneStyles = (colors: Palette): Record<BadgeTone, { bg: string; fg: string
   info: { bg: colors.infoMuted, fg: colors.info },
 });
 
+// ── Componente ────────────────────────────────────────────────────────
+
 export default function Badge({ label, tone = 'neutral' }: { label: string; tone?: BadgeTone }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -24,6 +34,8 @@ export default function Badge({ label, tone = 'neutral' }: { label: string; tone
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   container: {

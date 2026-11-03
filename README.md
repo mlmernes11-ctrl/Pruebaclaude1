@@ -56,15 +56,22 @@ npm run web     # versión web para pruebas rápidas
 ## Estructura del proyecto
 
 ```
-supabase/migrations/  Esquema de la base y reglas de seguridad
+App.tsx                 Punto de entrada: tema, cotización, sesión y qué pantalla se ve
+supabase/migrations/    Tablas de la base, reglas de seguridad y descripciones
 src/
-  components/   Componentes de UI reutilizables (Card, Button, FormField, etc.)
-  constants.ts  Catálogos y etiquetas (tipos de propiedad, estados, métodos de pago)
-  context/      Estado global: sesión (AuthContext), datos (DataContext), tema y cotización
-  lib/          Cliente de Supabase y sincronización con la base (remoteStore)
-  navigation/   Navegación por pestañas y stacks de cada sección
-  screens/      Pantallas de cada módulo (ingreso, propiedades, inquilinos, contratos, pagos)
-  theme.ts      Paleta de colores, espaciados y tipografía
-  types.ts      Modelos de datos (Property, Tenant, Contract, Payment)
-  utils/        Formateo de fechas/moneda y utilidades de pagos
+  types.ts              Forma de cada dato (propiedad, inquilino, contrato, liquidación, pago)
+  constants.ts          Textos de cada valor (tipos, estados, monedas, conceptos)
+  theme.ts              Colores del modo claro y oscuro, espacios y tamaños de letra
+  context/              Estado compartido: sesión (Auth), datos (Data), tema y cotización
+  lib/                  Conexión con Supabase y guardado en la base (remoteStore)
+  navigation/           Pestañas y pantallas de cada una
+  screens/              Pantallas, agrupadas por tema (pagos, propiedades, inquilinos…)
+  components/           Piezas reutilizables (filas de lista, botones, buscador, calendario…)
+  utils/                Cálculos: liquidaciones, cuenta corriente, búsqueda, formatos, estados
 ```
+
+### Cómo está comentado el código
+
+- Cada archivo empieza con un encabezado que dice qué hace.
+- Los bloques se separan con `// ── Nombre ──` (por ejemplo «Estilos», «Pantalla», «Constantes»), y dentro de las pantallas grandes con `// — Nombre —` (estado, totales, acciones, dibujo).
+- Todo lo que decide colores y etiquetas de estado (el semáforo) está en `src/utils/status.ts`; los colores en sí, en `src/theme.ts`.

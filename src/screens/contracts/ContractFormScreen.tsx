@@ -1,3 +1,7 @@
+// =====================================================================
+// Pantalla: Alta y edición de contrato
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -17,9 +21,13 @@ import { compareTitles } from '../../utils/text';
 import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 function isValidDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value).getTime());
 }
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function ContractFormScreen() {
   const styles = useStyles();
@@ -113,7 +121,7 @@ export default function ContractFormScreen() {
       smartGoBack(navigation, 'Rentals');
     };
 
-    // Two active contracts on one property would bill it twice.
+    // Dos contratos activos en una misma propiedad generarían dos liquidaciones por mes.
     const otherActive = contracts.find(
       (c) => c.id !== existing?.id && c.propertyId === propertyId && c.status === 'activo',
     );
@@ -210,6 +218,8 @@ export default function ContractFormScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   deleteButton: {

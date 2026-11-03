@@ -1,3 +1,9 @@
+// =====================================================================
+// Campo de selección
+// ---------------------------------------------------------------------
+// Abre una lista desde abajo para elegir una opción (contrato, propiedad, inquilino).
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -10,11 +16,15 @@ import {
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 export interface SelectOption {
   id: string;
   label: string;
   subtitle?: string;
 }
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function SelectField({
   label,
@@ -93,6 +103,8 @@ export default function SelectField({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   container: {

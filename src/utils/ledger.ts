@@ -1,18 +1,31 @@
+// =====================================================================
+// Cuenta corriente de cada liquidación
+// ---------------------------------------------------------------------
+// Calcula cuánto se pagó de cada liquidación, cuánto falta y si está vencida, por vencer o paga.
+// También reparte un pago entre varias liquidaciones y aplica el saldo a favor.
+// =====================================================================
+
 import { Charge, ChargeStatus, Payment, PaymentAllocation } from '../types';
 import { parseLocalDate, startOfToday } from './format';
 
+// Margen para comparar montos con centavos (evita errores de redondeo).
 const EPSILON = 0.005;
 
+// Redondea a centavos.
 export function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+// ── Tipos ─────────────────────────────────────────────────────────────
+
+// Lo pagado de una liquidación según los pagos registrados.
 export interface ChargePaymentInfo {
   paid: number;
   lastPaymentDate?: string;
   lastMethod?: string;
 }
 
+// Una liquidación con su situación: pagado, saldo y estado.
 export interface ChargeView {
   charge: Charge;
   paid: number;
@@ -22,6 +35,9 @@ export interface ChargeView {
   lastMethod?: string;
 }
 
+// ── Estado de cada liquidación ────────────────────────────────────────
+
+// Recorre los pagos y suma, para cada liquidación, cuánto se le aplicó.
 export function buildLedger(payments: Payment[]): Map<string, ChargePaymentInfo> {
   const ledger = new Map<string, ChargePaymentInfo>();
   [...payments]
@@ -38,11 +54,13 @@ export function buildLedger(payments: Payment[]): Map<string, ChargePaymentInfo>
   return ledger;
 }
 
+// Pagada si no queda saldo; si queda, vencida o por vencer según la fecha.
 export function getChargeStatus(charge: Charge, balance: number): ChargeStatus {
   if (balance <= EPSILON) return 'pagado';
   return parseLocalDate(charge.dueDate) < startOfToday() ? 'vencido' : 'pendiente';
 }
 
+// Arma la situación completa de una liquidación.
 export function viewCharge(charge: Charge, ledger: Map<string, ChargePaymentInfo>): ChargeView {
   const info = ledger.get(charge.id);
   const paid = info?.paid ?? 0;
@@ -57,21 +75,26 @@ export function viewCharge(charge: Charge, ledger: Map<string, ChargePaymentInfo
   };
 }
 
+// true si todavía queda algo por pagar.
 export function isOutstanding(view: ChargeView): boolean {
   return view.balance > EPSILON;
 }
 
+// De la que vence primero a la última.
 export function sortOldestFirst(views: ChargeView[]): ChargeView[] {
   return [...views].sort((a, b) =>
     a.charge.dueDate < b.charge.dueDate ? -1 : a.charge.dueDate > b.charge.dueDate ? 1 : 0,
   );
 }
 
+// Suma lo que falta pagar de varias liquidaciones.
 export function sumBalances(views: ChargeView[]): number {
   return roundMoney(views.reduce((sum, view) => sum + view.balance, 0));
 }
 
-// Applies an amount to the priority charges first, then to the rest; anything left is credit.
+// ── Reparto de pagos ──────────────────────────────────────────────────
+
+// Reparte un monto: primero a las liquidaciones prioritarias, después al resto; lo que sobra queda a favor.
 export function allocateAmount(
   amount: number,
   priority: ChargeView[],
@@ -93,13 +116,16 @@ export function allocateAmount(
   return { allocations, unallocated: remaining > EPSILON ? remaining : 0 };
 }
 
+// Lo que quedó de un pago sin aplicar a ninguna liquidación (saldo a favor).
 export function unallocatedAmount(payment: Payment): number {
   const allocated = payment.allocations.reduce((sum, a) => sum + a.amount, 0);
   return Math.max(0, roundMoney(payment.amount - allocated));
 }
 
-// Money paid in advance ("a favor") covers the next charges of the same contract, concept and
-// currency as soon as they exist. Returns undefined when nothing changes.
+// ── Saldo a favor ─────────────────────────────────────────────────────
+
+// Lo pagado de más ("a favor") cubre las próximas liquidaciones del mismo contrato, concepto y
+// moneda apenas existen. Devuelve nada si no hay cambios.
 export function applyCredits(payments: Payment[], charges: Charge[]): Payment[] | undefined {
   if (!payments.some((p) => unallocatedAmount(p) > EPSILON)) return undefined;
   const ledger = buildLedger(payments);

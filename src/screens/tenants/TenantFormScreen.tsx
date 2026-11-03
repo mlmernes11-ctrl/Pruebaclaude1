@@ -1,3 +1,7 @@
+// =====================================================================
+// Pantalla: Alta y edición de inquilino
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -8,6 +12,8 @@ import Screen from '../../components/Screen';
 import { useData } from '../../context/DataContext';
 import { spacing } from '../../theme';
 import { makeStyles } from '../../context/ThemeContext';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function TenantFormScreen() {
   const styles = useStyles();
@@ -81,6 +87,8 @@ export default function TenantFormScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   deleteButton: {

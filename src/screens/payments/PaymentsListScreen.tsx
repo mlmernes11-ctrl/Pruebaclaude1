@@ -1,3 +1,10 @@
+// =====================================================================
+// Pantalla: Pagos
+// ---------------------------------------------------------------------
+// Tres vistas: pagos recibidos, liquidaciones e historial del año. Con buscador, filtros por
+// estado o mes, filtro por propiedad y orden.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -43,6 +50,8 @@ import {
 } from '../../utils/status';
 import { compareTitles, plural } from '../../utils/text';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 type PaymentsView = 'pagos' | 'liquidaciones' | 'historial';
 type FilterValue = 'todos' | ChargeStatus;
 type MonthFilter = 'todos' | 'este' | 'anterior';
@@ -80,7 +89,7 @@ const STATUS_SUMMARY: { status: ChargeStatus; label: string; dot: DotTone }[] = 
   { status: 'pagado', label: 'Pagado', dot: 'success' },
 ];
 
-// What a list row shows, plus fields only the search looks at.
+// Lo que muestra una fila, más campos que solo mira el buscador.
 interface Row {
   title: string;
   subtitle: string;
@@ -91,6 +100,8 @@ interface Row {
 
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
+// ── Pantalla ──────────────────────────────────────────────────────────
+
 export default function PaymentsListScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -100,6 +111,8 @@ export default function PaymentsListScreen() {
   const { refreshing, onRefresh } = useRefresh();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+
+  // — Estado de la pantalla (vista elegida, filtros, orden, búsqueda) —
   const [view, setView] = useState<PaymentsView>('pagos');
   const [filter, setFilter] = useState<FilterValue>('todos');
   const [month, setMonth] = useState<MonthFilter>('todos');
@@ -109,7 +122,7 @@ export default function PaymentsListScreen() {
   const [query, setQuery] = useState('');
   const words = useMemo(() => searchWords(query), [query]);
 
-  // Everything on this screen (lists, totals and history) follows the property filter.
+  // Todo en esta pantalla (listas, totales e historial) respeta el filtro por propiedad.
   const propertyContracts = useMemo(
     () => (propertyId ? new Set(contracts.filter((c) => c.propertyId === propertyId).map((c) => c.id)) : undefined),
     [contracts, propertyId],
@@ -123,7 +136,7 @@ export default function PaymentsListScreen() {
     [allPayments, propertyContracts],
   );
 
-  // The dashboard opens this screen already filtered (e.g. "En mora").
+  // Otras pantallas abren esta ya filtrada (por ejemplo "En mora" desde el Inicio).
   useEffect(() => {
     const params = route.params;
     if (!params) return;
@@ -134,6 +147,7 @@ export default function PaymentsListScreen() {
     setQuery('');
   }, [route.params]);
 
+  // — Filas: lo que muestra cada liquidación y cada pago —
   const describeContract = (contractId: string) => {
     const contract = getContractById(contractId);
     return {
@@ -175,7 +189,7 @@ export default function PaymentsListScreen() {
     };
   };
 
-  // The search narrows lists and totals alike; rows keep what they show and why they matched.
+  // El buscador filtra listas y totales; cada fila guarda lo que muestra y por qué coincidió.
   const search = <T,>(items: T[], toRow: (item: T) => Row) =>
     items.flatMap((item) => {
       const row = toRow(item);
@@ -191,7 +205,8 @@ export default function PaymentsListScreen() {
   const searchedCharges = search(chargeViews, chargeRow);
   const searchedPayments = search(propertyPayments, paymentRow);
 
-  // Without an exchange rate dollars and pesos cannot be compared, so dollars go first.
+  // — Orden de las listas —
+  // Sin cotización no se pueden comparar dólares con pesos, así que van primero los dólares.
   const compareAmounts = (a: number, ca: Currency, b: number, cb: Currency) => {
     const pa = toPesos(a, ca);
     const pb = toPesos(b, cb);
@@ -225,6 +240,7 @@ export default function PaymentsListScreen() {
     return byDate(b.date, a.date);
   });
 
+  // — Totales —
   const chargeTotals: Record<ChargeStatus, { count: number; totals: MoneyTotals }> = {
     vencido: { count: 0, totals: emptyTotals() },
     pendiente: { count: 0, totals: emptyTotals() },
@@ -244,6 +260,7 @@ export default function PaymentsListScreen() {
     <EmptyState icon="search-outline" title="Sin resultados" message={`No hay ${what} que coincidan con «${query.trim()}».`} />
   );
 
+  // — Acciones —
   const registerPayment = () => {
     const active = propertyId ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo') : undefined;
     navigation.navigate('PaymentForm', active ? { contractId: active.id } : undefined);
@@ -256,6 +273,7 @@ export default function PaymentsListScreen() {
       <FilterPills options={MONTH_FILTERS} value={month} onChange={setMonth} />
     ) : null;
 
+  // — Dibujo de la pantalla —
   return (
     <Screen>
       <LargeTitleHeader title="Pagos" onAdd={registerPayment} addLabel="Registrar pago" />
@@ -375,6 +393,8 @@ export default function PaymentsListScreen() {
   );
 }
 
+// ── Partes de la pantalla ─────────────────────────────────────────────
+
 function FilterPills<T extends string>({
   options,
   value,
@@ -404,6 +424,8 @@ function FilterPills<T extends string>({
     </ScrollView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

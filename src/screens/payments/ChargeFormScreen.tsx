@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Liquidación
+// ---------------------------------------------------------------------
+// Ver una liquidación (lo pagado y lo que falta), editarla, anularla o crear una a mano.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -29,6 +35,8 @@ import { CHARGE_STATUS_BADGE, CHARGE_STATUS_LABEL } from '../../utils/status';
 import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
 
+// ── Pantalla ──────────────────────────────────────────────────────────
+
 export default function ChargeFormScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
@@ -52,6 +60,7 @@ export default function ChargeFormScreen() {
   const charge = existing?.charge;
   const hasPayments = (existing?.paid ?? 0) > 0;
 
+  // — Lo que se va completando en el formulario —
   const [contractId, setContractId] = useState(charge?.contractId ?? presetContractId ?? '');
   const [concept, setConcept] = useState<ChargeConcept>(charge?.concept ?? 'alquiler');
   const [period, setPeriod] = useState(charge?.period ?? currentPeriod());
@@ -75,7 +84,7 @@ export default function ChargeFormScreen() {
   const tenant = getTenantById(contract?.tenantId);
   const appliedPayments = charge ? paymentsForCharge(charge.id) : [];
 
-  // New charges suggest the amount and due date the contract would bill.
+  // Al crear una liquidación, se sugieren el monto y el vencimiento que correspondan al contrato.
   const suggest = (targetContractId: string, targetConcept: ChargeConcept, targetPeriod: string) => {
     if (charge) return;
     const target = getContractById(targetContractId);
@@ -86,6 +95,7 @@ export default function ChargeFormScreen() {
     setDueDate(periodToDueDate(targetPeriod, target.paymentDay));
   };
 
+  // — Guardar (avisa si ya hay una liquidación igual) —
   const handleSave = () => {
     if (!contract) {
       showAlert('Falta el contrato', 'Elegí a qué contrato corresponde la liquidación.');
@@ -144,6 +154,7 @@ export default function ChargeFormScreen() {
     save();
   };
 
+  // — Anular —
   const handleVoid = () => {
     if (!charge) return;
     showConfirm({
@@ -164,6 +175,7 @@ export default function ChargeFormScreen() {
     });
   };
 
+  // — Dibujo de la pantalla: resumen arriba (si ya existe) y formulario abajo —
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -284,6 +296,8 @@ export default function ChargeFormScreen() {
   );
 }
 
+// ── Partes de la pantalla ─────────────────────────────────────────────
+
 function AmountLine({
   label,
   amount,
@@ -307,6 +321,8 @@ function AmountLine({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

@@ -1,3 +1,10 @@
+// =====================================================================
+// Buscador de Alquileres
+// ---------------------------------------------------------------------
+// Buscador a pantalla completa sobre propiedades, inquilinos y contratos, con resultados
+// agrupados y coincidencias resaltadas.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -29,6 +36,8 @@ import Badge, { BadgeTone } from './Badge';
 import HighlightText from './HighlightText';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 export type SearchScope = 'propiedades' | 'inquilinos' | 'contratos';
 type ScopeFilter = 'todo' | SearchScope;
 
@@ -54,7 +63,7 @@ interface SearchRecord {
   key: string;
   scope: SearchScope;
   fields: SearchField[];
-  // Field indexes shown as the title and the subtitle; other matches are listed below.
+  // Qué campos se muestran como título y subtítulo; las demás coincidencias van debajo.
   titleFields: number[];
   subtitleFields: number[];
   badge?: { label: string; tone: BadgeTone };
@@ -66,7 +75,9 @@ interface SearchResult {
   matches: FieldMatch[];
 }
 
-// Search bar for list screens: tapping it slides up a full-screen search over everything.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Barra de búsqueda de las listas: al tocarla se abre un buscador a pantalla completa.
 export default function SearchLauncher({ scope }: { scope: SearchScope }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -90,6 +101,8 @@ export default function SearchLauncher({ scope }: { scope: SearchScope }) {
   );
 }
 
+// ── Partes de la pieza ────────────────────────────────────────────────
+
 function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => void }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -98,9 +111,10 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ScopeFilter>('todo');
 
-  // The browser back button closes the sheet instead of leaving the screen.
+  // El botón "atrás" del navegador cierra el buscador en vez de salir de la pantalla.
   useEffect(() => pushBackHandler(onClose), [onClose]);
 
+  // — Registros donde se busca (propiedades, inquilinos y contratos) —
   const records = useMemo<SearchRecord[]>(() => {
     const go = (tab: string, screen: string, params: object) => () => {
       onClose();
@@ -181,6 +195,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
     return [...propertyRecords, ...tenantRecords, ...contractRecords];
   }, [properties, tenants, contracts, getPropertyById, getTenantById, navigation, onClose]);
 
+  // — Resultados —
   const words = searchWords(query);
   const results = useMemo(() => {
     const grouped: Record<SearchScope, SearchResult[]> = { propiedades: [], inquilinos: [], contratos: [] };
@@ -189,7 +204,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
       const matches = matchFields(record.fields, words);
       if (matches) grouped[record.scope].push({ record, matches });
     });
-    // Matches in the name first, then in order of carpeta / name.
+    // Primero las que coinciden en el nombre, después en orden de carpeta o nombre.
     (Object.keys(grouped) as SearchScope[]).forEach((key) =>
       grouped[key].sort((a, b) => {
         const aTitle = a.matches.some((m) => a.record.titleFields.includes(m.index)) ? 0 : 1;
@@ -198,11 +213,11 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
       }),
     );
     return grouped;
-    // words is derived from query
+    // words sale de query
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [records, query]);
 
-  // The section the search was opened from goes first.
+  // La sección desde la que se abrió el buscador va primero.
   const order: SearchScope[] = [scope, ...(['propiedades', 'inquilinos', 'contratos'] as SearchScope[]).filter((s) => s !== scope)];
   const sections = order
     .filter((s) => filter === 'todo' || filter === s)
@@ -210,6 +225,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
     .filter((section) => section.data.length > 0);
   const total = order.reduce((sum, s) => sum + results[s].length, 0);
 
+  // — Dibujo del buscador —
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.sheet} edges={['top', 'left', 'right', 'bottom']}>
@@ -342,6 +358,8 @@ function ResultRow({ result }: { result: SearchResult }) {
   );
 }
 
+// ── Estilos ───────────────────────────────────────────────────────────
+
 const useStyles = makeStyles((colors) => ({
   launcher: {
     flexDirection: 'row',
@@ -384,7 +402,7 @@ const useStyles = makeStyles((colors) => ({
   },
   input: {
     flex: 1,
-    // Lets the field shrink on the web (inputs keep a native minimum width) so the clear button fits.
+    // En la web el campo tiene un ancho mínimo propio; esto lo deja achicarse para que entre la ✕.
     minWidth: 0,
     paddingVertical: 10,
     fontSize: fontSize.md,

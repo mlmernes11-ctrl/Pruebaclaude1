@@ -1,8 +1,14 @@
+// =====================================================================
+// Deslizar para actualizar
+// ---------------------------------------------------------------------
+// Lo que pasa al tirar la lista hacia abajo en las pantallas principales.
+// =====================================================================
+
 import { useCallback, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useExchangeRate } from '../context/ExchangeRateContext';
 
-// Pull to refresh: updates the dollar quote and re-evaluates due dates for today.
+// Deslizar hacia abajo para actualizar: baja la cotización del dólar y recalcula los vencimientos.
 export function useRefresh() {
   const { refreshToday } = useData();
   const { refreshQuotes } = useExchangeRate();

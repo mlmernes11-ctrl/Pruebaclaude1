@@ -1,8 +1,14 @@
+// =====================================================================
+// Botón de texto de la barra superior
+// =====================================================================
+
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-// Plain text action for the navigation bar ("Editar"), as on iOS.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Botón de texto para la barra de arriba ("Editar"), como en iOS.
 export default function HeaderTextButton({ label, onPress }: { label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (

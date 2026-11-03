@@ -1,3 +1,7 @@
+// =====================================================================
+// Pantalla: Historial por mes de una propiedad
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -7,7 +11,9 @@ import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
 
-// A property's year, month by month; tapping a month lists its liquidaciones.
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// El año de una propiedad mes a mes; al tocar un mes se ven sus liquidaciones.
 export default function PropertyPaymentsScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
@@ -34,6 +40,8 @@ export default function PropertyPaymentsScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

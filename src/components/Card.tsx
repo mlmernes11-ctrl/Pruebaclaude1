@@ -1,7 +1,15 @@
+// =====================================================================
+// Tarjeta
+// ---------------------------------------------------------------------
+// Caja blanca redondeada para agrupar contenido.
+// =====================================================================
+
 import React from 'react';
 import { StyleProp, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { radius, spacing } from '../theme';
 import { makeStyles } from '../context/ThemeContext';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function Card({
   children,
@@ -22,6 +30,8 @@ export default function Card({
   }
   return <View style={[styles.card, style]}>{children}</View>;
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   card: {

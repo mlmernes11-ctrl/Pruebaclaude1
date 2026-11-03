@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Registrar pago
+// ---------------------------------------------------------------------
+// Uno o varios conceptos en un mismo recibo, con el reparto entre las liquidaciones adeudadas.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
@@ -32,11 +38,15 @@ import { allocateAmount, ChargeView, isOutstanding, sortOldestFirst, sumBalances
 import { smartGoBack } from '../../utils/navigation';
 import { compareTitles, plural } from '../../utils/text';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 type AmountOption = 'cuota' | 'total' | 'otro';
 type Entry = { option: AmountOption; amount: string };
 
-// One receipt can pay several concepts at once: contract, date and method are entered once,
-// and each chosen concept (alquiler, expensas, servicios) gets its own amount.
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// Un mismo recibo puede pagar varios conceptos: contrato, fecha y método se cargan una vez
+// y cada concepto elegido (alquiler, expensas, servicios) lleva su propio monto.
 export default function PaymentFormScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
@@ -48,7 +58,8 @@ export default function PaymentFormScreen() {
   const { contracts, chargeViews, getContractById, getPropertyById, getTenantById, addPayment } = useData();
   const { rate } = useExchangeRate();
 
-  // Debt of one contract and concept, plus the charge "Lo del mes" refers to.
+  // — Deuda del contrato elegido —
+  // Deuda de un contrato y concepto, y cuál es la liquidación de "Lo del mes".
   const debtFor = (targetContractId: string, targetConcept: ChargeConcept) => {
     const outstanding = sortOldestFirst(
       chargeViews.filter(
@@ -71,6 +82,7 @@ export default function PaymentFormScreen() {
   const allDefaults = (targetContractId: string) =>
     Object.fromEntries(CHARGE_CONCEPTS.map((c) => [c, defaultsFor(targetContractId, c)])) as Record<ChargeConcept, Entry>;
 
+  // — Lo que se va completando en el formulario —
   const [contractId, setContractId] = useState(presetContractId ?? '');
   const [selected, setSelected] = useState<ChargeConcept[]>([presetConcept ?? 'alquiler']);
   const [entries, setEntries] = useState<Record<ChargeConcept, Entry>>(() => allDefaults(presetContractId ?? ''));
@@ -89,6 +101,7 @@ export default function PaymentFormScreen() {
     if (anyDollars && !exchangeRateInput && rate) setExchangeRateInput(String(rate));
   }, [anyDollars, rate, exchangeRateInput]);
 
+  // — Cambios en el formulario —
   const handleSelectContract = (id: string) => {
     setContractId(id);
     setEntries(allDefaults(id));
@@ -121,6 +134,7 @@ export default function PaymentFormScreen() {
       subtitle: getTenantById(c.tenantId)?.name,
     }));
 
+  // — Guardar: valida y registra un pago por cada concepto elegido —
   const handleSave = () => {
     if (!contract) {
       showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el pago.');
@@ -167,6 +181,7 @@ export default function PaymentFormScreen() {
     smartGoBack(navigation, 'PaymentsList');
   };
 
+  // — Dibujo de la pantalla —
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -249,6 +264,8 @@ export default function PaymentFormScreen() {
   );
 }
 
+// ── Partes de la pantalla ─────────────────────────────────────────────
+
 function ConceptChip({
   label,
   count,
@@ -281,8 +298,8 @@ function ConceptChip({
   );
 }
 
-// Amount for one concept: quick choices ("Lo del mes", "Total adeudado", "Otro monto") and the
-// resulting split over that concept's liquidaciones.
+// Monto de un concepto: opciones rápidas ("Lo del mes", "Total adeudado", "Otro monto") y cómo
+// queda repartido entre las liquidaciones de ese concepto.
 function ConceptBlock({
   concept,
   currency,
@@ -430,6 +447,8 @@ function AmountChoice({
     </TouchableOpacity>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

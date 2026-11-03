@@ -1,14 +1,20 @@
+// =====================================================================
+// Conexión con Supabase
+// ---------------------------------------------------------------------
+// Crea el cliente que usa la app para hablar con la base de datos y con el inicio de sesión.
+// =====================================================================
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
 if (Platform.OS !== 'web') {
-  // React Native lacks a complete URL implementation, which supabase-js relies on.
+  // En el celular falta una herramienta para manejar direcciones web que Supabase necesita; esto la agrega.
   require('react-native-url-polyfill/auto');
 }
 
-// Project "gestion-alquileres" (São Paulo). The publishable key is meant to ship inside the app:
-// access is enforced by Row Level Security, which only lets the allowlisted administrator in.
+// Proyecto "gestion-alquileres" (São Paulo). La clave publicable está pensada para ir dentro de la app:
+// lo que protege los datos son las reglas de seguridad de la base (RLS), que solo dejan pasar a la cuenta administradora.
 export const SUPABASE_URL = 'https://txuobaovrmdcecdkmrgd.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Lk7JJHh9TGYVlZ7ljm-2Tg_6tyLTR5f';
 
@@ -17,7 +23,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     storage: AsyncStorage,
     persistSession: true,
     autoRefreshToken: true,
-    // Only the web build receives sign-in redirects in its URL (used later for Google sign-in).
+    // Solo la versión web recibe datos de inicio de sesión en la dirección (servirá para el ingreso con Google).
     detectSessionInUrl: Platform.OS === 'web',
   },
 });

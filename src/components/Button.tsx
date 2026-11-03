@@ -1,10 +1,20 @@
+// =====================================================================
+// Botón
+// ---------------------------------------------------------------------
+// Botón grande de la app, con variantes: principal, secundario, peligro, etc.
+// =====================================================================
+
 import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { fontSize, Palette, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
-// dangerOutline: destructive actions that should not be the most prominent button on screen.
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
+// dangerOutline: acciones que borran algo, sin ser el botón más llamativo de la pantalla.
 type Variant = 'primary' | 'secondary' | 'danger' | 'dangerOutline' | 'ghost';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function Button({
   label,
@@ -53,6 +63,8 @@ const variantStyles = (colors: Palette): Record<Variant, { bg: string; fg: strin
   dangerOutline: { bg: colors.surface, fg: colors.danger, border: colors.surface },
   ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
 });
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   base: {

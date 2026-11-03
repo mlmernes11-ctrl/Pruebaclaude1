@@ -1,27 +1,39 @@
-// Flexible "contains" search: case and accent insensitive, every typed word must appear
-// somewhere in the record, and phone/ID fields also match ignoring spaces, dots and dashes.
+// =====================================================================
+// Buscador
+// ---------------------------------------------------------------------
+// La lógica de búsqueda que usan el buscador de Alquileres, el de Pagos y el filtro por
+// propiedad, y el cálculo de qué partes del texto se resaltan.
+// =====================================================================
 
+// Búsqueda flexible: no importan mayúsculas ni acentos, cada palabra escrita tiene que aparecer
+// en algún lado, y teléfonos y documentos coinciden aunque se escriban sin espacios, puntos ni guiones.
+
+// Tramo de texto resaltado: [desde, hasta).
 export type Range = [start: number, end: number];
 
+// Un dato en el que se busca, con su nombre ("Teléfono", "Nota"…).
 export interface SearchField {
   label: string;
   value?: string;
-  // Phones and documents: "1155551234" also finds "11 5555-1234".
+  // Teléfonos y documentos: "1155551234" también encuentra "11 5555-1234".
   digits?: boolean;
-  // Amounts: "350000" also finds "$ 350.000", but only from the start of the number
-  // (not "$ 1.350.000"), and only from 4 digits up, so "500" does not mark "$ 5.000".
+  // Montos: "350000" también encuentra "$ 350.000", pero solo desde el principio del número
+  // (no "$ 1.350.000") y desde 4 cifras, así "500" no marca "$ 5.000".
   amount?: boolean;
 }
 
+// Un campo que coincidió y qué partes resaltar.
 export interface FieldMatch {
   field: SearchField;
   index: number;
   ranges: Range[];
 }
 
+// ── Normalización (sin mayúsculas ni acentos) ─────────────────────────
+
 interface Normalized {
   text: string;
-  // Original index of every normalized character, to highlight the original text.
+  // Posición original de cada letra, para poder resaltar el texto tal como se ve.
   map: number[];
 }
 
@@ -39,10 +51,14 @@ function normalizeWithMap(value: string, digitsOnly = false): Normalized {
   return { text, map };
 }
 
+// Separa lo escrito en palabras ya normalizadas.
 export function searchWords(query: string): string[] {
   return normalizeWithMap(query).text.split(/\s+/).filter(Boolean);
 }
 
+// ── Coincidencias y resaltado ─────────────────────────────────────────
+
+// Todas las apariciones de una palabra en un texto normalizado.
 function findIn(normalized: Normalized, word: string): Range[] {
   const ranges: Range[] = [];
   if (!word) return ranges;
@@ -55,6 +71,7 @@ function findIn(normalized: Normalized, word: string): Range[] {
   return ranges;
 }
 
+// Une tramos resaltados que se tocan o se pisan.
 function mergeRanges(ranges: Range[]): Range[] {
   const sorted = [...ranges].sort((a, b) => a[0] - b[0]);
   const merged: Range[] = [];
@@ -68,13 +85,14 @@ function mergeRanges(ranges: Range[]): Range[] {
 
 const isDigit = (char?: string) => char !== undefined && char >= '0' && char <= '9';
 
-// Whether an original position starts a number (not its middle, e.g. the "350" in "1.350.000").
+// Si una posición es el comienzo de un número (y no el medio, como el "350" de "1.350.000").
 function startsNumber(value: string, index: number): boolean {
   const previous = value[index - 1];
   if (isDigit(previous)) return false;
   return !((previous === '.' || previous === ',') && isDigit(value[index - 2]));
 }
 
+// Qué partes de un texto resaltar para las palabras buscadas.
 export function highlightRanges(
   value: string | undefined,
   words: string[],
@@ -94,7 +112,9 @@ export function highlightRanges(
   return mergeRanges(ranges);
 }
 
-// Returns the fields that matched, or undefined when some word is not found anywhere.
+// ── Búsqueda en registros ─────────────────────────────────────────────
+
+// Devuelve los campos que coinciden, o nada si alguna palabra no aparece en ningún lado.
 export function matchFields(fields: SearchField[], words: string[]): FieldMatch[] | undefined {
   if (!words.length) return undefined;
   const found = new Set<string>();
@@ -111,9 +131,9 @@ export function matchFields(fields: SearchField[], words: string[]): FieldMatch[
   return words.every((word) => found.has(word)) ? matches : undefined;
 }
 
-// A list row searched over what it shows plus hidden fields (notes, method, month…). Returns undefined
-// when some word is missing; otherwise the hidden fields worth showing, because they hold a word the
-// visible text does not.
+// Busca en lo que muestra una fila más campos ocultos (notas, método, mes…). Devuelve nada si
+// falta alguna palabra; si no, los campos ocultos que vale la pena mostrar porque tienen una
+// palabra que el texto visible no tiene.
 export function matchRow(
   visible: SearchField[],
   hidden: SearchField[],

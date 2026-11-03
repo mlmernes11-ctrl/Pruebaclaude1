@@ -1,10 +1,16 @@
+// =====================================================================
+// Barra de búsqueda
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, TextInput, TouchableOpacity, View } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 
-// Inline search field (iOS style): filters the list below as you type.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Campo de búsqueda (estilo iOS): filtra la lista de abajo mientras escribís.
 export default function SearchBar({
   value,
   onChangeText,
@@ -41,6 +47,8 @@ export default function SearchBar({
   );
 }
 
+// ── Estilos ───────────────────────────────────────────────────────────
+
 const useStyles = makeStyles((colors) => ({
   bar: {
     flexDirection: 'row',
@@ -55,7 +63,7 @@ const useStyles = makeStyles((colors) => ({
   },
   input: {
     flex: 1,
-    // Lets the field shrink on the web (inputs keep a native minimum width) so the clear button fits.
+    // En la web el campo tiene un ancho mínimo propio; esto lo deja achicarse para que entre la ✕.
     minWidth: 0,
     paddingVertical: 9,
     fontSize: fontSize.md,

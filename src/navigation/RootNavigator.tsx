@@ -1,3 +1,10 @@
+// =====================================================================
+// Navegación
+// ---------------------------------------------------------------------
+// Las 4 pestañas de abajo (Inicio, Alquileres, Pagos, Ajustes) y las pantallas que se abren
+// dentro de cada una. Para agregar una pantalla nueva, se registra acá.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -28,6 +35,10 @@ import MonthDetailScreen from '../screens/payments/MonthDetailScreen';
 import { formatPeriod } from '../utils/format';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
+// ── Pilas de pantallas de cada pestaña ──────────────────────────────
+
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
 const RentalsStack = createNativeStackNavigator();
@@ -38,7 +49,7 @@ function useScreenOptions() {
   const { colors } = useTheme();
   return useMemo(
     () => ({
-      // Header blends with the grouped background, like iOS navigation bars.
+      // La barra de arriba usa el mismo fondo gris que la pantalla, como en iOS.
       headerStyle: { backgroundColor: colors.background },
       headerTitleStyle: { color: colors.text, fontWeight: '600' as const, fontSize: 17 },
       headerTintColor: colors.primary,
@@ -67,7 +78,7 @@ function DashboardStackNavigator() {
   );
 }
 
-// Properties, tenants and contracts live in one tab ("Alquileres") and share this stack.
+// Propiedades, inquilinos y contratos viven en una sola pestaña ("Alquileres").
 function RentalsStackNavigator() {
   const screenOptions = useScreenOptions();
   return (
@@ -160,7 +171,9 @@ function SettingsStackNavigator() {
   );
 }
 
-// Filled icon for the active tab, outline for the rest (as on iOS).
+// ── Pestañas y botón "atrás" del navegador ───────────────────────────
+
+// Ícono relleno para la pestaña activa y de contorno para las demás (como en iOS).
 const TAB_ICONS: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Ionicons.glyphMap]> = {
   DashboardTab: ['home', 'home-outline'],
   RentalsTab: ['business', 'business-outline'],
@@ -190,6 +203,10 @@ function useBrowserBackButton() {
   }, []);
 }
 
+// ── Componente ────────────────────────────────────────────────────────
+
+// ── Navegación principal ─────────────────────────────────────────────
+
 export default function RootNavigator() {
   const { colors, scheme } = useTheme();
   const styles = useStyles();
@@ -211,10 +228,10 @@ export default function RootNavigator() {
     };
   }, [colors, scheme]);
 
-  // The account's data could not be loaded (no connection): offer to try again.
+  // No se pudieron cargar los datos de la cuenta (sin conexión): se ofrece reintentar.
   if (!loading && loadError) return <AccessScreen message={loadError} onRetry={reload} />;
 
-  // Saved data loads in a moment; showing screens before that would flash empty states.
+  // Mientras cargan los datos se muestra una ruedita, para no mostrar pantallas vacías un instante.
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -231,7 +248,7 @@ export default function RootNavigator() {
           headerShown: false,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
-          // Explicit height so labels are never clipped (the web build has no bottom inset).
+          // Alto fijo para que los nombres de las pestañas nunca se corten.
           tabBarStyle: {
             backgroundColor: colors.tabBar,
             borderTopColor: colors.border,
@@ -253,6 +270,8 @@ export default function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   loading: {

@@ -1,3 +1,9 @@
+// =====================================================================
+// Monto con su equivalente en pesos
+// ---------------------------------------------------------------------
+// Muestra un monto y, si está en dólares, debajo lo que vale en pesos.
+// =====================================================================
+
 import React from 'react';
 import { StyleProp, Text, TextStyle, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
@@ -5,6 +11,8 @@ import { fontSize } from '../theme';
 import { Currency } from '../types';
 import { formatMoney } from '../utils/format';
 import { makeStyles } from '../context/ThemeContext';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function MoneyText({
   amount,
@@ -17,7 +25,7 @@ export default function MoneyText({
   amount: number;
   currency: Currency;
   suffix?: string;
-  // Rate actually used to pay; when present the peso amount is exact instead of an estimate.
+  // Cotización usada al pagar; si está, el monto en pesos es exacto y no un estimado.
   settledRate?: number;
   style?: StyleProp<TextStyle>;
   align?: 'left' | 'right';
@@ -43,6 +51,8 @@ export default function MoneyText({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   estimate: {

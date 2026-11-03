@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Ficha de la propiedad
+// ---------------------------------------------------------------------
+// Estado de cobro, contrato vigente, accesos a liquidaciones y pagos, detalles y contratos anteriores.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useLayoutEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -15,6 +21,8 @@ import { formatDate, formatMoney, formatTotals } from '../../utils/format';
 import { openInTab } from '../../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../../utils/propertySummary';
 import { plural } from '../../utils/text';
+
+// ── Constantes y funciones auxiliares ─────────────────────────────────
 
 function heroFor(summary: PropertySummary, today: string) {
   const { collection, overdue, pending, nextDueDate, oldestOverdueDate, property } = summary;
@@ -43,6 +51,8 @@ function heroFor(summary: PropertySummary, today: string) {
   }
   return { tone: 'empty' as const, label: 'En mantenimiento', value: 'No disponible', detail: property.notes };
 }
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PropertyDetailScreen() {
   const styles = useStyles();
@@ -79,6 +89,7 @@ export default function PropertyDetailScreen() {
     );
   }
 
+  // — Datos de la propiedad —
   const summary = summarizeProperty(property, allContracts, chargeViews, tenants);
   const hero = heroFor(summary, today);
   const active = summary.activeContract;
@@ -89,13 +100,14 @@ export default function PropertyDetailScreen() {
   const contractIds = new Set(propertyContracts.map((c) => c.id));
   const chargeCount = chargeViewsForProperty(property.id).length;
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
-  // The Pagos tab, already filtered to this property.
+  // Abre la pestaña Pagos ya filtrada por esta propiedad.
   const openPayments = (view: 'pagos' | 'liquidaciones') =>
     navigation.navigate('PaymentsTab', {
       screen: 'PaymentsList',
       params: { view, propertyId: property.id, filter: 'todos', month: 'todos' },
     });
 
+  // — Dibujo de la pantalla —
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
@@ -223,6 +235,8 @@ export default function PropertyDetailScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

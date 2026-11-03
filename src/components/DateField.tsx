@@ -1,3 +1,9 @@
+// =====================================================================
+// Campos de fecha y de mes
+// ---------------------------------------------------------------------
+// DateField abre un calendario para elegir un día; MonthField pasa de mes con flechas.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
@@ -11,6 +17,8 @@ import {
   toISODate,
 } from '../utils/format';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+
+// ── Constantes y funciones auxiliares ─────────────────────────────────
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -30,6 +38,8 @@ function buildMonthCells(period: string): (string | null)[] {
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
 }
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function DateField({
   label,
@@ -148,6 +158,8 @@ export default function DateField({
   );
 }
 
+// ── Partes de la pieza ────────────────────────────────────────────────
+
 export function MonthField({
   label,
   value,
@@ -182,6 +194,8 @@ export function MonthField({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   container: {

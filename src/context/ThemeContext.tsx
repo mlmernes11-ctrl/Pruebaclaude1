@@ -1,3 +1,10 @@
+// =====================================================================
+// Tema claro / oscuro
+// ---------------------------------------------------------------------
+// Guarda la preferencia (Sistema, Claro u Oscuro) y entrega los colores a todas las pantallas.
+// makeStyles() arma los estilos de cada pantalla con los colores del tema activo.
+// =====================================================================
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
@@ -58,7 +65,7 @@ export function useTheme(): ThemeContextValue {
   return useContext(ThemeContext);
 }
 
-// Styles that depend on the palette: built once per color scheme and reused.
+// Estilos que dependen de los colores: se arman una vez por tema (claro u oscuro) y se reutilizan.
 export function makeStyles<T extends StyleSheet.NamedStyles<T>>(
   factory: (colors: Palette) => T & StyleSheet.NamedStyles<any>,
 ): () => T {

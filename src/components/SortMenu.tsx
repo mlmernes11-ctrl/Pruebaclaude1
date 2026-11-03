@@ -1,13 +1,23 @@
+// =====================================================================
+// Menú para ordenar
+// ---------------------------------------------------------------------
+// Botón que abre las opciones de orden (más recientes, mayor monto, etc.).
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 export interface SortOption<T extends string> {
   value: T;
   label: string;
 }
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function SortMenu<T extends string>({
   options,
@@ -18,7 +28,7 @@ export default function SortMenu<T extends string>({
   options: SortOption<T>[];
   value: T;
   onChange: (value: T) => void;
-  // Icon-only trigger, for rows that also hold filters.
+  // Solo el ícono, para filas que también tienen filtros.
   compact?: boolean;
 }) {
   const { colors } = useTheme();
@@ -73,6 +83,8 @@ export default function SortMenu<T extends string>({
     </>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   trigger: {

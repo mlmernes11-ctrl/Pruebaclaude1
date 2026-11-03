@@ -1,3 +1,7 @@
+// =====================================================================
+// Pantalla: Alta y edición de propiedad
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -17,6 +21,8 @@ import { Currency, PropertyStatus, PropertyType } from '../../types';
 import { spacing } from '../../theme';
 import { CURRENCY_SYMBOL, parseAmount } from '../../utils/format';
 import { makeStyles } from '../../context/ThemeContext';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PropertyFormScreen() {
   const styles = useStyles();
@@ -160,6 +166,8 @@ export default function PropertyFormScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   deleteButton: {

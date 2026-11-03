@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Detalle de un mes
+// ---------------------------------------------------------------------
+// Las liquidaciones de un mes con su total liquidado, cobrado y sin cobrar.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -16,6 +22,8 @@ import { buildPeriodRow } from '../../utils/history';
 import { openInTab } from '../../utils/navigation';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { compareTitles, plural } from '../../utils/text';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function MonthDetailScreen() {
   const styles = useStyles();
@@ -90,6 +98,8 @@ export default function MonthDetailScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

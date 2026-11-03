@@ -1,3 +1,7 @@
+// =====================================================================
+// Lista de inquilinos
+// =====================================================================
+
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
@@ -12,6 +16,8 @@ import { spacing } from '../../theme';
 import { summarizeProperty } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
 import { COLLECTION_DOT } from '../../utils/status';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function TenantsList() {
   const styles = useStyles();
@@ -31,7 +37,7 @@ export default function TenantsList() {
         <View style={styles.body}>
           <ListSection>
             {sorted.map((tenant) => {
-              // A tenant's dot follows the payment status of the property they rent.
+              // El punto del inquilino sigue el estado de cobro de la propiedad que alquila.
               const active = contracts.find((c) => c.tenantId === tenant.id && c.status === 'activo');
               const property = properties.find((p) => p.id === active?.propertyId);
               const summary = property ? summarizeProperty(property, contracts, chargeViews, tenants) : undefined;
@@ -55,6 +61,8 @@ export default function TenantsList() {
     </ScrollView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   content: {

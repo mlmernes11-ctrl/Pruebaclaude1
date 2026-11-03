@@ -1,9 +1,15 @@
+// =====================================================================
+// Selector de vistas
+// =====================================================================
+
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 
-// Row of mutually exclusive views ("Recibidos | Liquidaciones | Historial").
+// ── Componente ────────────────────────────────────────────────────────
+
+// Selector de vistas ("Recibidos | Liquidaciones | Historial"): se ve una a la vez.
 export default function SegmentedControl<T extends string>({
   options,
   value,
@@ -35,6 +41,8 @@ export default function SegmentedControl<T extends string>({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   segment: {

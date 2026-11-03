@@ -1,7 +1,15 @@
+// =====================================================================
+// Historial por mes
+// ---------------------------------------------------------------------
+// Agrupa las liquidaciones por mes y calcula liquidado, cobrado, en mora y por vencer,
+// para la vista Historial y el resumen del mes en el Inicio.
+// =====================================================================
+
 import { Currency, MoneyTotals } from '../types';
 import { addToTotals, emptyTotals } from './format';
 import { ChargeView } from './ledger';
 
+// Un mes (o el año entero) del historial.
 export interface HistoryRow {
   period: string;
   count: number;
@@ -11,14 +19,15 @@ export interface HistoryRow {
   pending: MoneyTotals;
   overdueCount: number;
   pendingCount: number;
-  // Fractions of what was billed, for the segmented bar (they add up to 1 when count > 0).
+  // Proporciones de lo liquidado para la barra (suman 1 cuando hay liquidaciones).
   shares: { paid: number; overdue: number; pending: number };
-  // False when dollars could not be converted, so shares are averaged per liquidación.
+  // false si no hay cotización: las proporciones se calculan por cantidad de liquidaciones.
   sharesByAmount: boolean;
 }
 
 type ToPesos = (amount: number, currency: Currency) => number | undefined;
 
+// Arma la fila de un grupo de liquidaciones.
 function buildRow(period: string, views: ChargeView[], toPesos: ToPesos): HistoryRow {
   const row: HistoryRow = {
     period,
@@ -83,7 +92,9 @@ function buildRow(period: string, views: ChargeView[], toPesos: ToPesos): Histor
   return row;
 }
 
-// Each liquidación belongs to the month it bills (its period), whenever it was paid.
+// ── Armado del historial ──────────────────────────────────────────────
+
+// Cada liquidación cuenta en el mes que liquida (su período), sin importar cuándo se pagó.
 export function buildYearHistory(
   views: ChargeView[],
   year: number,
@@ -101,10 +112,12 @@ export function buildYearHistory(
   return { months, total: buildRow(String(year), inYear, toPesos) };
 }
 
+// La fila de un solo mes (la usan el Inicio y el detalle del mes).
 export function buildPeriodRow(views: ChargeView[], period: string, toPesos: ToPesos): HistoryRow {
   return buildRow(period, views.filter((v) => v.charge.period === period), toPesos);
 }
 
+// Primer y último año con liquidaciones, para las flechas del selector de año.
 export function yearRange(views: ChargeView[], currentYear: number): { min: number; max: number } {
   let min = currentYear;
   let max = currentYear;

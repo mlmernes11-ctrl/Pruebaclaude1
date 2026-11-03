@@ -1,3 +1,9 @@
+// =====================================================================
+// Historial del año
+// ---------------------------------------------------------------------
+// Resumen anual de lo cobrado y una fila por mes con su barra de colores.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -10,6 +16,8 @@ import { buildYearHistory, HistoryRow, yearRange } from '../utils/history';
 import { ChargeView } from '../utils/ledger';
 import { plural } from '../utils/text';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 const SEGMENTS = [
   { key: 'paid', label: 'Cobrado', colorKey: 'chartPaid' },
   { key: 'overdue', label: 'En mora', colorKey: 'chartOverdue' },
@@ -20,7 +28,9 @@ const hasAmount = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
 // Total en pesos sin "≈": la nota de abajo ya aclara que los dólares van a la cotización de hoy.
 const inPesos = (totals: MoneyTotals, rate?: number) => describeTotals(totals, rate, false).main;
 
-// Calendar-year view: how much of what was billed got collected, then one row per month.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Vista del año: cuánto se cobró de lo liquidado y una fila por mes.
 export default function YearHistory({
   views,
   year,
@@ -108,6 +118,8 @@ export default function YearHistory({
   );
 }
 
+// ── Partes de la pieza ────────────────────────────────────────────────
+
 function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: number; first: boolean; onPress: () => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -143,7 +155,7 @@ function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: numbe
   );
 }
 
-// One whole split into collected / overdue / due soon, with a 2px gap between segments.
+// Barra partida en cobrado / en mora / por vencer, con un espacio fino entre partes.
 function SegmentedBar({ row, height }: { row: HistoryRow; height: number }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -158,6 +170,8 @@ function SegmentedBar({ row, height }: { row: HistoryRow; height: number }) {
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   yearSelector: {

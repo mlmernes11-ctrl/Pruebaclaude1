@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Ficha del inquilino
+// ---------------------------------------------------------------------
+// Contacto (llamar, WhatsApp, mail) y sus contratos.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useLayoutEffect } from 'react';
 import { Linking, ScrollView, Text, View } from 'react-native';
@@ -13,7 +19,9 @@ import { formatDate } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { contractDot } from '../../utils/status';
 
-// Argentine mobile numbers for WhatsApp links: country code 54 plus the 9 for mobiles.
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
+// Celulares argentinos para WhatsApp: código de país 54 más el 9 de los celulares.
 function whatsappUrl(phone: string): string {
   let digits = phone.replace(/\D/g, '').replace(/^0/, '');
   if (!digits.startsWith('54')) digits = `549${digits}`;
@@ -21,6 +29,8 @@ function whatsappUrl(phone: string): string {
 }
 
 const openUrl = (url: string) => Linking.openURL(url).catch(() => undefined);
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function TenantDetailScreen() {
   const styles = useStyles();
@@ -118,6 +128,8 @@ export default function TenantDetailScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

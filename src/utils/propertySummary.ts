@@ -1,13 +1,22 @@
+// =====================================================================
+// Resumen de cada propiedad
+// ---------------------------------------------------------------------
+// Junta en un solo lugar cómo está una propiedad: contrato activo, inquilino, deuda,
+// próximo vencimiento y su estado de cobro (con deuda, por vencer, al día, etc.).
+// =====================================================================
+
 import { Contract, MoneyTotals, Property, Tenant } from '../types';
 import { addToTotals, emptyTotals, parseLocalDate, startOfToday } from './format';
 import { ChargeView } from './ledger';
 import { plural } from './text';
 
-// How the rent collection of a property stands; drives its color on the dashboard.
+// Cómo viene el cobro de una propiedad; define su color en las listas.
 export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato' | 'mantenimiento';
 
+// Días antes del fin de un contrato en que se empieza a avisar.
 export const CONTRACT_ENDING_SOON_DAYS = 60;
 
+// Cantidad y total de un grupo de liquidaciones.
 export interface PaymentBucket {
   count: number;
   totals: MoneyTotals;
@@ -20,16 +29,19 @@ export interface PropertySummary {
   overdue: PaymentBucket;
   pending: PaymentBucket;
   nextDueDate?: string;
-  // Due date of the oldest unpaid overdue charge (how long the debt has been running).
+  // Vencimiento de la deuda más vieja (para saber hace cuánto está en mora).
   oldestOverdueDate?: string;
   collection: CollectionState;
 }
 
+// ── Contratos ─────────────────────────────────────────────────────────
+
+// Días que faltan hasta una fecha (negativo si ya pasó).
 export function daysUntil(iso: string): number {
   return Math.round((parseLocalDate(iso).getTime() - startOfToday().getTime()) / 86400000);
 }
 
-// Badge for active contracts that already ended or end within CONTRACT_ENDING_SOON_DAYS.
+// Aviso para contratos activos que ya terminaron o terminan dentro de CONTRACT_ENDING_SOON_DAYS días.
 export function contractEndBadge(contract: Contract): { label: string; tone: 'warning' | 'danger' } | undefined {
   if (contract.status !== 'activo') return undefined;
   const days = daysUntil(contract.endDate);
@@ -38,10 +50,13 @@ export function contractEndBadge(contract: Contract): { label: string; tone: 'wa
   return { label: days === 0 ? 'Vence hoy' : `Vence en ${plural(days, 'día', 'días')}`, tone: 'warning' };
 }
 
+// ── Resumen de la propiedad ───────────────────────────────────────────
+
 function bucket(): PaymentBucket {
   return { count: 0, totals: emptyTotals() };
 }
 
+// Arma el resumen de una propiedad con sus contratos y liquidaciones.
 export function summarizeProperty(
   property: Property,
   contracts: Contract[],

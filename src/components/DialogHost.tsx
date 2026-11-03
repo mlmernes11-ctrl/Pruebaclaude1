@@ -1,8 +1,17 @@
+// =====================================================================
+// Cuadros de diálogo
+// ---------------------------------------------------------------------
+// Avisos y confirmaciones ("¿Seguro que querés eliminar…?"). Se llaman con showAlert() y
+// showConfirm() desde cualquier pantalla.
+// =====================================================================
+
 import React, { useEffect, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import Button from './Button';
 import { makeStyles } from '../context/ThemeContext';
+
+// ── Constantes y funciones auxiliares ─────────────────────────────────
 
 interface DialogRequest {
   title: string;
@@ -12,7 +21,7 @@ interface DialogRequest {
   onConfirm?: () => void;
 }
 
-// React Native's Alert is a no-op on web, so dialogs are rendered in-app on every platform.
+// Los avisos nativos no funcionan en la web, así que los cuadros de diálogo se dibujan dentro de la app.
 let listener: ((request: DialogRequest) => void) | null = null;
 
 export function showAlert(title: string, message: string) {
@@ -28,6 +37,8 @@ export function showConfirm(options: {
 }) {
   listener?.(options);
 }
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function DialogHost() {
   const styles = useStyles();
@@ -75,6 +86,8 @@ export default function DialogHost() {
     </Modal>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   backdrop: {

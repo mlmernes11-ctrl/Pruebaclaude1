@@ -1,9 +1,15 @@
+// =====================================================================
+// Sección de lista
+// =====================================================================
+
 import React from 'react';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 
-// iOS "inset grouped" list: optional caption above, rows on one rounded surface, note below.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Lista agrupada estilo iOS: título opcional arriba, filas en una tarjeta redondeada y nota abajo.
 export default function ListSection({
   header,
   footer,
@@ -31,6 +37,8 @@ export default function ListSection({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   section: {

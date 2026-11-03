@@ -1,8 +1,14 @@
+// =====================================================================
+// Bloque de estado grande
+// =====================================================================
+
 import React from 'react';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 import StatusDot, { DotTone } from './StatusDot';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 // Bloque grande de arriba de una pantalla: una etiqueta, un número grande y una línea de detalle.
 // Con "tone" la etiqueta lleva el punto de color del semáforo; sin "tone" es un total neutro.
@@ -41,6 +47,8 @@ export default function StatusHero({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   hero: {

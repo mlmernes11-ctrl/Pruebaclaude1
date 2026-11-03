@@ -1,11 +1,22 @@
+// =====================================================================
+// Cotización del dólar
+// ---------------------------------------------------------------------
+// Descarga la cotización de DolarAPI (blue, oficial o MEP) o usa un valor cargado a mano,
+// y la comparte con las pantallas para mostrar los dólares en pesos. Se guarda en el celular.
+// =====================================================================
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Currency } from '../types';
 import { embeddedPreview } from '../utils/platform';
 
+// Dónde se guarda la cotización en el celular y de dónde se descarga.
 const STORAGE_KEY = 'gestion_alquileres_cotizacion_v1';
 const QUOTES_URL = 'https://dolarapi.com/v1/dolares';
 
+// ── Tipos ─────────────────────────────────────────────────────────────
+
+// Qué dólar se usa: blue, oficial, bolsa (MEP) o un valor cargado a mano.
 export type QuoteSource = 'blue' | 'oficial' | 'bolsa';
 export type RateSource = QuoteSource | 'manual';
 
@@ -23,6 +34,7 @@ interface StoredExchange {
 
 const DEFAULT_EXCHANGE: StoredExchange = { source: 'blue', quotes: {} };
 
+// Nombre que ve el usuario para cada tipo de dólar.
 export const RATE_SOURCE_LABEL: Record<RateSource, string> = {
   blue: 'Blue',
   oficial: 'Oficial',
@@ -30,6 +42,7 @@ export const RATE_SOURCE_LABEL: Record<RateSource, string> = {
   manual: 'Manual',
 };
 
+// Promedio entre compra y venta, que es el valor que usa la app.
 export function quoteMidpoint(quote?: Quote): number | undefined {
   if (!quote) return undefined;
   return Math.round(((quote.compra + quote.venta) / 2) * 100) / 100;
@@ -47,6 +60,9 @@ interface ExchangeRateContextValue extends StoredExchange {
 
 const ExchangeRateContext = createContext<ExchangeRateContextValue | undefined>(undefined);
 
+// ── Descarga ──────────────────────────────────────────────────────────
+
+// Lee la respuesta de DolarAPI y se queda con blue, oficial y MEP.
 function parseQuotes(payload: unknown): Partial<Record<QuoteSource, Quote>> {
   const quotes: Partial<Record<QuoteSource, Quote>> = {};
   if (!Array.isArray(payload)) return quotes;
@@ -60,6 +76,8 @@ function parseQuotes(payload: unknown): Partial<Record<QuoteSource, Quote>> {
   }
   return quotes;
 }
+
+// ── Proveedor de cotización ───────────────────────────────────────────
 
 export function ExchangeRateProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<StoredExchange>(DEFAULT_EXCHANGE);
@@ -143,6 +161,7 @@ export function ExchangeRateProvider({ children }: { children: React.ReactNode }
   return <ExchangeRateContext.Provider value={value}>{children}</ExchangeRateContext.Provider>;
 }
 
+// Para usar la cotización desde cualquier pantalla: const { rate } = useExchangeRate();
 export function useExchangeRate(): ExchangeRateContextValue {
   const ctx = useContext(ExchangeRateContext);
   if (!ctx) throw new Error('useExchangeRate debe usarse dentro de ExchangeRateProvider');

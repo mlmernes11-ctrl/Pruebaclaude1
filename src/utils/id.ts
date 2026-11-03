@@ -1,3 +1,9 @@
+// =====================================================================
+// Identificadores
+// ---------------------------------------------------------------------
+// Genera un código único para cada registro nuevo.
+// =====================================================================
+
 export function generateId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
 }

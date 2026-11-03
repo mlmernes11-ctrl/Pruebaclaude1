@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Ingreso
+// ---------------------------------------------------------------------
+// Mail y contraseña, crear la cuenta la primera vez, o entrar al modo demo.
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -7,7 +13,9 @@ import { useAuth } from '../../context/AuthContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 
-// Sign in with email and password; the first time, the administrator creates the account here.
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// Ingreso con mail y contraseña; la primera vez, la cuenta administradora se crea acá.
 export default function LoginScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -114,6 +122,8 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   safe: {

@@ -1,3 +1,7 @@
+// =====================================================================
+// Lista de contratos
+// =====================================================================
+
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
@@ -15,6 +19,8 @@ import { contractEndBadge } from '../../utils/propertySummary';
 import { contractDot } from '../../utils/status';
 import { compareTitles } from '../../utils/text';
 
+// ── Pantalla ──────────────────────────────────────────────────────────
+
 export default function ContractsList() {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -22,7 +28,7 @@ export default function ContractsList() {
   const { contracts, getPropertyById, getTenantById } = useData();
   const { refreshing, onRefresh } = useRefresh();
 
-  // Active contracts first, then by carpeta.
+  // Primero los contratos activos, después por carpeta.
   const sorted = [...contracts].sort(
     (a, b) =>
       Number(b.status === 'activo') - Number(a.status === 'activo') ||
@@ -70,6 +76,8 @@ export default function ContractsList() {
     </ScrollView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   content: {

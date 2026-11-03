@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Inicio
+// ---------------------------------------------------------------------
+// Bloque grande con la mora (o "Todo al día"), el avance del mes y las carpetas que piden atención.
+// =====================================================================
+
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -28,7 +34,9 @@ import { openInTab } from '../utils/navigation';
 import { daysUntil, summarizeProperty } from '../utils/propertySummary';
 import { plural } from '../utils/text';
 
-// Opening the app answers one question first: is anyone behind on payments?
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// Al abrir la app, lo primero que responde es: ¿alguien está atrasado con los pagos?
 export default function DashboardScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -39,6 +47,7 @@ export default function DashboardScreen() {
   const isEmpty =
     properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
 
+  // — Carpetas: con deuda, por vencer y sin pendientes —
   const summaries = properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
   const inDebt = summaries
     .filter((s) => s.collection === 'deuda')
@@ -53,6 +62,7 @@ export default function DashboardScreen() {
     [settled.filter((s) => s.collection === 'mantenimiento').length, 'en mantenimiento', 'en mantenimiento'],
   ] as const;
 
+  // — Bloque grande: mora y avance del mes —
   // Total en mora: lo que falta pagar de todas las liquidaciones vencidas.
   const overdueTotals = emptyTotals();
   chargeViews
@@ -67,6 +77,7 @@ export default function DashboardScreen() {
 
   const openProperty = (propertyId: string) => openInTab(navigation, 'RentalsTab', 'PropertyDetail', { propertyId });
 
+  // — Dibujo de la pantalla —
   return (
     <Screen>
       <ScrollView
@@ -210,6 +221,8 @@ export default function DashboardScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

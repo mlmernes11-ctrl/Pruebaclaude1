@@ -1,3 +1,9 @@
+// =====================================================================
+// Lista de propiedades
+// ---------------------------------------------------------------------
+// Cada carpeta con su punto de color, dirección y lo que debe o paga por mes.
+// =====================================================================
+
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
@@ -15,6 +21,8 @@ import { PropertySummary, summarizeProperty } from '../../utils/propertySummary'
 import { compareTitles } from '../../utils/text';
 import { COLLECTION_DOT } from '../../utils/status';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 const LEGEND: { tone: DotTone; label: string }[] = [
   { tone: 'danger', label: 'Con deuda' },
   { tone: 'warning', label: 'Por vencer' },
@@ -22,7 +30,7 @@ const LEGEND: { tone: DotTone; label: string }[] = [
   { tone: 'empty', label: 'Sin inquilino' },
 ];
 
-// Strong red = money owed; grey = reference (the monthly rent or the property's situation).
+// Rojo = plata que se debe; gris = dato de referencia (el alquiler o la situación de la propiedad).
 function rightValue(summary: PropertySummary): { value: string; tone: ValueTone } {
   const { property, activeContract, collection, overdue } = summary;
   if (collection === 'deuda') return { value: `Debe ${formatTotals(overdue.totals)}`, tone: 'danger' };
@@ -32,6 +40,8 @@ function rightValue(summary: PropertySummary): { value: string; tone: ValueTone 
   const currency = activeContract?.currency ?? property.rentCurrency;
   return { value: `${formatMoney(amount, currency)}/mes`, tone: 'muted' };
 }
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PropertiesList() {
   const styles = useStyles();
@@ -90,6 +100,8 @@ export default function PropertiesList() {
     </ScrollView>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

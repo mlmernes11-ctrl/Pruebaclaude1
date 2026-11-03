@@ -1,14 +1,24 @@
+// =====================================================================
+// Generación automática de liquidaciones
+// ---------------------------------------------------------------------
+// Cada mes crea las liquidaciones de los contratos activos (alquiler, y expensas y servicios
+// si la propiedad los tiene), y actualiza las impagas si cambia un monto.
+// =====================================================================
+
 import { Charge, ChargeConcept, Contract, Currency, Property } from '../types';
 import { addMonthsToPeriod, currentPeriod, periodToDueDate, toISODate } from './format';
 import { generateId } from './id';
 import { ChargePaymentInfo } from './ledger';
 
+// Conceptos que se pueden liquidar, en el orden en que se muestran.
 export const CHARGE_CONCEPTS: ChargeConcept[] = ['alquiler', 'expensas', 'servicios'];
 
+// Clave para saber si ya existe la liquidación de un contrato, concepto y mes.
 function chargeKey(contractId: string, concept: ChargeConcept, period: string) {
   return `${contractId}|${concept}|${period}`;
 }
 
+// Cuánto y en qué moneda se liquida un concepto según el contrato y la propiedad.
 export function expectedCharge(
   contract: Contract,
   property: Property | undefined,
@@ -19,14 +29,14 @@ export function expectedCharge(
   return amount && amount > 0 ? { amount, currency: 'ARS' } : undefined;
 }
 
-// The first month's due date cannot fall before the contract starts.
+// El primer vencimiento no puede caer antes de que empiece el contrato.
 function dueDateFor(contract: Contract, period: string): string {
   const due = periodToDueDate(period, contract.paymentDay);
   return due < contract.startDate ? contract.startDate : due;
 }
 
-// Months are generated from the later of the contract start and the day it was loaded in the
-// app, so loading an old contract does not create years of past debt.
+// Los meses se generan desde el inicio del contrato o desde el día en que se cargó en la app (lo
+// que sea más tarde), así cargar un contrato viejo no crea años de deuda de golpe.
 function firstBillablePeriod(contract: Contract): string {
   const startPeriod = contract.startDate.slice(0, 7);
   const fromPeriod =
@@ -34,6 +44,9 @@ function firstBillablePeriod(contract: Contract): string {
   return startPeriod > fromPeriod ? startPeriod : fromPeriod;
 }
 
+// ── Generación mensual ────────────────────────────────────────────────
+
+// Las liquidaciones que faltan crear, desde el primer mes a liquidar hasta este mes.
 export function buildMissingCharges(
   contracts: Contract[],
   properties: Property[],
@@ -75,8 +88,10 @@ export function buildMissingCharges(
   return missing;
 }
 
-// When a rent or expensas amount is corrected, unpaid automatic charges from this month on
-// follow the new value; past or partially paid charges keep what was billed.
+// ── Actualización de montos ───────────────────────────────────────────
+
+// Si se corrige el alquiler o las expensas, las liquidaciones automáticas impagas de este mes
+// en adelante toman el valor nuevo; las pasadas o pagadas en parte quedan como estaban.
 export function syncUnpaidAutoCharges(
   charges: Charge[],
   contracts: Contract[],

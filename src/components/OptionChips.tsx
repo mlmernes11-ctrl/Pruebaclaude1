@@ -1,12 +1,22 @@
+// =====================================================================
+// Opciones en botoncitos
+// ---------------------------------------------------------------------
+// Para elegir una opción entre pocas (moneda, tipo de propiedad, estado…).
+// =====================================================================
+
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 export interface Option<T extends string> {
   value: T;
   label: string;
 }
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function OptionChips<T extends string>({
   label,
@@ -43,6 +53,8 @@ export default function OptionChips<T extends string>({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   container: {

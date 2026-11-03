@@ -1,8 +1,16 @@
+// =====================================================================
+// Pantalla vacía
+// ---------------------------------------------------------------------
+// Ícono y mensaje cuando una lista no tiene nada (por ejemplo "Sin pagos").
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { fontSize, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function EmptyState({
   icon,
@@ -25,6 +33,8 @@ export default function EmptyState({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   container: {

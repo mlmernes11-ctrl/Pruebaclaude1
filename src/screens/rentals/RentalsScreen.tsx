@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Alquileres
+// ---------------------------------------------------------------------
+// Pestaña con tres vistas: propiedades, inquilinos y contratos.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
@@ -7,6 +13,8 @@ import ContractsList from './ContractsList';
 import PropertiesList from './PropertiesList';
 import TenantsList from './TenantsList';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 export type RentalsView = 'propiedades' | 'inquilinos' | 'contratos';
 
 const VIEWS: { value: RentalsView; label: string; form: string; addLabel: string }[] = [
@@ -15,14 +23,16 @@ const VIEWS: { value: RentalsView; label: string; form: string; addLabel: string
   { value: 'contratos', label: 'Contratos', form: 'ContractForm', addLabel: 'Nuevo contrato' },
 ];
 
-// Properties, tenants and contracts share one tab; "+" creates whatever the current view lists.
+// ── Pantalla ──────────────────────────────────────────────────────────
+
+// Propiedades, inquilinos y contratos comparten pestaña; "+" crea lo que muestra la vista actual.
 export default function RentalsScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const [view, setView] = useState<RentalsView>('propiedades');
   const current = VIEWS.find((v) => v.value === view)!;
 
-  // The dashboard can open a specific view (e.g. "Ver todas").
+  // El Inicio puede abrir una vista en particular (por ejemplo "Ver todas").
   useEffect(() => {
     const requested = route.params?.view as RentalsView | undefined;
     if (requested) setView(requested);

@@ -1,4 +1,4 @@
--- Keep the security-definer helper out of the exposed API schema; policies still call it.
+-- Mueve is_admin() a un esquema privado, fuera de lo que expone la API; las reglas la siguen usando.
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;

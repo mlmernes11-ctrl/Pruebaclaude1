@@ -1,3 +1,9 @@
+// =====================================================================
+// Campo de texto de formulario
+// ---------------------------------------------------------------------
+// Etiqueta y caja para escribir, con asterisco si es obligatorio.
+// =====================================================================
+
 import React from 'react';
 import {
   KeyboardTypeOptions,
@@ -7,6 +13,8 @@ import {
 } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function FormField({
   label,
@@ -45,6 +53,8 @@ export default function FormField({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   container: {

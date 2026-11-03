@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Ajustes
+// ---------------------------------------------------------------------
+// Apariencia, cotización del dólar y la cuenta (o las opciones del modo demo).
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
@@ -14,7 +20,11 @@ import { makeStyles, THEME_PREFERENCE_LABEL, ThemePreference, useTheme } from '.
 import { spacing } from '../theme';
 import { formatMoney } from '../utils/format';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 const APPEARANCE: ThemePreference[] = ['system', 'light', 'dark'];
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
   const styles = useStyles();
@@ -107,6 +117,8 @@ export default function SettingsScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles(() => ({
   content: {

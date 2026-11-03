@@ -1,6 +1,7 @@
--- Gestión de alquileres: one administrator account (allowlisted email), no roles.
+-- Gestión de alquileres: esquema inicial.
+-- Una sola cuenta administradora (por mail, en una lista de permitidos) y sin roles.
 
--- Who may use the app. Read only through is_admin(); clients never see this table.
+-- Quién puede usar la app. Solo se lee a través de is_admin(); la app nunca ve esta tabla.
 create table public.app_admins (
   email text primary key check (email = lower(email))
 );
@@ -60,7 +61,7 @@ create table public.contracts (
   currency text not null check (currency in ('USD', 'ARS')),
   deposit_amount numeric check (deposit_amount >= 0),
   payment_day integer not null check (payment_day between 1 and 28),
-  -- First month billed automatically (YYYY-MM).
+  -- Primer mes que se liquida automáticamente (AAAA-MM).
   billing_start_period text check (billing_start_period ~ '^\d{4}-(0[1-9]|1[0-2])$'),
   status text not null check (status in ('activo', 'finalizado', 'cancelado')),
   notes text,
@@ -70,7 +71,7 @@ create table public.contracts (
 create index contracts_property_idx on public.contracts (property_id);
 create index contracts_tenant_idx on public.contracts (tenant_id);
 
--- What a tenant owes for one concept and month ("liquidación").
+-- Liquidaciones: lo que un inquilino debe por un concepto y un mes.
 create table public.charges (
   id text primary key default gen_random_uuid()::text,
   contract_id text not null references public.contracts (id) on delete cascade,
@@ -80,16 +81,16 @@ create table public.charges (
   currency text not null check (currency in ('USD', 'ARS')),
   due_date date not null,
   auto_generated boolean not null default false,
-  -- Voided charges stay so monthly generation does not recreate them.
+  -- Anulada: queda guardada para que la generación mensual no la vuelva a crear.
   voided boolean not null default false,
   notes text,
   created_at timestamptz not null default now()
 );
 create index charges_contract_idx on public.charges (contract_id);
--- Monthly generation creates at most one charge per contract, concept and month.
+-- La generación mensual crea como máximo una liquidación por contrato, concepto y mes.
 create unique index charges_auto_unique on public.charges (contract_id, concept, period) where auto_generated;
 
--- Money received ("pago recibido"); allocations = [{chargeId, amount}] over charges of the same concept.
+-- Pagos recibidos; allocations = [{chargeId, amount}]: a qué liquidaciones del mismo concepto se aplicó.
 create table public.payments (
   id text primary key default gen_random_uuid()::text,
   contract_id text not null references public.contracts (id) on delete cascade,
@@ -101,14 +102,14 @@ create table public.payments (
   exchange_rate numeric check (exchange_rate > 0),
   allocations jsonb not null default '[]'::jsonb check (jsonb_typeof(allocations) = 'array'),
   notes text,
-  -- Payments registered together in one receipt share this id.
+  -- Los pagos cargados juntos en un mismo recibo comparten este valor.
   receipt_id text,
   created_at timestamptz not null default now()
 );
 create index payments_contract_idx on public.payments (contract_id);
 create index payments_receipt_idx on public.payments (receipt_id) where receipt_id is not null;
 
--- Shared preferences (single row): which dollar quote the app uses.
+-- Preferencias compartidas (una sola fila): qué cotización del dólar usa la app.
 create table public.settings (
   id integer primary key default 1 check (id = 1),
   rate_source text not null default 'blue' check (rate_source in ('blue', 'oficial', 'bolsa', 'manual')),
@@ -117,7 +118,7 @@ create table public.settings (
 );
 insert into public.settings (id) values (1);
 
--- Daily dollar quotes, written by a scheduled server function (service role only).
+-- Cotización del dólar de cada día; la escribe una función programada del servidor.
 create table public.exchange_rates (
   date date not null,
   source text not null check (source in ('blue', 'oficial', 'bolsa')),
@@ -127,7 +128,7 @@ create table public.exchange_rates (
   primary key (date, source)
 );
 
--- Row Level Security: only the allowlisted administrator reads or writes anything.
+-- Seguridad por fila (RLS): solo la cuenta administradora puede leer o escribir.
 do $$
 declare t text;
 begin

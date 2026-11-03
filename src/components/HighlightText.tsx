@@ -1,9 +1,15 @@
+// =====================================================================
+// Texto resaltado
+// =====================================================================
+
 import React from 'react';
 import { Text, TextProps } from 'react-native';
 import { Range } from '../utils/search';
 import { makeStyles } from '../context/ThemeContext';
 
-// Text with the matched parts marked; nested Text keeps it a single wrapping line.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Texto con las partes que coinciden con la búsqueda resaltadas.
 export default function HighlightText({
   text,
   ranges,
@@ -25,6 +31,8 @@ export default function HighlightText({
   if (cursor < text.length) parts.push(text.slice(cursor));
   return <Text {...props}>{parts}</Text>;
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   mark: {

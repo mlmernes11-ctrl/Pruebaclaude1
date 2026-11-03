@@ -1,9 +1,17 @@
+// =====================================================================
+// Punto de estado
+// =====================================================================
+
 import React from 'react';
 import { View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-// Collection status: red = overdue, amber = due soon, green = up to date, empty ring = no tenant.
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
+// Punto del semáforo: rojo = en mora, ámbar = por vencer, verde = al día, círculo vacío = sin inquilino.
 export type DotTone = 'danger' | 'warning' | 'success' | 'empty';
+
+// ── Componente ────────────────────────────────────────────────────────
 
 export default function StatusDot({ tone, size = 10, halo }: { tone: DotTone; size?: number; halo?: boolean }) {
   const { colors } = useTheme();

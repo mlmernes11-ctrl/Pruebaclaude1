@@ -1,11 +1,23 @@
+// =====================================================================
+// Catálogos y etiquetas
+// ---------------------------------------------------------------------
+// Los textos que ve el usuario para cada valor interno (tipos de propiedad, estados, monedas,
+// conceptos y métodos de pago) y las opciones de los formularios.
+// =====================================================================
+
 import { ContractStatus, Currency, ChargeConcept, PropertyStatus, PropertyType } from './types';
 
+// ── Monedas ───────────────────────────────────────────────────────────
+
+// Moneda que se propone para un alquiler nuevo.
 export const DEFAULT_RENT_CURRENCY: Currency = 'USD';
 
 export const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
   { value: 'USD', label: 'Dólares (US$)' },
   { value: 'ARS', label: 'Pesos ($)' },
 ];
+
+// ── Propiedades ───────────────────────────────────────────────────────
 
 export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   apartamento: 'Departamento',
@@ -30,6 +42,8 @@ export const PROPERTY_STATUS_OPTIONS = Object.entries(PROPERTY_STATUS_LABEL).map
   ([value, label]) => ({ value: value as PropertyStatus, label }),
 );
 
+// ── Contratos ─────────────────────────────────────────────────────────
+
 export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   activo: 'Activo',
   finalizado: 'Finalizado',
@@ -39,6 +53,8 @@ export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
 export const CONTRACT_STATUS_OPTIONS = Object.entries(CONTRACT_STATUS_LABEL).map(
   ([value, label]) => ({ value: value as ContractStatus, label }),
 );
+
+// ── Pagos y liquidaciones ─────────────────────────────────────────────
 
 export const PAYMENT_METHOD_OPTIONS = [
   'Efectivo',
@@ -56,6 +72,8 @@ export const CONCEPT_LABEL: Record<ChargeConcept, string> = {
 export const CONCEPT_OPTIONS = Object.entries(CONCEPT_LABEL).map(
   ([value, label]) => ({ value: value as ChargeConcept, label }),
 );
+
+// ── Colores de las etiquetas del buscador ─────────────────────────────
 
 export const PROPERTY_STATUS_TONE = {
   disponible: 'info',

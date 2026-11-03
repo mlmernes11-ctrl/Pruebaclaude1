@@ -1,3 +1,7 @@
+// =====================================================================
+// Filtro por propiedad
+// =====================================================================
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -7,6 +11,8 @@ import { matchFields, searchWords } from '../utils/search';
 import { compareTitles } from '../utils/text';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
+// ── Constantes y funciones auxiliares ─────────────────────────────────
+
 interface Option {
   id: string;
   title: string;
@@ -14,7 +20,9 @@ interface Option {
   searchText: string;
 }
 
-// Pill that narrows a screen to one property; tapping it opens a searchable list.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Filtro por propiedad: al tocarlo se abre una lista con buscador.
 export default function PropertyFilter({
   value,
   onChange,
@@ -140,6 +148,8 @@ export default function PropertyFilter({
   );
 }
 
+// ── Partes de la pieza ────────────────────────────────────────────────
+
 function OptionRow({
   title,
   subtitle,
@@ -168,6 +178,8 @@ function OptionRow({
     </TouchableOpacity>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   trigger: {
@@ -243,7 +255,7 @@ const useStyles = makeStyles((colors) => ({
   },
   searchInput: {
     flex: 1,
-    // Lets the field shrink on the web (inputs keep a native minimum width) so the clear button fits.
+    // En la web el campo tiene un ancho mínimo propio; esto lo deja achicarse para que entre la ✕.
     minWidth: 0,
     paddingVertical: 10,
     fontSize: fontSize.md,

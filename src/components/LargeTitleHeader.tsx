@@ -1,9 +1,15 @@
+// =====================================================================
+// Título grande de pestaña
+// =====================================================================
+
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 
-// Big screen title (iOS "large title") with an optional caption or "+" action on the right.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Título grande de cada pestaña (estilo iOS) con un texto o un botón "+" opcional a la derecha.
 export default function LargeTitleHeader({
   title,
   caption,
@@ -43,6 +49,8 @@ export default function LargeTitleHeader({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   row: {

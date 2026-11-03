@@ -1,6 +1,12 @@
+// =====================================================================
+// Detalles de la plataforma
+// ---------------------------------------------------------------------
+// Saber si la app corre dentro de la versión de prueba (claude.ai) y el mensaje de "sin conexión".
+// =====================================================================
+
 import { Platform } from 'react-native';
 
-// The web preview runs inside another page (claude.ai), which blocks requests to other sites.
+// La versión de prueba corre dentro de otra página (claude.ai), que bloquea los pedidos a otros sitios.
 export function embeddedPreview(): boolean {
   if (Platform.OS !== 'web') return false;
   try {

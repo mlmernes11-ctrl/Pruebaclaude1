@@ -1,8 +1,14 @@
+// =====================================================================
+// Botón "atrás" del navegador (solo web)
+// ---------------------------------------------------------------------
+// Hace que el "atrás" del navegador vuelva a la pantalla anterior de la app en vez de salir.
+// =====================================================================
+
 import { Platform } from 'react-native';
 
-// On the web the browser's back button would leave the app. One extra history entry is kept
-// while there is somewhere to go back to, and each back press is turned into an in-app back.
-// Overlays (like the search sheet) register a handler so back closes them first.
+// En la web, el botón "atrás" del navegador sacaría al usuario de la app. Por eso se guarda
+// un paso extra en el historial y cada "atrás" se convierte en volver a la pantalla anterior.
+// Las ventanas que se abren encima (como el buscador) se cierran primero.
 let armed = false;
 const handlers: (() => void)[] = [];
 
@@ -12,7 +18,7 @@ export function armBrowserHistory() {
     window.history.pushState({ appBack: true }, '');
     armed = true;
   } catch {
-    // History may be unavailable in some embedded views; the in-app back still works.
+    // En algunas vistas incrustadas el historial no está disponible; el "atrás" de la app sigue andando.
   }
 }
 
@@ -29,7 +35,7 @@ export function pushBackHandler(handler: () => void): () => void {
   };
 }
 
-// Runs and removes the newest overlay handler; false when no overlay is open.
+// Cierra la última ventana abierta encima; devuelve false si no había ninguna.
 export function runBackHandler(): boolean {
   const handler = handlers.pop();
   if (!handler) return false;

@@ -1,12 +1,21 @@
+// =====================================================================
+// Datos de ejemplo (modo demo)
+// ---------------------------------------------------------------------
+// Una cartera de prueba con propiedades, inquilinos, contratos, liquidaciones y pagos,
+// armada para mostrar todos los estados posibles. Solo se usa en el modo demo.
+// =====================================================================
+
 import { AppData, Charge, ChargeConcept, Contract, Payment, Property, Tenant } from '../types';
 import { addMonthsToPeriod, currentPeriod, periodToDueDate, todayISO } from './format';
 import { generateId } from './id';
 
+// Arma la cartera de ejemplo con fechas relativas a hoy, así siempre se ve actual.
 export function buildSampleData(): AppData {
   const now = new Date().toISOString();
   const thisPeriod = currentPeriod();
   const monthStart = (offset: number) => periodToDueDate(addMonthsToPeriod(thisPeriod, offset), 1);
 
+  // — Propiedades —
   const property = (values: Omit<Property, 'id' | 'createdAt'>): Property => ({
     ...values,
     id: generateId(),
@@ -117,6 +126,7 @@ export function buildSampleData(): AppData {
     notes: 'Pintura y arreglo de aire acondicionado antes de volver a publicar.',
   });
 
+  // — Inquilinos —
   const tenant = (values: Omit<Tenant, 'id' | 'createdAt'>): Tenant => ({
     ...values,
     id: generateId(),
@@ -164,6 +174,7 @@ export function buildSampleData(): AppData {
     phone: '11 2222-3456',
   });
 
+  // — Contratos —
   const contract = (values: Omit<Contract, 'id' | 'createdAt'>): Contract => ({
     ...values,
     id: generateId(),
@@ -215,7 +226,7 @@ export function buildSampleData(): AppData {
     paymentDay: 10,
     status: 'activo',
   });
-  // Ends next month, so the dashboard also shows a contract about to expire.
+  // Termina el mes que viene, así el Inicio muestra un contrato por vencer.
   const contract64 = contract({
     propertyId: c64.id,
     tenantId: diego.id,
@@ -249,10 +260,11 @@ export function buildSampleData(): AppData {
     status: 'finalizado',
   });
 
+  // — Liquidaciones y pagos —
   const charges: Charge[] = [];
   const payments: Payment[] = [];
 
-  // paidAmount: undefined = unpaid, 'full' = paid in full, number = partial; paid on the due date or today if earlier.
+  // paidAmount: vacío = impaga, 'full' = pagada entera, número = pago parcial. Se paga el día del vencimiento (o hoy, si vence más adelante).
   const addCharge = (
     target: Contract,
     concept: ChargeConcept,
@@ -291,8 +303,8 @@ export function buildSampleData(): AppData {
     });
   };
 
-  // Each active contract shows a different collection state on any day of the month.
-  // Fully paid: 83 and 15. Only next month pending: 102 and 120. With debt: 37 and 64.
+  // Cada contrato activo muestra un estado distinto, sea el día del mes que sea.
+  // Al día: 83 y 15. Solo el mes que viene pendiente: 102 y 120. Con deuda: 37 y 64.
   for (const offset of [-2, -1, 0]) {
     addCharge(contract102, 'alquiler', c102.rentAmount, offset, 'full');
     addCharge(contract102, 'expensas', c102.expensasAmount!, offset, 'full');

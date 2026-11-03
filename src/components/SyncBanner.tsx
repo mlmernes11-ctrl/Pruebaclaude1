@@ -1,3 +1,7 @@
+// =====================================================================
+// Aviso de cambios sin guardar
+// =====================================================================
+
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -5,7 +9,9 @@ import { useData } from '../context/DataContext';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 
-// Changes that did not reach the server stay visible until they are saved.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Aviso rojo cuando hay cambios que no llegaron al servidor; queda visible hasta que se guardan.
 export default function SyncBanner() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -23,6 +29,8 @@ export default function SyncBanner() {
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   banner: {

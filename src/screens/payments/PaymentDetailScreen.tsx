@@ -1,3 +1,9 @@
+// =====================================================================
+// Pantalla: Detalle de un pago
+// ---------------------------------------------------------------------
+// Monto, a qué liquidaciones se aplicó, lo que quedó a favor y la opción de anularlo.
+// =====================================================================
+
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, Text } from 'react-native';
@@ -13,6 +19,8 @@ import { spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
 import { unallocatedAmount } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
+
+// ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PaymentDetailScreen() {
   const styles = useStyles();
@@ -113,6 +121,8 @@ export default function PaymentDetailScreen() {
     </Screen>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   content: {

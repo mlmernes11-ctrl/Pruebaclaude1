@@ -1,9 +1,15 @@
+// =====================================================================
+// Título de sección
+// =====================================================================
+
 import React from 'react';
 import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { fontSize, spacing } from '../theme';
 import { makeStyles } from '../context/ThemeContext';
 
-// Section title with an optional action on the right, both centered on the same line.
+// ── Componente ────────────────────────────────────────────────────────
+
+// Título de sección con una acción opcional a la derecha ("Ver todas").
 export default function SectionHeader({
   title,
   actionLabel,
@@ -32,6 +38,8 @@ export default function SectionHeader({
     </View>
   );
 }
+
+// ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
   row: {
