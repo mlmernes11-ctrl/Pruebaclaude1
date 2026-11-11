@@ -23,6 +23,8 @@ export default function LoginScreen() {
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // Al crear la cuenta se pide la contraseña dos veces, para evitar errores de tipeo.
+  const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -34,6 +36,10 @@ export default function LoginScreen() {
     setNotice(undefined);
     if (!email.trim() || !password) {
       setError('Completá el mail y la contraseña.');
+      return;
+    }
+    if (creating && password !== confirm) {
+      setError('Las contraseñas no coinciden. Escribila igual en los dos campos.');
       return;
     }
     setBusy(true);
@@ -105,11 +111,29 @@ export default function LoginScreen() {
               secureTextEntry
               textContentType={creating ? 'newPassword' : 'password'}
               autoComplete={creating ? 'new-password' : 'current-password'}
-              onSubmitEditing={submit}
-              returnKeyType="go"
+              onSubmitEditing={creating ? undefined : submit}
+              returnKeyType={creating ? 'next' : 'go'}
               style={[styles.input, webOutline]}
               accessibilityLabel="Contraseña"
             />
+            {creating ? (
+              <>
+                <View style={styles.separator} />
+                <TextInput
+                  value={confirm}
+                  onChangeText={setConfirm}
+                  placeholder="Repetir contraseña"
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  onSubmitEditing={submit}
+                  returnKeyType="go"
+                  style={[styles.input, webOutline]}
+                  accessibilityLabel="Repetir contraseña"
+                />
+              </>
+            ) : null}
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -119,6 +143,7 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={() => {
               setCreating(!creating);
+              setConfirm('');
               setError(undefined);
               setNotice(undefined);
             }}
