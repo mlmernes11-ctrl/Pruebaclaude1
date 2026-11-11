@@ -17,16 +17,20 @@ export default function Screen({
   children,
   style,
   narrow,
+  topSafe,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
   // Formularios y fichas simples: columna más angosta en pantalla grande.
   narrow?: boolean;
+  // Pantallas sin barra de arriba (las de cada pestaña): dejan libre la franja de la hora y la
+  // batería del celular, para que el título no quede debajo.
+  topSafe?: boolean;
 }) {
   const styles = useStyles();
   const desktop = useIsDesktop();
   return (
-    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={topSafe ? ['top', 'left', 'right'] : ['left', 'right']}>
       <View
         style={[styles.container, desktop && styles.desktop, desktop && { maxWidth: narrow ? 720 : 1160 }, style]}
       >

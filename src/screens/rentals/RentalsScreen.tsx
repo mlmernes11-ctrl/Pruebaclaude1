@@ -88,7 +88,7 @@ export default function RentalsScreen() {
   );
 
   return (
-    <Screen>
+    <Screen topSafe>
       <LargeTitleHeader
         title="Alquileres"
         onAdd={() => navigation.navigate(current.form)}

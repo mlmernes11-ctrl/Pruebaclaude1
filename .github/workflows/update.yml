@@ -1,0 +1,25 @@
+# Manda los cambios de la app a los celulares que ya tienen el APK instalado, sin reinstalar
+# (EAS Update). Llegan la próxima vez que se abre la app.
+# Se corre a mano desde GitHub › Actions › "Actualizar la app" › Run workflow.
+# Sirve para cambios de pantallas y lógica; si cambia algo nativo (permisos, ícono, paquetes
+# nativos) hace falta un APK nuevo con "Armar APK".
+name: Actualizar la app
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: eas update --channel main --environment preview --platform android --message "${{ github.event.head_commit.message || 'Actualización' }}" --non-interactive

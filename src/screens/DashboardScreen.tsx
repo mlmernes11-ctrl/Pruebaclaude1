@@ -140,7 +140,7 @@ export default function DashboardScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen>
+    <Screen topSafe>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}

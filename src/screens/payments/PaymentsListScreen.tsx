@@ -315,7 +315,7 @@ export default function PaymentsListScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen>
+    <Screen topSafe>
       <LargeTitleHeader
         title="Pagos"
         onAdd={registerPayment}
