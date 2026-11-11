@@ -1,0 +1,23 @@
+# Muestra el estado del último APK armado en Expo y, si terminó, el enlace para descargarlo.
+# Se corre a mano desde GitHub › Actions › "Estado del APK" › Run workflow.
+name: Estado del APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Último armado de Android
+        run: |
+          eas build:list --platform android --limit 1 --non-interactive --json > build.json
+          node -e "const b = require('./build.json')[0]; console.log('ESTADO: ' + b.status); console.log('APK: ' + ((b.artifacts && b.artifacts.buildUrl) || 'todavía no está'));"
