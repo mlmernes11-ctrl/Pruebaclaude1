@@ -38,7 +38,7 @@ export default function PaymentDetailScreen() {
   if (!payment) {
     return (
       <Screen narrow>
-        <Text style={styles.notFound}>Este pago ya no existe.</Text>
+        <Text style={styles.notFound}>Este cobro ya no existe.</Text>
       </Screen>
     );
   }
@@ -53,7 +53,7 @@ export default function PaymentDetailScreen() {
 
   const handleDelete = () => {
     showConfirm({
-      title: '¿Eliminar pago?',
+      title: '¿Eliminar cobro?',
       message: 'La deuda que cubría vuelve a quedar pendiente. Es una acción permanente e irreversible.',
       confirmLabel: 'Eliminar',
       destructive: true,
@@ -85,17 +85,17 @@ export default function PaymentDetailScreen() {
         <ListSection footer={payment.notes ? `Notas: ${payment.notes}` : undefined}>
           <ListRow title="Propiedad" value={property?.title ?? 'Propiedad'} valueTone="muted" />
           <ListRow title="Inquilino" value={tenant?.name ?? 'Inquilino'} valueTone="muted" />
-          <ListRow title="Método" value={payment.method ?? '-'} valueTone="muted" />
+          <ListRow title="Medio de pago" value={payment.method ?? '-'} valueTone="muted" />
         </ListSection>
 
-        <ListSection header="Liquidaciones que cubre">
-          {payment.allocations.length === 0 ? <ListRow title="No se aplicó a ninguna liquidación" /> : null}
+        <ListSection header="Se aplicó a">
+          {payment.allocations.length === 0 ? <ListRow title="No se aplicó a ningún cargo" /> : null}
           {payment.allocations.map((allocation) => {
             const charge = charges.find((c) => c.id === allocation.chargeId);
             return (
               <ListRow
                 key={allocation.chargeId}
-                title={charge ? `${CONCEPT_LABEL[charge.concept]} ${formatPeriodShort(charge.period)}` : 'Liquidación eliminada'}
+                title={charge ? `${CONCEPT_LABEL[charge.concept]} ${formatPeriodShort(charge.period)}` : 'Cargo eliminado'}
                 value={formatMoney(allocation.amount, payment.currency)}
                 valueTone="muted"
                 onPress={charge ? () => navigation.navigate('ChargeForm', { chargeId: allocation.chargeId }) : undefined}
@@ -103,7 +103,7 @@ export default function PaymentDetailScreen() {
             );
           })}
           {credit > 0 ? (
-            <ListRow title="A favor del inquilino" value={formatMoney(credit, payment.currency)} valueTone="primary" />
+            <ListRow title="Saldo a favor" value={formatMoney(credit, payment.currency)} valueTone="primary" />
           ) : null}
         </ListSection>
 
@@ -123,7 +123,7 @@ export default function PaymentDetailScreen() {
 
         <ListSection>
           <ListRow
-            title="Enviar comprobante por WhatsApp"
+            title="Enviar recibo por WhatsApp"
             icon="logo-whatsapp"
             onPress={() =>
               openWhatsapp(
@@ -141,7 +141,7 @@ export default function PaymentDetailScreen() {
         </ListSection>
 
         <ListSection>
-          <ListRow title="Eliminar pago" destructive onPress={handleDelete} />
+          <ListRow title="Eliminar cobro" destructive onPress={handleDelete} />
         </ListSection>
       </ScrollView>
     </Screen>

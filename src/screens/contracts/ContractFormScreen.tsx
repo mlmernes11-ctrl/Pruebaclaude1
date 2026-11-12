@@ -4,7 +4,7 @@
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';
@@ -49,11 +49,36 @@ export default function ContractFormScreen() {
 
   const {
     getContractById, addContract, updateContract, properties, tenants, contracts, getPropertyById, mode,
+    getTenantById, addTenant, updateTenant,
   } = useData();
   const existing = getContractById(contractId);
 
   const [propertyId, setPropertyId] = useState(existing?.propertyId ?? presetPropertyId ?? '');
-  const [tenantId, setTenantId] = useState(existing?.tenantId ?? presetTenantId ?? '');
+  // El inquilino va dentro del contrato: sus datos se cargan acá. Si ya existe (una renovación,
+  // o alguien que alquila dos propiedades), se elige de la lista y sus datos se pueden corregir.
+  const initialTenant = getTenantById(existing?.tenantId ?? presetTenantId);
+  const [tenantId, setTenantId] = useState(initialTenant?.id ?? '');
+  const [tenantName, setTenantName] = useState(initialTenant?.name ?? '');
+  const [tenantDocument, setTenantDocument] = useState(initialTenant?.document ?? '');
+  const [tenantPhone, setTenantPhone] = useState(initialTenant?.phone ?? '');
+  const [tenantEmail, setTenantEmail] = useState(initialTenant?.email ?? '');
+  const [pickingTenant, setPickingTenant] = useState(false);
+  const pickTenant = (id: string) => {
+    const t = getTenantById(id);
+    setTenantId(id);
+    setTenantName(t?.name ?? '');
+    setTenantDocument(t?.document ?? '');
+    setTenantPhone(t?.phone ?? '');
+    setTenantEmail(t?.email ?? '');
+    setPickingTenant(false);
+  };
+  const newTenant = () => {
+    setTenantId('');
+    setTenantName('');
+    setTenantDocument('');
+    setTenantPhone('');
+    setTenantEmail('');
+  };
   const [startDate, setStartDate] = useState(existing?.startDate ?? todayISO());
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
   const presetProperty = getPropertyById(propertyId);
@@ -88,8 +113,8 @@ export default function ContractFormScreen() {
   };
 
   const handleSave = () => {
-    if (!propertyId || !tenantId) {
-      showAlert('Faltan datos', 'Elegí la propiedad y el inquilino.');
+    if (!propertyId || !tenantName.trim()) {
+      showAlert('Faltan datos', 'Elegí la propiedad y completá el nombre del inquilino.');
       return;
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
@@ -112,7 +137,7 @@ export default function ContractFormScreen() {
     }
     const parsedDay = Number(paymentDay);
     if (!Number.isInteger(parsedDay) || parsedDay < 1 || parsedDay > 28) {
-      showAlert('Día inválido', 'El día de pago debe estar entre 1 y 28.');
+      showAlert('Día inválido', 'El día de vencimiento debe estar entre 1 y 28.');
       return;
     }
 
@@ -136,9 +161,15 @@ export default function ContractFormScreen() {
         ? lastPassedAdjustmentPeriod(startDate, months)
         : existing?.lastAdjustedPeriod;
 
+    const tenantData = {
+      name: tenantName.trim(),
+      document: tenantDocument.trim() || undefined,
+      phone: tenantPhone.trim() || undefined,
+      email: tenantEmail.trim() || undefined,
+    };
+
     const payload = {
       propertyId,
-      tenantId,
       startDate,
       endDate,
       rentAmount: parsedRent,
@@ -154,23 +185,27 @@ export default function ContractFormScreen() {
     };
 
     const save = () => {
+      // Inquilino nuevo o corregido, y después el contrato.
+      let savedTenantId = tenantId;
+      if (savedTenantId) updateTenant(savedTenantId, tenantData);
+      else savedTenantId = addTenant(tenantData).id;
       if (existing) {
-        updateContract(existing.id, payload);
+        updateContract(existing.id, { ...payload, tenantId: savedTenantId });
       } else {
-        addContract(payload);
+        addContract({ ...payload, tenantId: savedTenantId });
       }
       smartGoBack(navigation, 'Rentals');
     };
 
-    // Dos contratos activos en una misma propiedad generarían dos liquidaciones por mes.
+    // Dos contratos vigentes en una misma propiedad generarían dos cargos por mes.
     const otherActive = contracts.find(
       (c) => c.id !== existing?.id && c.propertyId === propertyId && c.status === 'activo',
     );
     if (status === 'activo' && otherActive) {
       showConfirm({
-        title: 'La propiedad ya tiene un contrato activo',
+        title: 'La propiedad ya tiene un contrato vigente',
         message:
-          'Si los dos quedan activos, se van a generar dos liquidaciones por mes. Si el anterior terminó, marcalo como finalizado. ¿Guardar igual?',
+          'Si los dos quedan vigentes, se van a generar dos cargos por mes. Si el anterior terminó, finalizalo primero. ¿Guardar igual?',
         confirmLabel: 'Guardar igual',
         onConfirm: save,
       });
@@ -198,15 +233,38 @@ export default function ContractFormScreen() {
           emptyMessage="No hay propiedades. Creá una primero."
           options={propertyOptions}
         />
-        <SelectField
-          label="Inquilino"
-          placeholder="Elegí un inquilino"
-          required
-          selectedId={tenantId}
-          onSelect={setTenantId}
-          emptyMessage="No hay inquilinos. Creá uno primero."
-          options={tenantOptions}
+        <View style={styles.tenantHeader}>
+          <Text style={styles.tenantTitle}>Inquilino</Text>
+          {tenantOptions.length ? (
+            <TouchableOpacity
+              onPress={() => (tenantId ? newTenant() : setPickingTenant((v) => !v))}
+              accessibilityRole="button"
+            >
+              <Text style={styles.link}>{tenantId ? 'Es otro inquilino' : 'Elegir uno existente'}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        {pickingTenant ? (
+          <SelectField
+            label="Inquilino existente"
+            placeholder="Elegí un inquilino"
+            selectedId={tenantId}
+            onSelect={pickTenant}
+            emptyMessage="Todavía no hay inquilinos."
+            options={tenantOptions}
+          />
+        ) : null}
+        <FormField label="Nombre y apellido (o razón social)" value={tenantName} onChangeText={setTenantName} required />
+        <FormField label="DNI o CUIT" value={tenantDocument} onChangeText={setTenantDocument} keyboardType="number-pad" />
+        <FormField label="Teléfono" value={tenantPhone} onChangeText={setTenantPhone} keyboardType="phone-pad" />
+        <FormField
+          label="Mail"
+          value={tenantEmail}
+          onChangeText={setTenantEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
+        <Text style={styles.sectionTitle}>Condiciones</Text>
         <DateField label="Fecha de inicio" value={startDate} onChange={setStartDate} required />
         <DateField label="Fecha de fin" value={endDate} onChange={setEndDate} required />
         <OptionChips label="Moneda del contrato" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
@@ -254,7 +312,7 @@ export default function ContractFormScreen() {
           keyboardType="numeric"
         />
         <FormField
-          label="Día de pago mensual"
+          label="Día de vencimiento"
           value={paymentDay}
           onChangeText={setPaymentDay}
           placeholder="1-28"
@@ -272,6 +330,32 @@ export default function ContractFormScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
+  tenantHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  tenantTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  link: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.primary,
+  },
   hint: {
     fontSize: fontSize.sm,
     color: colors.textMuted,

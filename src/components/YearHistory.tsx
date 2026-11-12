@@ -21,7 +21,7 @@ import { plural } from '../utils/text';
 const SEGMENTS = [
   { key: 'paid', label: 'Cobrado', colorKey: 'chartPaid' },
   { key: 'overdue', label: 'En mora', colorKey: 'chartOverdue' },
-  { key: 'pending', label: 'Por vencer', colorKey: 'chartPending' },
+  { key: 'pending', label: 'A vencer', colorKey: 'chartPending' },
 ] as const;
 
 const hasAmount = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
@@ -74,7 +74,7 @@ export default function YearHistory({
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>Cobrado en {year}</Text>
         {total.count === 0 ? (
-          <Text style={styles.heroDetail}>No hay liquidaciones en {year}.</Text>
+          <Text style={styles.heroDetail}>No hay cargos en {year}.</Text>
         ) : (
           <>
             <Text style={styles.heroValue}>{Math.round(total.shares.paid * 100)} %</Text>
@@ -98,7 +98,7 @@ export default function YearHistory({
               ))}
             </View>
             {total.sharesByAmount ? null : (
-              <Text style={styles.note}>Porcentaje por cantidad de liquidaciones: falta la cotización del dólar.</Text>
+              <Text style={styles.note}>Porcentaje por cantidad de cargos: falta la cotización del dólar.</Text>
             )}
           </>
         )}
@@ -128,7 +128,7 @@ function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: numbe
   let caption = 'Todo cobrado';
   let captionColor = colors.success;
   if (row.overdueCount) {
-    caption = `En mora ${inPesos(row.overdue, rate)} · ${plural(row.overdueCount, 'liquidación', 'liquidaciones')}`;
+    caption = `En mora ${inPesos(row.overdue, rate)} · ${plural(row.overdueCount, 'cargo', 'cargos')}`;
     captionColor = colors.danger;
   } else if (hasAmount(unpaid)) {
     caption = `Por cobrar ${inPesos(unpaid, rate)}`;

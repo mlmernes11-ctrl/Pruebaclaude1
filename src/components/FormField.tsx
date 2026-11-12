@@ -24,6 +24,7 @@ export default function FormField({
   keyboardType,
   multiline,
   required,
+  autoCapitalize,
 }: {
   label: string;
   value: string;
@@ -32,6 +33,7 @@ export default function FormField({
   keyboardType?: KeyboardTypeOptions;
   multiline?: boolean;
   required?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -47,6 +49,7 @@ export default function FormField({
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
         multiline={multiline}
         style={[styles.input, multiline && styles.multiline]}
       />

@@ -1,8 +1,8 @@
 // =====================================================================
 // Finalizar o eliminar un contrato
 // ---------------------------------------------------------------------
-// Finalizar es lo recomendado: conserva todo el historial y deja de generar liquidaciones.
-// Eliminar borra el contrato con sus liquidaciones y pagos, así que pide confirmación.
+// Finalizar es lo recomendado: conserva todo el historial y deja de generar cargos.
+// Eliminar borra el contrato con sus cargos y cobros, así que pide confirmación.
 // =====================================================================
 
 import { showConfirm } from '../components/DialogHost';
@@ -32,7 +32,7 @@ export function confirmDeleteContract(contract: Contract, deleteContract: (id: s
   showConfirm({
     title: '¿Eliminar contrato?',
     message:
-      'Se elimina el contrato con todo su historial de pagos y liquidaciones. Es una acción permanente e irreversible.',
+      'Se elimina el contrato con todo su historial de cargos y cobros. Es una acción permanente e irreversible.',
     confirmLabel: 'Eliminar',
     destructive: true,
     onConfirm: () => {

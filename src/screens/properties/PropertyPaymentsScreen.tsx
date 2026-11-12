@@ -1,5 +1,8 @@
 // =====================================================================
-// Pantalla: Historial por mes de una propiedad
+// Pantalla: Historial por mes
+// ---------------------------------------------------------------------
+// El año mes a mes (lo cargado, lo cobrado y lo que quedó en mora). Con una propiedad, solo la
+// de esa propiedad; sin propiedad (desde la pestaña Cobros), la de todas.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -13,13 +16,13 @@ import { fontSize, spacing } from '../../theme';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-// El año de una propiedad mes a mes; al tocar un mes se ven sus liquidaciones.
+// Al tocar un mes se ven sus cargos.
 export default function PropertyPaymentsScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { propertyId } = route.params;
-  const { getPropertyById, chargeViewsForProperty } = useData();
+  const propertyId = route.params?.propertyId as string | undefined;
+  const { getPropertyById, chargeViewsForProperty, chargeViews } = useData();
   const [year, setYear] = useState(() => new Date().getFullYear());
   const property = getPropertyById(propertyId);
 
@@ -27,11 +30,13 @@ export default function PropertyPaymentsScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.titleBlock}>
-          <Text style={styles.title}>{property?.title ?? 'Propiedad'}</Text>
-          <Text style={styles.subtitle}>Liquidaciones y pagos de todos sus contratos</Text>
+          <Text style={styles.title}>{property?.title ?? 'Todas las propiedades'}</Text>
+          <Text style={styles.subtitle}>
+            {property ? 'Cargos y cobros de todos sus contratos' : 'Cargos y cobros de todos los contratos'}
+          </Text>
         </View>
         <YearHistory
-          views={chargeViewsForProperty(propertyId)}
+          views={propertyId ? chargeViewsForProperty(propertyId) : chargeViews}
           year={year}
           onChangeYear={setYear}
           onPressMonth={(period) => navigation.navigate('MonthDetail', { period, propertyId })}

@@ -1,7 +1,7 @@
 // =====================================================================
 // Navegación
 // ---------------------------------------------------------------------
-// Las 4 pestañas de abajo (Inicio, Alquileres, Pagos, Menú) y las pantallas que se abren
+// Las 4 pestañas de abajo (Inicio, Alquileres, Cobros, Menú) y las pantallas que se abren
 // dentro de cada una. Para agregar una pantalla nueva, se registra acá.
 // =====================================================================
 
@@ -97,7 +97,7 @@ function RentalsStackNavigator() {
       <RentalsStack.Screen
         name="PropertyPayments"
         component={PropertyPaymentsScreen}
-        options={{ title: 'Historial de pagos' }}
+        options={{ title: 'Historial por mes' }}
       />
       <RentalsStack.Screen
         name="MonthDetail"
@@ -136,19 +136,24 @@ function PaymentsStackNavigator() {
       <PaymentsStack.Screen
         name="PaymentForm"
         component={PaymentFormScreen}
-        options={{ title: 'Registrar pago' }}
+        options={{ title: 'Registrar cobro' }}
       />
       <PaymentsStack.Screen
         name="PaymentDetail"
         component={PaymentDetailScreen}
-        options={{ title: 'Pago recibido' }}
+        options={{ title: 'Cobro' }}
       />
       <PaymentsStack.Screen
         name="ChargeForm"
         component={ChargeFormScreen}
         options={({ route }: any) => ({
-          title: route.params?.chargeId ? 'Liquidación' : 'Nueva liquidación',
+          title: route.params?.chargeId ? 'Cargo' : 'Agregar cargo',
         })}
+      />
+      <PaymentsStack.Screen
+        name="History"
+        component={PropertyPaymentsScreen}
+        options={{ title: 'Historial por mes' }}
       />
       <PaymentsStack.Screen
         name="MonthDetail"
@@ -270,7 +275,7 @@ export default function RootNavigator() {
       >
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
         <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
-        <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Pagos' }} />
+        <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Cobros' }} />
         <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Menú' }} />
       </Tab.Navigator>
     </NavigationContainer>

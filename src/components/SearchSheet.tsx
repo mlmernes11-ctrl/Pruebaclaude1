@@ -54,9 +54,9 @@ const SCOPE_ICON: Record<SearchScope, keyof typeof Ionicons.glyphMap> = {
 };
 
 const PLACEHOLDER: Record<SearchScope, string> = {
-  propiedades: 'Buscar carpeta, calle, barrio, inquilino…',
-  inquilinos: 'Buscar nombre, teléfono, DNI, carpeta…',
-  contratos: 'Buscar carpeta, inquilino, calle, estado…',
+  propiedades: 'Buscar propiedad, calle, barrio, inquilino…',
+  inquilinos: 'Buscar nombre, teléfono, DNI, propiedad…',
+  contratos: 'Buscar propiedad, inquilino, calle, estado…',
 };
 
 interface SearchRecord {
@@ -128,7 +128,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         key: `p-${property.id}`,
         scope: 'propiedades',
         fields: [
-          { label: 'Carpeta', value: property.title },
+          { label: 'Propiedad', value: property.title },
           { label: 'Dirección', value: property.address },
           { label: 'Barrio', value: property.neighborhood },
           { label: 'Inquilino', value: tenant?.name },
@@ -154,7 +154,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         fields: [
           { label: 'Nombre', value: tenant.name },
           { label: 'Teléfono', value: tenant.phone, digits: true },
-          { label: 'Carpeta', value: ownProperties.map((p) => p!.title).join(', ') },
+          { label: 'Propiedad', value: ownProperties.map((p) => p!.title).join(', ') },
           { label: 'Documento', value: tenant.document, digits: true },
           { label: 'Email', value: tenant.email },
           { label: 'Dirección', value: ownProperties.map((p) => p!.address).join(', ') },
@@ -162,7 +162,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         ],
         titleFields: [0],
         subtitleFields: [1, 2],
-        badge: hasActive ? undefined : { label: 'Sin contrato activo', tone: 'neutral' },
+        badge: hasActive ? undefined : { label: 'Sin contrato vigente', tone: 'neutral' },
         open: go('RentalsTab', 'TenantDetail', { tenantId: tenant.id }),
       };
     });
@@ -174,7 +174,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
         key: `c-${contract.id}`,
         scope: 'contratos',
         fields: [
-          { label: 'Carpeta', value: property?.title ?? 'Propiedad' },
+          { label: 'Propiedad', value: property?.title ?? 'Propiedad' },
           { label: 'Inquilino', value: tenant?.name ?? 'Inquilino' },
           { label: 'Vigencia', value: `${formatDate(contract.startDate)} al ${formatDate(contract.endDate)}` },
           { label: 'Dirección', value: property?.address },

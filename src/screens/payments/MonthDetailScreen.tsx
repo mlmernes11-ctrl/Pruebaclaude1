@@ -59,15 +59,15 @@ export default function MonthDetailScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.subtitle}>
-          {property ? property.title : 'Todas las propiedades'} · {plural(items.length, 'liquidación', 'liquidaciones')}
+          {property ? property.title : 'Todas las propiedades'} · {plural(items.length, 'cargo', 'cargos')}
         </Text>
         {items.length ? (
           <>
             <ListSection>
-              <ListRow title="Liquidado" value={describeTotals(row.billed, rate).main} />
+              <ListRow title="Importe del mes" value={describeTotals(row.billed, rate).main} />
               <ListRow title="Cobrado" value={describeTotals(row.paid, rate).main} valueTone="muted" />
               <ListRow
-                title="Sin cobrar"
+                title="Saldo"
                 value={describeTotals(unpaid, rate).main}
                 valueTone={row.overdueCount ? 'danger' : 'muted'}
               />
@@ -91,7 +91,7 @@ export default function MonthDetailScreen() {
           </>
         ) : (
           <View>
-            <EmptyState icon="calendar-outline" title="Sin liquidaciones" message="No hay liquidaciones en este mes." />
+            <EmptyState icon="calendar-outline" title="Sin cargos" message="No hay cargos en este mes." />
           </View>
         )}
       </ScrollView>

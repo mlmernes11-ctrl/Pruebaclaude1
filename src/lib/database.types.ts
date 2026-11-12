@@ -58,9 +58,17 @@ export type Database = {
           source: string;
         };
       };
+      payment_allocations: {
+        Row: {
+          amount: number;
+          charge_id: string;
+          id: string;
+          payment_id: string;
+          user_id: string;
+        };
+      };
       payments: {
         Row: {
-          allocations: Json;
           amount: number;
           concept: string;
           contract_id: string;

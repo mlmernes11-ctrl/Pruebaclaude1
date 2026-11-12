@@ -80,7 +80,7 @@ export default function SettingsScreen() {
     showConfirm({
       title: '¿Eliminar tu cuenta?',
       message:
-        'Se eliminan la cuenta y todos sus datos: propiedades, inquilinos, contratos, liquidaciones y pagos. ' +
+        'Se eliminan la cuenta y todos sus datos: propiedades, inquilinos, contratos, cargos y cobros. ' +
         'Es una acción permanente e irreversible.',
       confirmLabel: 'Eliminar cuenta',
       destructive: true,

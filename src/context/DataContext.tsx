@@ -12,7 +12,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { describeRemoteError, diffData, hasChanges, isConflict, loadRemoteData, pushChanges } from '../lib/remoteStore';
+import {
+  describeRemoteError,
+  diffData,
+  hasChanges,
+  isConflict,
+  loadRemoteData,
+  pushChanges,
+  runAccountBilling,
+} from '../lib/remoteStore';
 import { AppData, Charge, Contract, Payment, Property, PropertyStatus, Tenant } from '../types';
 import { buildMissingCharges, syncUnpaidAutoCharges } from '../utils/chargeGeneration';
 import { todayISO } from '../utils/format';
@@ -51,6 +59,8 @@ interface DataContextValue extends AppData {
   today: string;
   // Vuelve a leer la fecha de hoy (se usa al deslizar hacia abajo para actualizar).
   refreshToday: () => void;
+  // Cuenta real: el servidor revisa lo automático y se vuelve a leer todo (deslizar hacia abajo).
+  pullFromServer: () => Promise<void>;
 
   // Cada liquidación (sin las anuladas) con lo pagado, lo que falta y su estado.
   chargeViews: ChargeView[];
@@ -138,6 +148,47 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
   const dataRef = useRef<AppData>(EMPTY_DATA);
   dataRef.current = data;
 
+  // ── Lectura del servidor (cuenta real) ─────────────────────────────
+
+  // Vuelve a leer todo del servidor sin mostrar la ruedita. Va en la misma fila que los
+  // guardados y solo reemplaza los datos si no hay cambios propios sin enviar, así nunca pisa
+  // algo que todavía no se guardó.
+  // Si el servidor cambió algo pero no se pudo releer (había cambios propios sin enviar), queda
+  // pendiente y se relee después del próximo guardado.
+  const staleRef = useRef(false);
+  const refreshFromServer = useCallback((): Promise<void> => {
+    if (mode !== 'remote') return Promise.resolve();
+    queueRef.current = queueRef.current.then(async () => {
+      if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
+      try {
+        const remote = await loadRemoteData();
+        if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
+        syncedRef.current = remote;
+        staleRef.current = false;
+        setData(remote);
+      } catch {
+        // Sin conexión: se sigue con lo que hay y se reintenta la próxima vez.
+      }
+    });
+    return queueRef.current;
+  }, [mode]);
+
+  // Lo automático de la cuenta (cargos del mes, ajustes y saldo a favor) lo hace el servidor.
+  // Si cambió algo, se vuelve a leer. No se espera desde adentro de la fila de guardados: la
+  // relectura se encola después.
+  const runServerBilling = useCallback(async () => {
+    const changed = await runAccountBilling().catch(() => 0);
+    if (changed > 0) staleRef.current = true;
+    if (staleRef.current) void refreshFromServer();
+  }, [refreshFromServer]);
+
+  // Deslizar hacia abajo para actualizar: el servidor revisa lo automático y se vuelve a leer todo.
+  const pullFromServer = useCallback(async () => {
+    if (mode !== 'remote') return;
+    await runAccountBilling().catch(() => 0);
+    await refreshFromServer();
+  }, [mode, refreshFromServer]);
+
   // ── Carga inicial ──────────────────────────────────────────────────
   useEffect(() => {
     let active = true;
@@ -150,6 +201,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
           syncedRef.current = remote;
           setData(remote);
           setLoadError(undefined);
+          void runServerBilling();
         } catch (e) {
           if (active) setLoadError(describeRemoteError(e));
         } finally {
@@ -173,7 +225,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     return () => {
       active = false;
     };
-  }, [mode, reloadKey]);
+  }, [mode, reloadKey, runServerBilling]);
 
   // ── Guardado ───────────────────────────────────────────────────────
 
@@ -188,13 +240,15 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
         await pushChanges(changes);
         syncedRef.current = snapshot;
         setSyncError(undefined);
+        // Lo guardado puede pedir cargos nuevos (un contrato nuevo) o usar saldo a favor.
+        void runServerBilling();
       } catch (e) {
         setSyncError(describeRemoteError(e));
-        // Otro dispositivo ya creó la misma liquidación del mes: se recarga lo del servidor.
+        // El servidor ya tenía un cargo igual: se recarga lo del servidor.
         if (isConflict(e)) setReloadKey((k) => k + 1);
       }
     });
-  }, []);
+  }, [runServerBilling]);
 
   // Cada vez que cambian los datos, se guardan (en el servidor o en el celular).
   useEffect(() => {
@@ -225,45 +279,34 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
   }, []);
 
   // Cuenta real: al volver a la app (o a la pestaña del navegador) se vuelve a leer lo del
-  // servidor, que pudo cambiar desde otro dispositivo o por las tareas diarias (liquidaciones
-  // nuevas, ajustes del alquiler). Va en la misma fila que los guardados y solo reemplaza los
-  // datos si no hay cambios propios sin enviar, así nunca pisa algo que todavía no se guardó.
+  // servidor, que pudo cambiar desde otro dispositivo o por las tareas diarias. Como mucho una
+  // vez cada 30 segundos.
   const lastRefreshRef = useRef(0);
   useEffect(() => {
     if (mode !== 'remote' || loading || loadError) return;
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active' || Date.now() - lastRefreshRef.current < 30_000) return;
       lastRefreshRef.current = Date.now();
-      queueRef.current = queueRef.current.then(async () => {
-        if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
-        try {
-          const remote = await loadRemoteData();
-          if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
-          syncedRef.current = remote;
-          setData(remote);
-        } catch {
-          // Sin conexión: se sigue con lo que hay y se reintenta la próxima vez.
-        }
-      });
+      void pullFromServer();
     });
     return () => subscription.remove();
-  }, [mode, loading, loadError]);
+  }, [mode, loading, loadError, pullFromServer]);
 
-  // Crea las liquidaciones del mes (y las de meses que falten desde que se cargó el contrato).
+  // Modo demo (sin servidor): la app misma crea los cargos del mes y aplica el saldo a favor.
+  // Con una cuenta real eso lo hace el servidor (ver runServerBilling).
   useEffect(() => {
-    if (loading || loadError) return;
+    if (mode !== 'demo' || loading || loadError) return;
     if (buildMissingCharges(data.contracts, data.properties, data.charges).length === 0) return;
     setData((prev) => ({
       ...prev,
       charges: [...prev.charges, ...buildMissingCharges(prev.contracts, prev.properties, prev.charges)],
     }));
-  }, [loading, loadError, today, data.contracts, data.properties, data.charges]);
+  }, [mode, loading, loadError, today, data.contracts, data.properties, data.charges]);
 
-  // El dinero que quedó a favor de un inquilino paga solo sus próximas liquidaciones.
   useEffect(() => {
-    if (loading || loadError || !applyCredits(data.payments, data.charges)) return;
+    if (mode !== 'demo' || loading || loadError || !applyCredits(data.payments, data.charges)) return;
     setData((prev) => ({ ...prev, payments: applyCredits(prev.payments, prev.charges) ?? prev.payments }));
-  }, [loading, loadError, data.payments, data.charges]);
+  }, [mode, loading, loadError, data.payments, data.charges]);
 
   // ── Estado de cada liquidación ─────────────────────────────────────
 
@@ -473,6 +516,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     retrySync: syncNow,
     today,
     refreshToday: () => setToday(todayISO()),
+    pullFromServer,
     chargeViews,
     addProperty,
     updateProperty,

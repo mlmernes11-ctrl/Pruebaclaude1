@@ -34,13 +34,13 @@ function heroFor(summary: PropertySummary, today: string) {
       tone: 'danger' as const,
       label: 'Con deuda',
       value: formatTotals(overdue.totals),
-      detail: `${plural(overdue.count, 'liquidación vencida', 'liquidaciones vencidas')} · ${plural(days, 'día', 'días')} de mora`,
+      detail: `${plural(overdue.count, 'cargo vencido', 'cargos vencidos')} · ${plural(days, 'día', 'días')} de mora`,
     };
   }
   if (collection === 'por-vencer') {
     return {
       tone: 'warning' as const,
-      label: 'Por vencer',
+      label: 'A vencer',
       value: formatTotals(pending.totals),
       detail: `Vence el ${formatDate(nextDueDate)}`,
     };
@@ -50,7 +50,7 @@ function heroFor(summary: PropertySummary, today: string) {
       tone: 'success' as const,
       label: 'Al día',
       value: 'Sin deuda',
-      detail: 'Todas las liquidaciones están pagas',
+      detail: 'Todos los cargos están pagos',
     };
   }
   if (collection === 'sin-contrato') {
@@ -118,11 +118,11 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
   // Lo que debe el inquilino actual: vencido o por vencer de su contrato.
   const owed = active ? propertyCharges.filter((v) => v.charge.contractId === active.id && isOutstanding(v)) : [];
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
-  // Abre la pestaña Pagos ya filtrada por esta propiedad.
-  const openPayments = (view: 'pagos' | 'liquidaciones') =>
+  // Abre la pestaña Cobros ya filtrada por esta propiedad (todos sus cargos o todos sus cobros).
+  const openPayments = (mode: 'cargos' | 'cobros') =>
     navigation.navigate('PaymentsTab', {
       screen: 'PaymentsList',
-      params: { view, propertyId: property.id, filter: 'todos', month: 'todos' },
+      params: { mode, propertyId: property.id },
     });
 
   // — Dibujo de la pantalla —
@@ -144,7 +144,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         {summary.collection === 'deuda' && summary.pending.count ? (
           <View style={styles.heroExtra}>
             <View style={styles.heroExtraRow}>
-              <Text style={styles.heroExtraLabel}>Por vencer</Text>
+              <Text style={styles.heroExtraLabel}>A vencer</Text>
               <Text style={styles.heroExtraValue}>{formatTotals(summary.pending.totals)}</Text>
             </View>
             <Text style={styles.heroExtraNote}>Vence el {formatDate(summary.nextDueDate)}</Text>
@@ -155,7 +155,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
       {active ? (
         <View style={styles.primaryAction}>
           <Button
-            label="Registrar pago"
+            label="Registrar cobro"
             onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
           />
           {owed.length ? (
@@ -171,12 +171,11 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <View style={styles.heroGap} />
       )}
 
-      <ListSection header="Contrato">
+      <ListSection header={active ? 'Contrato vigente' : 'Contrato'}>
         {active ? (
           <ListRow
             title="Inquilino"
-            value={tenant?.name ?? 'Inquilino'}
-            valueTone="muted"
+            subtitle={[tenant?.name ?? 'Inquilino', tenant?.phone].filter(Boolean).join(' · ')}
             onPress={tenant ? () => navigation.navigate('TenantDetail', { tenantId: tenant.id }) : undefined}
           />
         ) : null}
@@ -190,7 +189,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         {active ? (
           <ListRow
             title="Alquiler"
-            value={`${formatMoney(active.rentAmount, active.currency)} · día ${active.paymentDay}`}
+            value={`${formatMoney(active.rentAmount, active.currency)} · vence el ${active.paymentDay}`}
             valueTone="muted"
           />
         ) : null}
@@ -208,20 +207,20 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         )}
       </ListSection>
 
-      <ListSection header="Pagos">
+      <ListSection header="Cuenta corriente">
         <ListRow
-          title="Liquidaciones"
+          title="Cargos"
           icon="document-text-outline"
           value={summary.overdue.count ? `${summary.overdue.count} en mora` : String(chargeCount)}
           valueTone={summary.overdue.count ? 'danger' : 'muted'}
-          onPress={() => openPayments('liquidaciones')}
+          onPress={() => openPayments('cargos')}
         />
         <ListRow
-          title="Pagos recibidos"
+          title="Cobros"
           icon="wallet-outline"
           value={String(paymentCount)}
           valueTone="muted"
-          onPress={() => openPayments('pagos')}
+          onPress={() => openPayments('cobros')}
         />
         <ListRow
           title="Historial por mes"
@@ -251,7 +250,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
       </ListSection>
 
       {pastContracts.length ? (
-        <ListSection header="Contratos anteriores">
+        <ListSection header="Historial de contratos">
           {pastContracts.map((contract) => (
             <ListRow
               key={contract.id}

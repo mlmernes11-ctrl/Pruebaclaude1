@@ -98,18 +98,18 @@ export default function ChargeFormScreen() {
   // — Guardar (avisa si ya hay una liquidación igual) —
   const handleSave = () => {
     if (!contract) {
-      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde la liquidación.');
+      showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el cargo.');
       return;
     }
     const parsedAmount = parseAmount(amount) ?? 0;
     if (!(parsedAmount > 0)) {
-      showAlert('Monto inválido', 'Ingresá el monto de la liquidación.');
+      showAlert('Monto inválido', 'Ingresá el importe del cargo.');
       return;
     }
     if (existing && parsedAmount < existing.paid) {
       showAlert(
-        'Monto menor a lo pagado',
-        `Ya se pagaron ${formatMoney(existing.paid, existing.charge.currency)} de esta liquidación.`,
+        'Importe menor a lo cobrado',
+        `Ya se cobraron ${formatMoney(existing.paid, existing.charge.currency)} de este cargo.`,
       );
       return;
     }
@@ -142,7 +142,7 @@ export default function ChargeFormScreen() {
     );
     if (duplicate) {
       showConfirm({
-        title: 'Ya hay una liquidación igual',
+        title: 'Ya hay un cargo igual',
         message: `Este contrato ya tiene ${CONCEPT_LABEL[concept].toLowerCase()} de ${formatPeriod(
           period,
         )} por ${formatMoney(duplicate.charge.amount, duplicate.charge.currency)}. ¿Guardar otra igual?`,
@@ -158,10 +158,10 @@ export default function ChargeFormScreen() {
   const handleVoid = () => {
     if (!charge || !existing) return;
     showConfirm({
-      title: '¿Eliminar liquidación?',
+      title: '¿Eliminar cargo?',
       message:
         'Es una acción permanente e irreversible.' +
-        (existing.paid > 0 ? ' Lo que ya se pagó queda como saldo a favor del inquilino.' : ''),
+        (existing.paid > 0 ? ' Lo que ya se cobró queda como saldo a favor del inquilino.' : ''),
       confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
@@ -189,13 +189,13 @@ export default function ChargeFormScreen() {
               <Badge label={CHARGE_STATUS_LABEL[existing.status]} tone={CHARGE_STATUS_BADGE[existing.status]} />
             </View>
             <View style={styles.summaryAmounts}>
-              <AmountLine label="Liquidado" amount={charge.amount} currency={charge.currency} />
-              <AmountLine label="Pagado" amount={existing.paid} currency={charge.currency} />
-              <AmountLine label="Resta" amount={existing.balance} currency={charge.currency} strong />
+              <AmountLine label="Importe" amount={charge.amount} currency={charge.currency} />
+              <AmountLine label="Cobrado" amount={existing.paid} currency={charge.currency} />
+              <AmountLine label="Saldo" amount={existing.balance} currency={charge.currency} strong />
             </View>
             {appliedPayments.length ? (
               <View style={styles.applied}>
-                <Text style={styles.appliedTitle}>Pagos aplicados</Text>
+                <Text style={styles.appliedTitle}>Cobros aplicados</Text>
                 {appliedPayments.map((payment) => {
                   const applied = payment.allocations.find((a) => a.chargeId === charge.id)!.amount;
                   return (
@@ -213,7 +213,7 @@ export default function ChargeFormScreen() {
             ) : null}
             {existing.balance > 0 ? (
               <Button
-                label="Registrar pago de esta liquidación"
+                label="Registrar cobro de este cargo"
                 onPress={() =>
                   navigation.navigate('PaymentForm', {
                     contractId: charge.contractId,
@@ -274,7 +274,7 @@ export default function ChargeFormScreen() {
           <OptionChips label="Moneda" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         ) : null}
         <FormField
-          label={`Monto de la liquidación (${CURRENCY_SYMBOL[currency]})`}
+          label={`Importe del cargo (${CURRENCY_SYMBOL[currency]})`}
           value={amount}
           onChangeText={setAmount}
           placeholder="0"
@@ -283,9 +283,9 @@ export default function ChargeFormScreen() {
         />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />
 
-        <Button label={charge ? 'Guardar cambios' : 'Crear liquidación'} onPress={handleSave} />
+        <Button label={charge ? 'Guardar cambios' : 'Agregar cargo'} onPress={handleSave} />
         {charge ? (
-          <Button label="Eliminar liquidación" variant="dangerOutline" onPress={handleVoid} style={styles.voidButton} />
+          <Button label="Eliminar cargo" variant="dangerOutline" onPress={handleVoid} style={styles.voidButton} />
         ) : null}
       </ScrollView>
     </Screen>

@@ -2,7 +2,7 @@
 // Mensajes por WhatsApp
 // ---------------------------------------------------------------------
 // Arma el enlace de WhatsApp (con el mensaje ya escrito) para recordar una deuda o mandar el
-// comprobante de un pago. Si el inquilino no tiene teléfono cargado, WhatsApp abre igual y
+// recibo de un cobro. Si el inquilino no tiene teléfono cargado, WhatsApp abre igual y
 // deja elegir el contacto.
 // =====================================================================
 
@@ -42,7 +42,7 @@ export function debtReminderText(tenant: Tenant | undefined, property: Property 
   });
   return [
     `Hola${firstName(tenant) ? ` ${firstName(tenant)}` : ''}, te escribo por ${property?.title ?? 'el alquiler'}.`,
-    'Te paso el detalle de lo pendiente:',
+    'Te paso el detalle del saldo pendiente:',
     '',
     ...lines,
     '',
@@ -52,9 +52,9 @@ export function debtReminderText(tenant: Tenant | undefined, property: Property 
   ].join('\n');
 }
 
-// ── Comprobante de pago ───────────────────────────────────────────────
+// ── Recibo ───────────────────────────────────────────────────────────
 
-// Un comprobante con todo lo cobrado en el mismo recibo (alquiler, expensas, etc.).
+// Un recibo con todo lo cobrado junto (alquiler, expensas, etc.).
 export function receiptText(
   payments: Payment[],
   tenant: Tenant | undefined,
@@ -79,14 +79,14 @@ export function receiptText(
   const owed = emptyTotals();
   stillOwed.forEach((v) => addToTotals(owed, v.balance, v.charge.currency));
   return [
-    '*Comprobante de pago*',
+    '*Recibo*',
     `Propiedad: ${property?.title ?? '-'}${property?.address ? ` (${property.address})` : ''}`,
     `Inquilino: ${tenant?.name ?? '-'}`,
     `Fecha: ${formatDate(first.date)}${first.method ? ` · ${first.method}` : ''}`,
     '',
     ...lines,
     '',
-    `Total recibido: ${formatTotals(total)}`,
-    owed.USD > 0 || owed.ARS > 0 ? `Queda pendiente: ${formatTotals(owed)}` : 'No queda nada pendiente. ¡Gracias!',
+    `Total: ${formatTotals(total)}`,
+    owed.USD > 0 || owed.ARS > 0 ? `Saldo pendiente: ${formatTotals(owed)}` : 'Sin saldo pendiente. ¡Gracias!',
   ].join('\n');
 }

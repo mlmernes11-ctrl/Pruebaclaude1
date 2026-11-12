@@ -1,7 +1,10 @@
 // =====================================================================
 // Pantalla: Alquileres
 // ---------------------------------------------------------------------
-// Pestaña con tres vistas: propiedades, inquilinos y contratos.
+// Una sola lista: cada propiedad con su contrato vigente (inquilino y hasta cuándo) y cómo
+// viene el cobro. Filtros arriba (Todas · Alquiladas · Disponibles · En mora). Los contratos y
+// los inquilinos viven dentro de cada propiedad; el buscador los encuentra igual.
+// En pantalla grande: la lista a la izquierda y la ficha de la propiedad a la derecha.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -9,104 +12,72 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
 import Screen from '../../components/Screen';
+import SegmentedControl from '../../components/SegmentedControl';
 import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { useIsDesktop } from '../../hooks/useIsDesktop';
 import { radius, spacing } from '../../theme';
+import { summarizeProperty } from '../../utils/propertySummary';
 import { compareTitles } from '../../utils/text';
-import { ContractDetail } from '../contracts/ContractDetailScreen';
 import { PropertyDetail } from '../properties/PropertyDetailScreen';
-import { TenantDetail } from '../tenants/TenantDetailScreen';
-import SegmentedControl from '../../components/SegmentedControl';
-import ContractsList from './ContractsList';
-import PropertiesList from './PropertiesList';
-import TenantsList from './TenantsList';
+import PropertiesList, { PropertyFilterKey, matchesFilter } from './PropertiesList';
 
-// ── Constantes y funciones auxiliares ─────────────────────────────────
+// ── Constantes ────────────────────────────────────────────────────────
 
-export type RentalsView = 'propiedades' | 'inquilinos' | 'contratos';
-
-const VIEWS: { value: RentalsView; label: string; form: string; addLabel: string }[] = [
-  { value: 'propiedades', label: 'Propiedades', form: 'PropertyForm', addLabel: 'Nueva propiedad' },
-  { value: 'inquilinos', label: 'Inquilinos', form: 'TenantForm', addLabel: 'Nuevo inquilino' },
-  { value: 'contratos', label: 'Contratos', form: 'ContractForm', addLabel: 'Nuevo contrato' },
+const FILTERS: { value: PropertyFilterKey; label: string }[] = [
+  { value: 'todas', label: 'Todas' },
+  { value: 'alquiladas', label: 'Alquiladas' },
+  { value: 'disponibles', label: 'Disponibles' },
+  { value: 'mora', label: 'En mora' },
 ];
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-// Propiedades, inquilinos y contratos comparten pestaña; "+" crea lo que muestra la vista actual.
 export default function RentalsScreen() {
   const styles = useStyles();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const [view, setView] = useState<RentalsView>('propiedades');
-  const current = VIEWS.find((v) => v.value === view)!;
+  const desktop = useIsDesktop();
+  const { properties, contracts, chargeViews, tenants } = useData();
+  const [filter, setFilter] = useState<PropertyFilterKey>('todas');
+  const [selected, setSelected] = useState<string>();
 
-  // El Inicio puede abrir una vista en particular (por ejemplo "Ver todas").
+  // El Inicio puede abrir la lista con un filtro (por ejemplo "Ver todas").
   useEffect(() => {
-    const requested = route.params?.view as RentalsView | undefined;
-    if (requested) setView(requested);
+    const requested = route.params?.filter as PropertyFilterKey | undefined;
+    if (requested) setFilter(requested);
   }, [route.params]);
 
-  // — Pantalla grande: lista a la izquierda y ficha de lo elegido a la derecha —
-  const desktop = useIsDesktop();
-  const { properties, tenants, contracts } = useData();
-  const [selected, setSelected] = useState<Record<RentalsView, string | undefined>>({
-    propiedades: undefined,
-    inquilinos: undefined,
-    contratos: undefined,
-  });
-  // Si no se eligió nada (o lo elegido se borró), se muestra el primero de la lista.
-  const firstId = {
-    propiedades: [...properties].sort((a, b) => compareTitles(a.title, b.title))[0]?.id,
-    inquilinos: [...tenants].sort((a, b) => compareTitles(a.name, b.name))[0]?.id,
-    // Mismo orden que la lista: primero los activos, después por carpeta.
-    contratos: [...contracts].sort(
-      (a, b) =>
-        Number(b.status === 'activo') - Number(a.status === 'activo') ||
-        compareTitles(
-          properties.find((p) => p.id === a.propertyId)?.title ?? '',
-          properties.find((p) => p.id === b.propertyId)?.title ?? '',
-        ),
-    )[0]?.id,
-  }[view];
-  const exists = {
-    propiedades: properties.some((p) => p.id === selected.propiedades),
-    inquilinos: tenants.some((t) => t.id === selected.inquilinos),
-    contratos: contracts.some((c) => c.id === selected.contratos),
-  }[view];
-  const selectedId = exists ? selected[view] : firstId;
-  const select = (id: string) => setSelected((prev) => ({ ...prev, [view]: id }));
-  const listProps = desktop ? { onSelect: select, selectedId } : {};
+  // Pantalla grande: si no se eligió nada (o lo elegido ya no está en la lista), la primera.
+  const visible = [...properties]
+    .sort((a, b) => compareTitles(a.title, b.title))
+    .filter((p) => matchesFilter(summarizeProperty(p, contracts, chargeViews, tenants), filter));
+  const selectedId = visible.some((p) => p.id === selected) ? selected : visible[0]?.id;
 
-  const list = (
-    <>
-      {view === 'propiedades' ? <PropertiesList {...listProps} /> : null}
-      {view === 'inquilinos' ? <TenantsList {...listProps} /> : null}
-      {view === 'contratos' ? <ContractsList {...listProps} /> : null}
-    </>
+  const filters = (
+    <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} style={desktop ? styles.segmentInline : undefined} />
   );
 
   return (
     <Screen topSafe>
       <LargeTitleHeader
         title="Alquileres"
-        onAdd={() => navigation.navigate(current.form)}
-        addLabel={current.addLabel}
-        middle={desktop ? <SegmentedControl options={VIEWS} value={view} onChange={setView} style={styles.segmentInline} /> : null}
+        onAdd={() => navigation.navigate('PropertyForm')}
+        addLabel="Nueva propiedad"
+        middle={desktop ? filters : null}
       />
-      {desktop ? null : <SegmentedControl options={VIEWS} value={view} onChange={setView} />}
+      {desktop ? null : filters}
       {desktop ? (
         <View style={styles.split}>
-          <View style={styles.listColumn}>{list}</View>
+          <View style={styles.listColumn}>
+            <PropertiesList filter={filter} onSelect={setSelected} selectedId={selectedId} />
+          </View>
           <View style={styles.detailPanel}>
-            {selectedId && view === 'propiedades' ? <PropertyDetail key={selectedId} propertyId={selectedId} embedded /> : null}
-            {selectedId && view === 'inquilinos' ? <TenantDetail key={selectedId} tenantId={selectedId} embedded /> : null}
-            {selectedId && view === 'contratos' ? <ContractDetail key={selectedId} contractId={selectedId} embedded /> : null}
+            {selectedId ? <PropertyDetail key={selectedId} propertyId={selectedId} embedded /> : null}
           </View>
         </View>
       ) : (
-        list
+        <PropertiesList filter={filter} />
       )}
     </Screen>
   );
@@ -118,7 +89,7 @@ const useStyles = makeStyles((colors) => ({
   segmentInline: {
     marginHorizontal: 0,
     marginBottom: 0,
-    width: 380,
+    width: 420,
   },
   split: {
     flex: 1,
@@ -126,7 +97,7 @@ const useStyles = makeStyles((colors) => ({
     gap: spacing.lg,
   },
   listColumn: {
-    width: 380,
+    width: 400,
   },
   detailPanel: {
     flex: 1,

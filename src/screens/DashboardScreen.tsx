@@ -1,7 +1,7 @@
 // =====================================================================
 // Pantalla: Inicio
 // ---------------------------------------------------------------------
-// Bloque grande con la mora (o "Todo al día"), el avance del mes y las carpetas que piden atención.
+// Bloque grande con la mora (o "Todo al día"), el avance del mes y las propiedades que piden atención.
 // =====================================================================
 
 import { useNavigation } from '@react-navigation/native';
@@ -83,7 +83,7 @@ export default function DashboardScreen() {
   const openOverdue = () =>
     navigation.navigate('PaymentsTab', {
       screen: 'PaymentsList',
-      params: { view: 'liquidaciones', filter: hasOverdue ? 'vencido' : 'pendiente' },
+      params: { mode: 'cargos', status: hasOverdue ? 'vencido' : 'pendiente' },
     });
 
   // — Avisos de contratos: los que vencen pronto y los que ajustan este mes o el que viene —
@@ -136,8 +136,8 @@ export default function DashboardScreen() {
       </Text>
       <Text style={styles.heroDetail}>
         {hasOverdue
-          ? [plural(inDebt.length, 'carpeta', 'carpetas'), overdue.detail].filter(Boolean).join(' · ')
-          : 'No hay liquidaciones vencidas'}
+          ? [plural(inDebt.length, 'propiedad', 'propiedades'), overdue.detail].filter(Boolean).join(' · ')
+          : 'No hay cargos vencidos'}
       </Text>
     </>
   );
@@ -163,12 +163,12 @@ export default function DashboardScreen() {
           </View>
           <Text style={styles.monthCaption}>
             {desktop
-              ? `de ${describeTotals(month.billed, rate, false).main} liquidado`
+              ? `de ${describeTotals(month.billed, rate, false).main} del mes`
               : `${describeTotals(month.paid, rate, false).main} de ${describeTotals(month.billed, rate, false).main}`}
           </Text>
         </>
       ) : (
-        <Text style={styles.monthCaption}>Todavía no hay liquidaciones este mes.</Text>
+        <Text style={styles.monthCaption}>Todavía no hay cargos este mes.</Text>
       )}
     </>
   );
@@ -219,8 +219,8 @@ export default function DashboardScreen() {
             <Card style={styles.welcome}>
               <Text style={styles.welcomeTitle}>Empezá por tu primera propiedad</Text>
               <Text style={styles.welcomeText}>
-                Cargá la propiedad, después el inquilino y el contrato. Desde ahí la app genera sola las liquidaciones
-                de cada mes.
+                Cargá la propiedad y después su contrato con el inquilino. Desde ahí la app genera sola los cargos de
+                cada mes.
               </Text>
               <Button label="Agregar propiedad" onPress={() => openInTab(navigation, 'RentalsTab', 'PropertyForm')} />
             </Card>
@@ -269,10 +269,10 @@ export default function DashboardScreen() {
             <View style={desktop ? styles.row : undefined}>
               <View style={desktop ? styles.colWide : undefined}>
                 <SectionHeader
-                  title="Carpetas"
+                  title="Propiedades"
                   actionLabel="Ver todas"
                   onAction={() =>
-                    navigation.navigate('RentalsTab', { screen: 'Rentals', params: { view: 'propiedades' } })
+                    navigation.navigate('RentalsTab', { screen: 'Rentals', params: { filter: 'todas' } })
                   }
                 />
                 <ListSection>
@@ -304,13 +304,13 @@ export default function DashboardScreen() {
                   {settled.length ? (
                     <ListRow
                       dot={settledParts[0][0] ? 'success' : 'empty'}
-                      title={`${plural(settled.length, 'carpeta', 'carpetas')} sin pendientes`}
+                      title={`${plural(settled.length, 'propiedad', 'propiedades')} sin pendientes`}
                       subtitle={settledParts
                         .filter(([count]) => count > 0)
                         .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
                         .join(' · ')}
                       onPress={() =>
-                        navigation.navigate('RentalsTab', { screen: 'Rentals', params: { view: 'propiedades' } })
+                        navigation.navigate('RentalsTab', { screen: 'Rentals', params: { filter: 'todas' } })
                       }
                     />
                   ) : null}
@@ -319,10 +319,10 @@ export default function DashboardScreen() {
               {desktop && latestPayments.length ? (
                 <View style={styles.colNarrow}>
                   <SectionHeader
-                    title="Últimos pagos"
+                    title="Últimos cobros"
                     actionLabel="Ver todos"
                     onAction={() =>
-                      navigation.navigate('PaymentsTab', { screen: 'PaymentsList', params: { view: 'pagos' } })
+                      navigation.navigate('PaymentsTab', { screen: 'PaymentsList', params: { mode: 'cobros' } })
                     }
                   />
                   <ListSection>

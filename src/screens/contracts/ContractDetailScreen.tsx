@@ -1,7 +1,7 @@
 // =====================================================================
 // Pantalla: Ficha del contrato
 // ---------------------------------------------------------------------
-// Condiciones, propiedad e inquilino, y todas sus liquidaciones.
+// Condiciones, propiedad e inquilino, y su cuenta corriente (cargos).
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -93,7 +93,7 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
 
       {contract.status === 'activo' ? (
         <Button
-          label="Registrar pago"
+          label="Registrar cobro"
           onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
           style={styles.primaryAction}
         />
@@ -133,11 +133,11 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
         {contract.depositAmount ? (
           <ListRow title="Depósito" value={formatMoney(contract.depositAmount, contract.currency)} valueTone="muted" />
         ) : null}
-        <ListRow title="Día de pago" value={`${contract.paymentDay} de cada mes`} valueTone="muted" />
+        <ListRow title="Vencimiento" value={`${contract.paymentDay} de cada mes`} valueTone="muted" />
       </ListSection>
 
       <ListSection
-        header="Liquidaciones"
+        header="Cuenta corriente"
         footer={credit.USD || credit.ARS ? `Saldo a favor del inquilino: ${formatTotals(credit)}` : undefined}
       >
         {charges.map((view) => (
@@ -152,7 +152,7 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
           />
         ))}
         <ListRow
-          title="Nueva liquidación manual"
+          title="Agregar cargo"
           icon="add-circle-outline"
           onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
         />

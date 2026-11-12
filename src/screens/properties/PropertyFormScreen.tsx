@@ -99,10 +99,18 @@ export default function PropertyFormScreen() {
 
     if (existing) {
       updateProperty(existing.id, payload);
-    } else {
-      addProperty(payload);
+      navigation.goBack();
+      return;
     }
+    // Propiedad nueva: se ofrece cargar el contrato (con el inquilino) en el mismo recorrido.
+    const created = addProperty(payload);
     navigation.goBack();
+    showConfirm({
+      title: 'Propiedad creada',
+      message: '¿Querés cargar ahora el contrato con su inquilino?',
+      confirmLabel: 'Cargar contrato',
+      onConfirm: () => navigation.navigate('ContractForm', { propertyId: created.id }),
+    });
   };
 
   // — Dibujo de la pantalla —

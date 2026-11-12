@@ -42,16 +42,16 @@ export const PROPERTY_STATUS_LABEL: Record<PropertyStatus, string> = {
 // ── Contratos ─────────────────────────────────────────────────────────
 
 export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
-  activo: 'Activo',
+  activo: 'Vigente',
   finalizado: 'Finalizado',
-  cancelado: 'Cancelado',
+  cancelado: 'Rescindido',
 };
 
 export const CONTRACT_STATUS_OPTIONS = Object.entries(CONTRACT_STATUS_LABEL).map(
   ([value, label]) => ({ value: value as ContractStatus, label }),
 );
 
-// ── Pagos y liquidaciones ─────────────────────────────────────────────
+// ── Cargos y cobros ───────────────────────────────────────────────────
 
 export const PAYMENT_METHOD_OPTIONS = [
   'Efectivo',

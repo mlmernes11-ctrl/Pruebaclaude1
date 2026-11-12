@@ -18,9 +18,9 @@ import { CollectionState, contractEndBadge } from './propertySummary';
 
 // Nombre del estado de una liquidación.
 export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
-  vencido: 'Vencida',
-  pendiente: 'Por vencer',
-  pagado: 'Pagada',
+  vencido: 'Vencido',
+  pendiente: 'A vencer',
+  pagado: 'Pagado',
 };
 
 // Punto de color al lado de cada liquidación en las listas.
@@ -53,9 +53,9 @@ export function chargeShownAmount(view: ChargeView): number {
 // o "vence el 10/11".
 export function chargeProgress(view: ChargeView): string {
   const { charge } = view;
-  if (view.status === 'pagado') return `pagada el ${formatDayMonth(view.lastPaymentDate)}`;
+  if (view.status === 'pagado') return `pagado el ${formatDayMonth(view.lastPaymentDate)}`;
   if (view.paid > 0) {
-    return `pagó ${formatMoney(view.paid, charge.currency)} de ${formatMoney(charge.amount, charge.currency)}`;
+    return `pago parcial: ${formatMoney(view.paid, charge.currency)} de ${formatMoney(charge.amount, charge.currency)}`;
   }
   return `vence el ${formatDayMonth(charge.dueDate)}`;
 }

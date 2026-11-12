@@ -8,19 +8,20 @@ import { useCallback, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useExchangeRate } from '../context/ExchangeRateContext';
 
-// Deslizar hacia abajo para actualizar: baja la cotización del dólar y recalcula los vencimientos.
+// Deslizar hacia abajo para actualizar: vuelve a leer los datos de la cuenta y la cotización
+// del dólar, y recalcula los vencimientos.
 export function useRefresh() {
-  const { refreshToday } = useData();
+  const { refreshToday, pullFromServer } = useData();
   const { refreshQuotes } = useExchangeRate();
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     refreshToday();
     try {
-      await refreshQuotes();
+      await Promise.all([pullFromServer(), refreshQuotes()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshToday, refreshQuotes]);
+  }, [refreshToday, pullFromServer, refreshQuotes]);
   return { refreshing, onRefresh };
 }
