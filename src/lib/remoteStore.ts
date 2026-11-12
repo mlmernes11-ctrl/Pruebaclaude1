@@ -218,6 +218,16 @@ export async function pushChanges(changes: RemoteChanges): Promise<void> {
   }
 }
 
+// ── ¿Cambió algo? ─────────────────────────────────────────────────────
+
+// Número de versión de la cuenta: sube solo con cada cambio en sus datos (lo mantiene la base).
+// Es un pedido mínimo; si el número cambió, recién ahí se vuelve a bajar todo.
+export async function readAccountVersion(): Promise<number> {
+  const { data, error } = await supabase.from('account_versions').select('version').maybeSingle();
+  if (error) throw error;
+  return Number(data?.version ?? 0);
+}
+
 // ── Lo automático de la cuenta ────────────────────────────────────────
 
 // El servidor crea los cargos del mes que falten, aplica los ajustes de alquiler y el saldo a

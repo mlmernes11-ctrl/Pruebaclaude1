@@ -11,6 +11,13 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      account_versions: {
+        Row: {
+          updated_at: string;
+          user_id: string;
+          version: number;
+        };
+      };
       charges: {
         Row: {
           amount: number;

@@ -19,6 +19,7 @@ import {
   isConflict,
   loadRemoteData,
   pushChanges,
+  readAccountVersion,
   runAccountBilling,
 } from '../lib/remoteStore';
 import { AppData, Charge, Contract, Payment, Property, PropertyStatus, Tenant } from '../types';
@@ -156,14 +157,21 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
   // Si el servidor cambió algo pero no se pudo releer (había cambios propios sin enviar), queda
   // pendiente y se relee después del próximo guardado.
   const staleRef = useRef(false);
+  // Número de versión de la cuenta que corresponde a los datos que tiene la app (ver
+  // readAccountVersion): si el del servidor es otro, alguien cambió algo.
+  const versionRef = useRef<number | undefined>(undefined);
   const refreshFromServer = useCallback((): Promise<void> => {
     if (mode !== 'remote') return Promise.resolve();
     queueRef.current = queueRef.current.then(async () => {
       if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
       try {
+        // La versión se lee antes que los datos: si algo cambia en el medio, la próxima
+        // revisión lo ve distinto y vuelve a leer.
+        const version = await readAccountVersion();
         const remote = await loadRemoteData();
         if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
         syncedRef.current = remote;
+        versionRef.current = version;
         staleRef.current = false;
         setData(remote);
       } catch {
@@ -196,9 +204,11 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     (async () => {
       if (mode === 'remote') {
         try {
+          const version = await readAccountVersion().catch(() => undefined);
           const remote = await loadRemoteData();
           if (!active) return;
           syncedRef.current = remote;
+          versionRef.current = version;
           setData(remote);
           setLoadError(undefined);
           void runServerBilling();
@@ -291,6 +301,20 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     });
     return () => subscription.remove();
   }, [mode, loading, loadError, pullFromServer]);
+
+  // Cuenta real: cada 60 segundos, con la app a la vista y sin cambios propios sin enviar, se
+  // pregunta al servidor si cambió algo (su número de versión). Solo si cambió se vuelve a leer
+  // todo; la pantalla se actualiza sola, sin avisos.
+  useEffect(() => {
+    if (mode !== 'remote' || loading || loadError) return;
+    const timer = setInterval(async () => {
+      if (AppState.currentState !== 'active') return;
+      if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
+      const version = await readAccountVersion().catch(() => undefined);
+      if (version !== undefined && version !== versionRef.current) void refreshFromServer();
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [mode, loading, loadError, refreshFromServer]);
 
   // Modo demo (sin servidor): la app misma crea los cargos del mes y aplica el saldo a favor.
   // Con una cuenta real eso lo hace el servidor (ver runServerBilling).
