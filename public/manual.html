@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de uso · Locatia</title>
+<meta name="description" content="Cómo usar Locatia paso a paso: propiedades, contratos, cargos del mes, cobros y más.">
+<link rel="icon" href="/locatia-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    --navy: #10213F; --blue: #0A4FA8; --accent: #0A4FA8; --bg: #F6F7F9; --card: #FFFFFF; --line: #DCE3EE;
+    --text: #10213F; --muted: #4A5568; --soft: #E3ECFA; --on-navy: #F6F7F9; --on-navy-muted: #BFD0EA;
+    --red: #B3261E; --amber: #8A5300; --green: #1B6E3A;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0B1626; --card: #12233D; --line: #22385A; --text: #E9EEF6; --muted: #A9B6C9; --soft: #183257;
+      --accent: #8FB4EE; --red: #FF8A80; --amber: #FFB547; --green: #6FD69A;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; }
+  h1, h2, h3 { font-family: 'Space Grotesk', 'Inter', sans-serif; line-height: 1.15; margin: 0; }
+  a { color: var(--accent); }
+  img { max-width: 100%; }
+
+  /* Portada */
+  .cover { background: var(--navy); color: var(--on-navy); padding: 48px 20px 56px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 14px; font-size: 18px; color: var(--on-navy-muted); }
+  .brand svg { width: 52px; height: 52px; flex: none; }
+  .cover h1 { font-size: clamp(40px, 8vw, 72px); font-weight: 700; margin: 40px 0 16px; letter-spacing: -1px; }
+  .cover p { font-size: clamp(18px, 3vw, 24px); color: var(--on-navy-muted); max-width: 680px; margin: 0; }
+  .cover .back { display: inline-block; margin-top: 28px; background: var(--on-navy); color: var(--navy); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 12px; }
+
+  /* Índice */
+  main { padding: 0 20px 64px; }
+  .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  .index { margin: -28px auto 0; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; position: relative; }
+  .index ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 24px; }
+  .index li a { display: flex; gap: 12px; align-items: baseline; text-decoration: none; color: var(--text); padding: 6px 0; font-weight: 600; }
+  .index li span { font-family: 'Space Grotesk', sans-serif; color: var(--accent); min-width: 24px; }
+
+  /* Capítulos */
+  .chapter { margin-top: 56px; scroll-margin-top: 16px; }
+  .chapter h2 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; margin-bottom: 12px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 760px; margin: 0 0 24px; }
+  .figure { display: grid; grid-template-columns: 300px 1fr; gap: 32px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; margin-top: 20px; }
+  .figure.two { grid-template-columns: 1fr 1fr; }
+  .phone { width: 100%; max-width: 300px; margin: 0 auto; border-radius: 34px; border: 8px solid #0A1222; overflow: hidden; background: #0A1222; box-shadow: 0 16px 36px rgba(16, 33, 63, 0.18); }
+  .phone img { display: block; width: 100%; height: auto; }
+  .caption { font-size: 14px; color: var(--muted); text-align: center; margin-top: 10px; }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 14px; }
+  .steps li { counter-increment: s; position: relative; padding-left: 44px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 30px; height: 30px; border-radius: 50%; background: var(--soft); color: var(--accent); font: 700 15px/30px 'Space Grotesk', sans-serif; text-align: center; }
+  .steps b { color: var(--text); }
+  .figure h3 { font-size: 22px; margin-bottom: 14px; }
+  .tip { margin-top: 18px; background: var(--soft); border-radius: 16px; padding: 14px 18px; font-size: 16px; }
+  .tip b { color: var(--accent); }
+
+  /* Glosario y estados */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+  .card h3 { font-size: 21px; margin-bottom: 6px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .pill { display: inline-block; font-size: 14px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; }
+  .p-red { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+  .p-amber { color: var(--amber); background: color-mix(in srgb, var(--amber) 16%, transparent); }
+  .p-green { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+  .p-blue { color: var(--accent); background: var(--soft); }
+
+  /* Preguntas */
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin-top: 10px; }
+  summary { cursor: pointer; font-weight: 700; font-size: 18px; }
+  details p { color: var(--muted); margin: 10px 0 0; }
+
+  footer { background: var(--navy); color: var(--on-navy-muted); padding: 32px 20px; font-size: 15px; }
+  footer a { color: var(--on-navy); }
+
+  @media (max-width: 760px) {
+    .figure, .figure.two { grid-template-columns: 1fr; padding: 20px; gap: 22px; }
+    .phone { max-width: 260px; }
+    .index { padding: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><rect width="160" height="160" rx="36" fill="#0A4FA8"/><g transform="translate(-2 0)" fill="#F6F7F9"><path d="M42 34 H68 V100 H122 V126 H42 Z"/><path d="M74 76 L98 52 L122 76 V94 H104 V80 Q104 78 102 78 H94 Q92 78 92 80 V94 H74 Z"/></g></svg>
+      <span>Locatia · Gestión de alquileres</span>
+    </div>
+    <h1>Manual de uso</h1>
+    <p>Todo lo que hace Locatia, paso a paso y con ejemplos: de cargar tu primera propiedad a cobrar el alquiler del mes.</p>
+    <a class="back" href="/">Abrir Locatia</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <nav class="index" aria-label="Índice">
+      <p class="eyebrow">Índice</p>
+      <ol>
+        <li><a href="#conceptos"><span>1</span>Las palabras de la app</a></li>
+        <li><a href="#instalar"><span>2</span>Dónde se usa: web y Android</a></li>
+        <li><a href="#ingresar"><span>3</span>Ingresar</a></li>
+        <li><a href="#inicio"><span>4</span>Inicio</a></li>
+        <li><a href="#alquileres"><span>5</span>Alquileres</a></li>
+        <li><a href="#propiedad-nueva"><span>6</span>Cargar una propiedad</a></li>
+        <li><a href="#ficha"><span>7</span>La ficha de la propiedad</a></li>
+        <li><a href="#contrato-nuevo"><span>8</span>Cargar un contrato</a></li>
+        <li><a href="#contrato"><span>9</span>El contrato: renovar y finalizar</a></li>
+        <li><a href="#cargos"><span>10</span>Los cargos de cada mes</a></li>
+        <li><a href="#cobro"><span>11</span>Registrar un cobro</a></li>
+        <li><a href="#cobros"><span>12</span>La pestaña Cobros</a></li>
+        <li><a href="#historial"><span>13</span>Historial por mes</a></li>
+        <li><a href="#dolar"><span>14</span>Cotización del dólar</a></li>
+        <li><a href="#menu"><span>15</span>Menú y apariencia</a></li>
+        <li><a href="#preguntas"><span>16</span>Preguntas frecuentes</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 -->
+    <section class="chapter" id="conceptos">
+      <p class="eyebrow">Capítulo 1</p>
+      <h2>Las palabras de la app</h2>
+      <p class="lead">Locatia usa siempre las mismas palabras para lo mismo. Con estas cinco ideas se entiende todo lo demás.</p>
+      <div class="grid">
+        <div class="card"><h3>Propiedad</h3><p>Lo que administrás: un departamento, una casa, un local, una oficina. Cada una tiene su nombre corto, por ejemplo «Carpeta 64».</p></div>
+        <div class="card"><h3>Inquilino</h3><p>Quien alquila. Se carga dentro del contrato, con su teléfono para escribirle o llamarlo desde la app.</p></div>
+        <div class="card"><h3>Contrato</h3><p>Une una propiedad con un inquilino: fechas, alquiler, moneda, día de vencimiento y cómo se ajusta.</p></div>
+        <div class="card"><h3>Cargo</h3><p>Lo que el inquilino debe por un concepto y un mes: alquiler, expensas o servicios. La app los crea sola cada mes.</p></div>
+        <div class="card"><h3>Cobro</h3><p>Lo que el inquilino te pagó. Se aplica a sus cargos, empezando por el más viejo.</p></div>
+      </div>
+      <h3 style="font-size:24px;margin:32px 0 12px">Los cuatro estados</h3>
+      <div class="grid">
+        <div class="card"><span class="pill p-red">Vencido</span><p>Pasó la fecha de vencimiento y no se pagó todo. Se muestra en rojo, con los días de atraso.</p></div>
+        <div class="card"><span class="pill p-amber">A vencer</span><p>Hay un cargo del mes que todavía no venció. Se muestra en naranja, con la fecha.</p></div>
+        <div class="card"><span class="pill p-green">Al día</span><p>No debe nada. Se muestra en verde.</p></div>
+        <div class="card"><span class="pill p-blue">Disponible</span><p>La propiedad no tiene contrato vigente: está libre para alquilar (o en mantenimiento).</p></div>
+      </div>
+    </section>
+
+    <!-- Instalar -->
+    <section class="chapter" id="instalar">
+      <p class="eyebrow">Capítulo 2</p>
+      <h2>Dónde se usa: web y Android</h2>
+      <p class="lead">Hay dos formas de usar Locatia, con la misma cuenta y los mismos datos. Se pueden usar las dos a la vez.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+        <div class="card">
+          <span class="pill p-blue">Recomendado para empezar</span>
+          <h3>En el navegador</h3>
+          <p>Funciona en la computadora y en cualquier celular, también en iPhone. No hay que instalar nada y siempre está en su última versión.</p>
+          <p style="margin-top:12px"><a href="/"><b>gestion-alquileres-sero0.vercel.app</b></a></p>
+          <p style="margin-top:12px"><b>Tip:</b> en el celular, agregalo a la pantalla de inicio y queda como una app. En Chrome (Android): menú ⋮ › «Agregar a la pantalla principal». En Safari (iPhone): botón Compartir › «Agregar a inicio».</p>
+        </div>
+        <div class="card">
+          <span class="pill p-green">Android</span>
+          <h3>La app para Android</h3>
+          <p>Se instala con un archivo (APK) mientras Locatia no está en Google Play. Las mejoras llegan solas: al abrirla aparece «Hay una nueva versión».</p>
+          <p style="margin-top:12px"><a href="/descargar"><b>Descargar Locatia para Android</b></a></p>
+        </div>
+      </div>
+      <div class="figure" style="grid-template-columns:1fr;margin-top:20px">
+        <div>
+          <h3>Cómo instalar la app de Android</h3>
+          <ol class="steps">
+            <li>Desde el celular, abrí el link <b>Descargar Locatia para Android</b>. Se baja un archivo llamado Locatia (APK). Si el navegador pregunta si querés descargarlo igual, tocá <b>Descargar</b>.</li>
+            <li>Abrí el archivo desde la notificación de descarga o desde la carpeta Descargas.</li>
+            <li>La primera vez, Android avisa que por seguridad no deja instalar apps de esa fuente. Tocá <b>Configuración</b>, activá <b>Permitir de esta fuente</b> y volvé atrás.</li>
+            <li>Tocá <b>Instalar</b>. Si aparece Google Play Protect diciendo que la app no está verificada o que es desconocida, tocá <b>Más detalles</b> y después <b>Instalar de todos modos</b>.</li>
+            <li>Listo: abrí Locatia desde la pantalla de inicio e ingresá con tu cuenta.</li>
+          </ol>
+          <p class="tip"><b>¿Por qué aparecen esos avisos?</b> Android advierte sobre cualquier app que no se baja de Google Play, aunque sea segura. Cuando Locatia esté publicada en Google Play, se va a instalar desde ahí sin ningún aviso.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="chapter" id="ingresar">
+      <p class="eyebrow">Capítulo 3</p>
+      <h2>Ingresar</h2>
+      <p class="lead">Locatia funciona en el celular (Android) y en la computadora, desde el navegador. Es la misma cuenta en los dos: lo que cargás en uno aparece en el otro.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/01-ingreso.jpg" alt="Pantalla de ingreso de Locatia" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>Continuar con Google</b> es lo más rápido: entrás con tu cuenta de Google, sin crear contraseña.</li>
+            <li>Con <b>mail y contraseña</b>: la primera vez tocá «¿Primera vez? Crear cuenta». Si te olvidaste la contraseña, escribí tu mail y tocá «¿Olvidaste tu contraseña?»: te llega un mail para crear una nueva.</li>
+            <li><b>Probar con datos de ejemplo</b> abre la app con propiedades, contratos y cobros inventados, para recorrerla sin cargar nada. Esos datos quedan solo en ese dispositivo.</li>
+          </ol>
+          <p class="tip"><b>Tip:</b> todas las capturas de este manual son del modo de ejemplo. Podés abrirlo y seguir el manual tocando lo mismo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="chapter" id="inicio">
+      <p class="eyebrow">Capítulo 4</p>
+      <h2>Inicio: qué hacer hoy</h2>
+      <p class="lead">La primera pantalla responde una sola pregunta: ¿qué tengo que hacer hoy? Arriba están las acciones de todos los meses y abajo, quién te debe.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/02-inicio.jpg" alt="Pantalla de Inicio con accesos, alquileres vencidos y a vencer" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>La franja azul</b> muestra la fecha de hoy y la cotización del dólar. Tocá el dólar para ver o cambiar cuál se usa.</li>
+            <li><b>Los cuatro accesos</b>: Registrar cobro, Recordar deuda, Cargar importes y Nuevo contrato. Son lo que se hace todos los meses, a un toque.</li>
+            <li><b>Tus alquileres</b> muestra primero a los que deben (en rojo, con el monto y hace cuántos días) y después a los que tienen el alquiler por vencer (en naranja, con el monto y la fecha). Arriba a la derecha, cuántas propiedades están al día y cuántas sin alquilar. Tocá una persona para abrir su propiedad.</li>
+            <li><b>Otros pendientes</b>: los importes del mes que faltan cargar y los contratos que hay que renovar o ajustar.</li>
+          </ol>
+          <p class="tip"><b>Tip:</b> deslizá la pantalla hacia abajo para actualizar todo al instante.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="chapter" id="alquileres">
+      <p class="eyebrow">Capítulo 5</p>
+      <h2>Alquileres: tu cartera</h2>
+      <p class="lead">Acá están todas tus propiedades, una tarjeta por cada una. Si Inicio es lo que hay que hacer, Alquileres es lo que tenés.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/03-alquileres.jpg" alt="Pestaña Alquileres con una tarjeta por propiedad" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>Arriba de cada tarjeta</b>: el nombre, el tipo y el barrio, y la etiqueta de cómo viene el pago («Debe 33 días», «Vence el 01/12», «Al día», «Disponible»).</li>
+            <li><b>Debajo</b>: el alquiler por mes y hasta cuándo va el contrato. Si termina pronto, se avisa en naranja.</li>
+            <li><b>El inquilino</b>, con dos botones: WhatsApp y llamar. Si debe, el WhatsApp abre con el detalle de la deuda ya escrito.</li>
+            <li><b>Buscar</b> encuentra propiedades, inquilinos y barrios. <b>Filtrar y ordenar</b> muestra solo las alquiladas, las disponibles o las vencidas, y las ordena por nombre, barrio, alquiler o fin de contrato.</li>
+            <li>El botón <b>+</b> de arriba carga una propiedad nueva.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="chapter" id="propiedad-nueva">
+      <p class="eyebrow">Capítulo 6</p>
+      <h2>Cargar una propiedad</h2>
+      <p class="lead">Es lo primero que se carga. Después se le agrega el contrato con el inquilino.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/13-propiedad-nueva.jpg" alt="Formulario de nueva propiedad" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li>En Alquileres, tocá <b>+</b>.</li>
+            <li>Completá <b>Nombre</b> (cómo la llamás, por ejemplo «Carpeta 102») y <b>Dirección</b>. El barrio y el tipo ayudan a ordenar y buscar.</li>
+            <li><b>Expensas y servicios mensuales</b> (opcional, en pesos): si tienen valor, cada mes la app crea esos cargos además del alquiler.</li>
+            <li><b>En mantenimiento</b>: marcalo si por ahora no se alquila. Si no, la app la marca sola como alquilada o disponible según tenga contrato.</li>
+            <li>En <b>Más datos</b> van el precio publicado, los ambientes, los baños, la superficie y notas.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="chapter" id="ficha">
+      <p class="eyebrow">Capítulo 7</p>
+      <h2>La ficha de la propiedad</h2>
+      <p class="lead">Tocando una tarjeta en Alquileres (o una persona en Inicio) se abre todo lo de esa propiedad.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/04-ficha.jpg" alt="Ficha de la propiedad Carpeta 64" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>Arriba, cómo está</b>: si debe, cuánto y desde hace cuántos días; si está al día; o si está disponible.</li>
+            <li><b>Registrar cobro</b> y <b>Recordar deuda por WhatsApp</b>, a mano cuando hay deuda.</li>
+            <li><b>Contrato vigente</b>: inquilino, vigencia, alquiler y «Ver contrato».</li>
+            <li><b>Cuenta corriente</b>: todos los <b>Cargos</b>, todos los <b>Cobros</b> y el <b>Historial por mes</b>.</li>
+            <li><b>Detalles</b> de la propiedad. Para cambiarlos, tocá <b>Editar</b> arriba a la derecha.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="chapter" id="contrato-nuevo">
+      <p class="eyebrow">Capítulo 8</p>
+      <h2>Cargar un contrato</h2>
+      <p class="lead">El contrato es el que pone en marcha todo: desde que lo guardás, la app crea sola los cargos de cada mes.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/12-contrato-nuevo.jpg" alt="Formulario de nuevo contrato" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li>Tocá <b>Nuevo contrato</b> en Inicio (o en la ficha de la propiedad) y elegí la <b>Propiedad</b>.</li>
+            <li><b>Inquilino</b>: cargá nombre, DNI o CUIT, teléfono y mail. Si ya lo tenías de otro contrato, tocá «Elegir uno existente». Con el teléfono cargado funcionan los botones de WhatsApp y llamar.</li>
+            <li><b>Condiciones</b>: fecha de inicio y de fin, <b>moneda</b> (pesos o dólares), alquiler mensual, depósito y <b>día de vencimiento</b> de cada mes.</li>
+            <li><b>Ajuste del alquiler</b>: sin ajuste, por <b>IPC</b> (inflación del INDEC), por <b>ICL</b> (índice del Banco Central para alquileres) o un <b>% fijo</b>, y cada cuántos meses. La app baja los índices sola y calcula el alquiler nuevo cuando corresponde.</li>
+            <li>Tocá <b>Guardar</b>. La propiedad pasa a «alquilada» y aparecen sus cargos.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="chapter" id="contrato">
+      <p class="eyebrow">Capítulo 9</p>
+      <h2>El contrato: renovar y finalizar</h2>
+      <p class="lead">Desde «Ver contrato» se ven las condiciones y lo que se debe de ese contrato.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/05-contrato.jpg" alt="Detalle del contrato con el botón Renovar contrato" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>Condiciones</b>: inicio, fin, alquiler, ajuste, depósito y día de vencimiento. Si termina en menos de dos meses, la fecha de fin se marca en naranja y aparece en los pendientes de Inicio.</li>
+            <li><b>Renovar contrato</b> arma el contrato nuevo con los mismos datos, empezando cuando termina el actual. Lo revisás, cambiás lo que haga falta (por ejemplo, el alquiler) y guardás. Si quedó deuda del contrato viejo, sigue visible y se puede cobrar.</li>
+            <li><b>Agregar cargo</b> suma un cargo a mano (por ejemplo, un arreglo que paga el inquilino).</li>
+            <li><b>Finalizar contrato</b>, cuando el inquilino se va: deja de generar cargos y la propiedad pasa a disponible. <b>Eliminar contrato</b> lo borra con sus cargos y cobros; usalo solo si lo cargaste por error.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="chapter" id="cargos">
+      <p class="eyebrow">Capítulo 10</p>
+      <h2>Los cargos de cada mes</h2>
+      <p class="lead">No hace falta cargar nada a mano: al empezar cada mes, la app crea el alquiler de cada contrato vigente y, si la propiedad los tiene, las expensas y los servicios.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/11-importes.jpg" alt="Pantalla Actualizar importes con las expensas del mes" loading="lazy"></div></div>
+        <div>
+          <h3>Actualizar importes</h3>
+          <ol class="steps">
+            <li>Las expensas y los servicios cambian todos los meses. Al crearlos, la app pone el importe del mes anterior y los marca como pendientes de revisar.</li>
+            <li>Entrá desde <b>Cargar importes</b> en Inicio (o desde el Menú). Arriba elegís el mes y la pestaña: Expensas, Servicios o Alquiler.</li>
+            <li>Tocá una fila para escribir el importe nuevo. Si no cambió, tocá <b>Mantener el importe anterior</b> en las que quedan.</li>
+            <li>Tocá <b>Guardar</b>. Si a un cargo ya le habían pagado una parte, la diferencia se agrega como un cargo aparte.</li>
+          </ol>
+          <p class="tip"><b>Tip:</b> los ajustes por IPC o ICL también se aplican solos: el mes que toca, el alquiler nuevo ya aparece en el cargo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="chapter" id="cobro">
+      <p class="eyebrow">Capítulo 11</p>
+      <h2>Registrar un cobro</h2>
+      <p class="lead">Como una transferencia en el banco: elegís cuánto, confirmás y listo. Tres pasos.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/06-cobro-importe.jpg" alt="Registrar cobro, paso 1: el importe" loading="lazy"></div><p class="caption">Paso 1 · El importe</p></div>
+        <div>
+          <ol class="steps">
+            <li>Tocá <b>Registrar cobro</b> (en Inicio, en la ficha de la propiedad o en el contrato). Si entrás desde Inicio, elegí el contrato.</li>
+            <li>Arriba ves el <b>saldo total</b> y cuánto está vencido. Elegí qué te pagó: <b>Saldo total</b>, <b>Solo lo vencido</b> u <b>Otro importe</b> (un pago parcial o un adelanto).</li>
+            <li>Si el contrato es en dólares y te pagan en pesos, activá <b>Paga los dólares en pesos</b>: la app hace la cuenta con la cotización del día.</li>
+            <li>Elegí el <b>medio de pago</b> (efectivo, transferencia, tarjeta u otro) y la <b>fecha</b>. Podés agregar una nota.</li>
+            <li>Tocá <b>Continuar</b>.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="figure two">
+        <div><div class="phone"><img src="/manual/07-cobro-confirmar.jpg" alt="Registrar cobro, paso 2: confirmar" loading="lazy"></div><p class="caption">Paso 2 · Confirmar: a qué cargos se aplica</p></div>
+        <div><div class="phone"><img src="/manual/08-cobro-listo.jpg" alt="Registrar cobro, paso 3: cobro registrado" loading="lazy"></div><p class="caption">Paso 3 · Listo: mandá el recibo por WhatsApp</p></div>
+      </div>
+      <p class="tip"><b>Tip:</b> si te pagan de más, lo que sobra queda como saldo a favor del inquilino y se usa solo para su próxima deuda. Si te equivocaste, abrí el cobro desde la pestaña Cobros y tocá <b>Eliminar cobro</b>.</p>
+    </section>
+
+    <!-- 11 -->
+    <section class="chapter" id="cobros">
+      <p class="eyebrow">Capítulo 12</p>
+      <h2>La pestaña Cobros</h2>
+      <p class="lead">Todos los cargos de todas las propiedades, agrupados por cómo vienen.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/09-cobros.jpg" alt="Pestaña Cobros con lo vencido y lo a vencer" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li><b>Vencido</b>: lo que se debe y ya pasó su fecha, con el total.</li>
+            <li><b>A vencer</b>: lo del mes que todavía no venció.</li>
+            <li><b>Cobrado</b>: lo que entró en el mes.</li>
+            <li><b>Buscar</b> y <b>Filtrar</b> por propiedad, estado y mes. Tocá un cargo para ver su detalle o cobrarlo.</li>
+            <li>El <b>+</b> registra un cobro.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="chapter" id="historial">
+      <p class="eyebrow">Capítulo 13</p>
+      <h2>Historial por mes</h2>
+      <p class="lead">Cómo vino cada mes de una propiedad: lo que se cargó, lo que se cobró y lo que quedó debiendo.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/10-historial.jpg" alt="Historial por mes de una propiedad" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li>Entrá desde la ficha de la propiedad, en <b>Historial por mes</b> (o desde la pestaña Cobros, para todas las propiedades juntas).</li>
+            <li>Arriba, el <b>porcentaje cobrado del año</b> y cuánto se cobró, cuánto está vencido y cuánto está a vencer. Cambiá de año con las flechas.</li>
+            <li>Debajo, <b>un renglón por mes</b>. Tocalo para ver cada cargo de ese mes.</li>
+          </ol>
+          <p class="tip"><b>Tip:</b> los montos en dólares se pasan a pesos con la cotización del día, para poder sumarlos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="chapter" id="dolar">
+      <p class="eyebrow">Capítulo 14</p>
+      <h2>Cotización del dólar</h2>
+      <p class="lead">Se usa para mostrar totales en pesos y para cobrar en pesos una deuda en dólares.</p>
+      <div class="figure">
+        <div><div class="phone"><img src="/manual/14-dolar.jpg" alt="Pantalla de cotización del dólar" loading="lazy"></div></div>
+        <div>
+          <ol class="steps">
+            <li>La app guarda todos los días el dólar <b>blue</b>, el <b>oficial</b> y el <b>MEP</b>. Arriba ves el que está en uso.</li>
+            <li>Elegí cuál usar como <b>cotización de referencia</b>. Con <b>Manual</b> ponés el valor vos.</li>
+            <li><b>Volver a leer la del día</b> la actualiza al instante.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section class="chapter" id="menu">
+      <p class="eyebrow">Capítulo 15</p>
+      <h2>Menú y apariencia</h2>
+      <p class="lead">Lo que no se usa todos los días.</p>
+      <div class="figure two">
+        <div><div class="phone"><img src="/manual/15-menu.jpg" alt="Pestaña Menú" loading="lazy"></div><p class="caption">Menú</p></div>
+        <div><div class="phone"><img src="/manual/16-inicio-oscuro.jpg" alt="Inicio en modo oscuro" loading="lazy"></div><p class="caption">Modo oscuro</p></div>
+      </div>
+      <div class="figure" style="grid-template-columns:1fr">
+        <ol class="steps">
+          <li><b>Actualizar importes</b> y <b>Cotización del dólar</b>, también desde acá.</li>
+          <li><b>Apariencia</b>: Sistema (sigue al celular), Claro u Oscuro.</li>
+          <li><b>Ayuda</b>: abre este manual.</li>
+          <li><b>Política de privacidad</b>, <b>Cerrar sesión</b> y <b>Eliminar cuenta</b>. Eliminar la cuenta borra todos tus datos para siempre: no se puede deshacer.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section class="chapter" id="preguntas">
+      <p class="eyebrow">Capítulo 16</p>
+      <h2>Preguntas frecuentes</h2>
+      <details><summary>¿Qué pasa si no tengo internet?</summary><p>Podés seguir usando la app. Lo que cargues queda guardado en el celular y se envía solo cuando vuelve la señal. Si algo no se pudo guardar, la app lo avisa arriba con un botón para reintentar.</p></details>
+      <details><summary>¿Puedo usarla en el celular y en la computadora?</summary><p>Sí, con la misma cuenta. Los cambios de uno aparecen en el otro en menos de un minuto (o al instante, deslizando hacia abajo).</p></details>
+      <details><summary>Me apareció «Hay una nueva versión». ¿Qué hago?</summary><p>Tocá «Actualizar». Tarda unos segundos y no se pierde nada: tus datos están en la nube.</p></details>
+      <details><summary>El inquilino me pagó de más. ¿Cómo lo cargo?</summary><p>Registrá el cobro con «Otro importe» y el total que te pagó. Lo que sobra queda como saldo a favor y se aplica solo a su próxima deuda.</p></details>
+      <details><summary>Me pagó una parte. ¿Qué hago?</summary><p>Registrá el cobro con «Otro importe» y lo que te pagó. El cargo queda con el saldo que falta y sigue apareciendo como vencido o a vencer.</p></details>
+      <details><summary>Cargué un cobro por error.</summary><p>En la pestaña Cobros, abrí el cobro y tocá «Eliminar cobro». La deuda vuelve a quedar como estaba.</p></details>
+      <details><summary>Un cargo no corresponde. ¿Lo puedo borrar?</summary><p>Sí: abrí el cargo y eliminalo. No se vuelve a generar, y si tenía algo cobrado, esa plata queda a favor del inquilino.</p></details>
+      <details><summary>El contrato terminó. ¿Qué hago?</summary><p>Si sigue el mismo inquilino, abrí el contrato y tocá «Renovar contrato». Si se va, tocá «Finalizar contrato»: la propiedad pasa a disponible y deja de generar cargos.</p></details>
+      <details><summary>¿Quién ve mis datos?</summary><p>Solo vos, con tu cuenta. Más detalles en la <a href="/privacidad.html">política de privacidad</a>.</p></details>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">Locatia · Gestión de alquileres · <a href="/">Abrir la app</a> · <a href="/privacidad.html">Privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></div>
+</footer>
+
+</body>
+</html>

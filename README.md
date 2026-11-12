@@ -33,6 +33,8 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 
 - **Web**: Vercel publica cada cambio (`vercel.json`).
 - **APK**: GitHub › Actions › «Armar APK». Lo arma Expo (EAS, `eas.json`); el enlace queda en expo.dev › Builds o en «Estado del APK».
+- **Link para descargar el APK**: `/descargar` (por ejemplo, gestion-alquileres-sero0.vercel.app/descargar) lleva al último APK. Cuando se arma uno nuevo, se cambia su destino en `vercel.json` por el enlace que muestra «Estado del APK».
+- **Manual de uso**: `public/manual.html` (gestion-alquileres-sero0.vercel.app/manual.html), con capturas en `public/manual/`. En la app, Menú › Ayuda.
 - **Actualizar la app sin APK nuevo**: GitHub › Actions › «Actualizar la app» (actualización OTA de Expo).
 - **Mantener Supabase activo**: «Mantener activo el servidor» corre cada 3 días.
 - Los workflows usan el secreto `EXPO_TOKEN` de GitHub.

@@ -3,5 +3,12 @@
   "framework": null,
   "installCommand": "npm install",
   "buildCommand": "npx expo export --platform web",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/descargar",
+      "destination": "https://expo.dev/artifacts/eas/2AMbFbDR9iGg_5f4cLuEsnVGkor4TDOR2SiZCLt0B6s.apk",
+      "permanent": false
+    }
+  ]
 }

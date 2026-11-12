@@ -2,7 +2,7 @@
 // Pantalla: Menú
 // ---------------------------------------------------------------------
 // Pestaña "Menú" de la barra de abajo: la cuenta arriba y después una lista, una opción abajo de
-// la otra (dólar, apariencia, privacidad, cerrar sesión y eliminar cuenta). En modo demo, las
+// la otra (dólar, apariencia, ayuda, privacidad, cerrar sesión y eliminar cuenta). En modo demo, las
 // opciones de los datos de ejemplo.
 // =====================================================================
 
@@ -26,9 +26,10 @@ import { pendingImportsCount } from './imports/importsLogic';
 
 const APPEARANCE: ThemePreference[] = ['system', 'light', 'dark'];
 
-// La política de privacidad está publicada junto con la versión web.
-const PRIVACY_URL =
-  Platform.OS === 'web' ? '/privacidad.html' : 'https://gestion-alquileres-sero0.vercel.app/privacidad.html';
+// El manual y la política de privacidad están publicados junto con la versión web.
+const SITE = Platform.OS === 'web' ? '' : 'https://gestion-alquileres-sero0.vercel.app';
+const MANUAL_URL = `${SITE}/manual.html`;
+const PRIVACY_URL = `${SITE}/privacidad.html`;
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -143,6 +144,12 @@ export default function MenuScreen() {
           </ListSection>
 
           <ListSection>
+            <ListRow
+              title="Ayuda"
+              subtitle="Manual de uso, paso a paso"
+              icon="help-circle-outline"
+              onPress={() => Linking.openURL(MANUAL_URL).catch(() => undefined)}
+            />
             <ListRow
               title="Política de privacidad"
               icon="shield-checkmark-outline"
