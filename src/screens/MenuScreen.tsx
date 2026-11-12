@@ -7,7 +7,7 @@
 // =====================================================================
 
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Linking, Platform, ScrollView, Text, View } from 'react-native';
 import { showAlert, showConfirm } from '../components/DialogHost';
 import LargeTitleHeader from '../components/LargeTitleHeader';
@@ -32,7 +32,7 @@ const PRIVACY_URL =
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
-export default function SettingsScreen() {
+export default function MenuScreen() {
   const styles = useStyles();
   const { preference, setPreference } = useTheme();
   const navigation = useNavigation<any>();
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
             <ListRow
               title="Actualizar importes"
               icon="document-text-outline"
-              value={pendingImports ? `${pendingImports} pendientes` : undefined}
+              value={pendingImports ? `Faltan ${pendingImports}` : undefined}
               valueTone={pendingImports ? 'warning' : 'muted'}
               onPress={() => navigation.navigate('Imports')}
             />

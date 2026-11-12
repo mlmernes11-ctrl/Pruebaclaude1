@@ -1,7 +1,7 @@
 // =====================================================================
 // Historial por mes
 // ---------------------------------------------------------------------
-// Agrupa las liquidaciones por mes y calcula liquidado, cobrado, en mora y por vencer,
+// Agrupa los cargos por mes y calcula el importe, lo cobrado, lo que está en mora y lo a vencer,
 // para la vista Historial y el resumen del mes en el Inicio.
 // =====================================================================
 
@@ -19,15 +19,15 @@ export interface HistoryRow {
   pending: MoneyTotals;
   overdueCount: number;
   pendingCount: number;
-  // Proporciones de lo liquidado para la barra (suman 1 cuando hay liquidaciones).
+  // Proporciones del importe para la barra (suman 1 cuando hay cargos).
   shares: { paid: number; overdue: number; pending: number };
-  // false si no hay cotización: las proporciones se calculan por cantidad de liquidaciones.
+  // false si no hay cotización: las proporciones se calculan por cantidad de cargos.
   sharesByAmount: boolean;
 }
 
 type ToPesos = (amount: number, currency: Currency) => number | undefined;
 
-// Arma la fila de un grupo de liquidaciones.
+// Arma la fila de un grupo de cargos.
 function buildRow(period: string, views: ChargeView[], toPesos: ToPesos): HistoryRow {
   const row: HistoryRow = {
     period,
@@ -94,7 +94,7 @@ function buildRow(period: string, views: ChargeView[], toPesos: ToPesos): Histor
 
 // ── Armado del historial ──────────────────────────────────────────────
 
-// Cada liquidación cuenta en el mes que liquida (su período), sin importar cuándo se pagó.
+// Cada cargo cuenta en el mes al que corresponde (su período), sin importar cuándo se pagó.
 export function buildYearHistory(
   views: ChargeView[],
   year: number,
@@ -117,7 +117,7 @@ export function buildPeriodRow(views: ChargeView[], period: string, toPesos: ToP
   return buildRow(period, views.filter((v) => v.charge.period === period), toPesos);
 }
 
-// Primer y último año con liquidaciones, para las flechas del selector de año.
+// Primer y último año con cargos, para las flechas del selector de año.
 export function yearRange(views: ChargeView[], currentYear: number): { min: number; max: number } {
   let min = currentYear;
   let max = currentYear;

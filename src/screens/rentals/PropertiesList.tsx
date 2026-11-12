@@ -6,7 +6,6 @@
 // =====================================================================
 
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
 import ListRow, { ValueTone } from '../../components/ListRow';

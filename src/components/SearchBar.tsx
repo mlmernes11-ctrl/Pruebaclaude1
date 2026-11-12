@@ -3,7 +3,6 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Platform, StyleProp, TextInput, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';

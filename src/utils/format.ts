@@ -61,7 +61,7 @@ export function formatTotals(totals: MoneyTotals): string {
 }
 
 // Todo pasado a pesos con la cotización; nada si hay dólares y no hay cotización.
-export function totalsInPesos(totals: MoneyTotals, rate?: number): number | undefined {
+function totalsInPesos(totals: MoneyTotals, rate?: number): number | undefined {
   if (totals.USD && !rate) return undefined;
   return totals.ARS + totals.USD * (rate ?? 0);
 }

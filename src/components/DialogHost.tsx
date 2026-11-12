@@ -5,7 +5,7 @@
 // showConfirm() desde cualquier pantalla.
 // =====================================================================
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import Button from './Button';

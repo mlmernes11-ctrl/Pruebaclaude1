@@ -3,7 +3,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { showAlert, showConfirm } from '../../components/DialogHost';
 import Button from '../../components/Button';

@@ -2,14 +2,13 @@
 // Selector de vistas
 // =====================================================================
 
-import React from 'react';
 import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 
 // ── Componente ────────────────────────────────────────────────────────
 
-// Selector de vistas ("Recibidos | Liquidaciones | Historial"): se ve una a la vez.
+// Selector de vistas ("Expensas | Servicios | Alquiler"): se ve una a la vez.
 export default function SegmentedControl<T extends string>({
   options,
   value,

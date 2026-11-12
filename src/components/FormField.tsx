@@ -4,7 +4,6 @@
 // Etiqueta y caja para escribir, con asterisco si es obligatorio.
 // =====================================================================
 
-import React from 'react';
 import {
   KeyboardTypeOptions,
   Text,

@@ -7,7 +7,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { showAlert, showConfirm } from '../../components/DialogHost';

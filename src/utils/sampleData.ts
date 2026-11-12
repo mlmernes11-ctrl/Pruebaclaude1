@@ -1,7 +1,7 @@
 // =====================================================================
 // Datos de ejemplo (modo demo)
 // ---------------------------------------------------------------------
-// Una cartera de prueba con propiedades, inquilinos, contratos, liquidaciones y pagos,
+// Una cartera de prueba con propiedades, inquilinos, contratos, cargos y cobros,
 // armada para mostrar todos los estados posibles. Solo se usa en el modo demo.
 // =====================================================================
 
@@ -261,7 +261,7 @@ export function buildSampleData(): AppData {
     status: 'finalizado',
   });
 
-  // — Liquidaciones y pagos —
+  // — Cargos y cobros —
   const charges: Charge[] = [];
   const payments: Payment[] = [];
 

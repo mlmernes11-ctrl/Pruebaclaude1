@@ -1,7 +1,7 @@
 // =====================================================================
 // Tipos de datos
 // ---------------------------------------------------------------------
-// La forma de cada cosa que guarda la app: propiedad, inquilino, contrato, liquidación y pago.
+// La forma de cada cosa que guarda la app: propiedad, inquilino, contrato, cargo y pago.
 // Los nombres en inglés coinciden con las columnas de la base (en la base van en snake_case).
 // =====================================================================
 
@@ -85,13 +85,13 @@ export interface Contract {
   createdAt: string;
 }
 
-// ── Liquidaciones ─────────────────────────────────────────────────────
+// ── Cargos ─────────────────────────────────────────────────────
 
 export type ChargeStatus = 'pagado' | 'pendiente' | 'vencido';
 
 export type ChargeConcept = 'alquiler' | 'expensas' | 'servicios';
 
-// Liquidación: lo que el inquilino debe por un concepto y un mes.
+// Cargo: lo que el inquilino debe por un concepto y un mes.
 export interface Charge {
   id: string;
   contractId: string;
@@ -109,15 +109,15 @@ export interface Charge {
   createdAt: string;
 }
 
-// ── Pagos ─────────────────────────────────────────────────────────────
+// ── Cobros ─────────────────────────────────────────────────────────────
 
-// Cuánto de un pago se aplicó a una liquidación.
+// Cuánto de un cobro se aplicó a un cargo.
 export interface PaymentAllocation {
   chargeId: string;
   amount: number;
 }
 
-// Pago recibido, aplicado a una o más liquidaciones del mismo concepto.
+// Cobro recibido, aplicado a una o más cargos del mismo concepto.
 export interface Payment {
   id: string;
   contractId: string;
@@ -135,7 +135,7 @@ export interface Payment {
   rateSource?: 'blue' | 'oficial' | 'bolsa' | 'manual';
   allocations: PaymentAllocation[];
   notes?: string;
-  // Los pagos cargados juntos en un recibo (por ejemplo alquiler + expensas) comparten este valor.
+  // Los cobros cargados juntos en un recibo (por ejemplo alquiler + expensas) comparten este valor.
   receiptId?: string;
   createdAt: string;
 }

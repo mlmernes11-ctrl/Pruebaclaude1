@@ -1,11 +1,10 @@
 // =====================================================================
-// Pantalla: Detalle de un pago
+// Pantalla: Detalle de un cobro
 // ---------------------------------------------------------------------
-// Monto, a qué liquidaciones se aplicó, lo que quedó a favor y la opción de anularlo.
+// Monto, a qué cargos se aplicó, lo que quedó a favor y la opción de anularlo.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React from 'react';
 import { ScrollView, Text } from 'react-native';
 import { showConfirm } from '../../components/DialogHost';
 import ListRow from '../../components/ListRow';

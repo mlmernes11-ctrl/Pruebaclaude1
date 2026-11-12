@@ -1,12 +1,12 @@
 // =====================================================================
-// Datos de la app (propiedades, inquilinos, contratos, liquidaciones y pagos)
+// Datos de la app (propiedades, inquilinos, contratos, cargos y cobros)
 // ---------------------------------------------------------------------
 // Este "contexto" guarda todos los datos en memoria y los comparte con todas las pantallas
 // (cualquier pantalla los lee con useData()). También se encarga de:
 //   - Cargarlos al abrir la app: de Supabase (cuenta real) o del celular (modo demo).
 //   - Guardar cada cambio: en Supabase, o en el celular en modo demo.
-//   - Generar solas las liquidaciones de cada mes.
-//   - Aplicar el saldo a favor de un inquilino a sus próximas liquidaciones.
+//   - Generar solos los cargos de cada mes.
+//   - Aplicar el saldo a favor de un inquilino a sus próximos cargos.
 // =====================================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,7 +63,7 @@ interface DataContextValue extends AppData {
   // Cuenta real: el servidor revisa lo automático y se vuelve a leer todo (deslizar hacia abajo).
   pullFromServer: () => Promise<void>;
 
-  // Cada liquidación (sin las anuladas) con lo pagado, lo que falta y su estado.
+  // Cada cargo (sin los anulados) con lo pagado, lo que falta y su estado.
   chargeViews: ChargeView[];
 
   // Altas, cambios y bajas.
@@ -332,9 +332,9 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     setData((prev) => ({ ...prev, payments: applyCredits(prev.payments, prev.charges) ?? prev.payments }));
   }, [mode, loading, loadError, data.payments, data.charges]);
 
-  // ── Estado de cada liquidación ─────────────────────────────────────
+  // ── Estado de cada cargo ─────────────────────────────────────
 
-  // Cuánto se pagó de cada liquidación, según los pagos registrados.
+  // Cuánto se pagó de cada cargo, según los cobros registrados.
   const ledger = useMemo(() => buildLedger(data.payments), [data.payments]);
 
   const chargeViews = useMemo(
@@ -352,7 +352,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     return property;
   }, []);
 
-  // Si cambian las expensas o los servicios, las liquidaciones impagas de este mes en adelante
+  // Si cambian las expensas o los servicios, los cargos impagos de este mes en adelante
   // toman el valor nuevo.
   const updateProperty = useCallback<DataContextValue['updateProperty']>((id, values) => {
     setData((prev) => {
@@ -411,7 +411,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     return contract;
   }, []);
 
-  // Si cambia el alquiler, las liquidaciones impagas de este mes en adelante toman el valor nuevo.
+  // Si cambia el alquiler, los cargos impagos de este mes en adelante toman el valor nuevo.
   const updateContract = useCallback<DataContextValue['updateContract']>((id, values) => {
     setData((prev) => {
       const previousPropertyId = prev.contracts.find((c) => c.id === id)?.propertyId;
@@ -426,7 +426,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     });
   }, []);
 
-  // Borrar un contrato borra también sus liquidaciones y pagos.
+  // Borrar un contrato borra también sus cargos y cobros.
   const deleteContract = useCallback<DataContextValue['deleteContract']>((id) => {
     setData((prev) => {
       const removed = prev.contracts.find((c) => c.id === id);
@@ -441,7 +441,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     });
   }, []);
 
-  // ── Liquidaciones ──────────────────────────────────────────────────
+  // ── Cargos ──────────────────────────────────────────────────
 
   const addCharge = useCallback<DataContextValue['addCharge']>((values) => {
     const charge: Charge = { ...values, ...newRecordFields() };
@@ -453,8 +453,8 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     setData((prev) => ({ ...prev, charges: prev.charges.map((c) => (c.id === id ? { ...c, ...values } : c)) }));
   }, []);
 
-  // Eliminar una liquidación no la borra de la base: queda marcada como anulada para que la
-  // generación mensual no la vuelva a crear. Si tenía pagos, esa plata se desvincula y queda a
+  // Eliminar un cargo no lo borra de la base: queda marcado como anulado para que la
+  // generación mensual no lo vuelva a crear. Si tenía cobros, esa plata se desvincula y queda a
   // favor del inquilino (y se aplica sola a su próxima deuda del mismo concepto).
   const voidCharge = useCallback<DataContextValue['voidCharge']>((id) => {
     setData((prev) => ({
@@ -468,7 +468,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     }));
   }, []);
 
-  // ── Pagos ──────────────────────────────────────────────────────────
+  // ── Cobros ──────────────────────────────────────────────────────────
 
   const addPayment = useCallback<DataContextValue['addPayment']>((values) => {
     const payment: Payment = { ...values, ...newRecordFields() };
@@ -506,7 +506,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     (tenantId: string) => data.contracts.filter((c) => c.tenantId === tenantId),
     [data.contracts],
   );
-  // Las listas de liquidaciones y pagos van de la más nueva a la más vieja.
+  // Las listas de cargos y cobros van del más nuevo al más viejo.
   const chargeViewsForContract = useCallback(
     (contractId: string) => chargeViews.filter((v) => v.charge.contractId === contractId).sort(byDueDateDesc),
     [chargeViews],

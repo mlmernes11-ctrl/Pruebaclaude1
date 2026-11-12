@@ -4,7 +4,6 @@
 // Botón grande de la app, con variantes: principal, secundario, peligro, etc.
 // =====================================================================
 
-import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { fontSize, Palette, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';

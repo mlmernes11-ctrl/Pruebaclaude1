@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Button from '../../components/Button';
 import HeaderTextButton from '../../components/HeaderTextButton';

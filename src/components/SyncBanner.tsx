@@ -2,7 +2,6 @@
 // Aviso de cambios sin guardar
 // =====================================================================
 
-import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../context/DataContext';

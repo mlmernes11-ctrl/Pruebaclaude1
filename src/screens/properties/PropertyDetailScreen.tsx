@@ -1,12 +1,12 @@
 // =====================================================================
 // Pantalla: Ficha de la propiedad
 // ---------------------------------------------------------------------
-// Estado de cobro, contrato vigente, accesos a liquidaciones y pagos, detalles y contratos anteriores.
+// Estado de cobro, contrato vigente, accesos a cargos y cobros, detalles y contratos anteriores.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/Button';
 import HeaderTextButton from '../../components/HeaderTextButton';
@@ -253,7 +253,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <ListRow
           title="Historial por mes"
           icon="time-outline"
-          onPress={() => navigation.navigate('PropertyPayments', { propertyId: property.id })}
+          onPress={() => navigation.navigate('History', { propertyId: property.id })}
         />
       </ListSection>
 

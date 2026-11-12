@@ -9,7 +9,7 @@
 import { AdjustmentIndex, Contract } from '../types';
 import { addMonthsToPeriod, currentPeriod } from './format';
 
-export const ADJUSTMENT_LABEL: Record<AdjustmentIndex, string> = {
+const ADJUSTMENT_LABEL: Record<AdjustmentIndex, string> = {
   ipc: 'IPC',
   icl: 'ICL',
   fijo: 'Porcentaje fijo',

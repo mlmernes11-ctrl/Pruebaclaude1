@@ -204,7 +204,7 @@ function SearchSheet({ scope, onClose }: { scope: SearchScope; onClose: () => vo
       const matches = matchFields(record.fields, words);
       if (matches) grouped[record.scope].push({ record, matches });
     });
-    // Primero las que coinciden en el nombre, después en orden de carpeta o nombre.
+    // Primero las que coinciden en el nombre, después en orden de propiedad o nombre.
     (Object.keys(grouped) as SearchScope[]).forEach((key) =>
       grouped[key].sort((a, b) => {
         const aTitle = a.matches.some((m) => a.record.titleFields.includes(m.index)) ? 0 : 1;

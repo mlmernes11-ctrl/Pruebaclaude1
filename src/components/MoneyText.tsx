@@ -4,7 +4,6 @@
 // Muestra un monto y, si está en dólares, debajo lo que vale en pesos.
 // =====================================================================
 
-import React from 'react';
 import { StyleProp, Text, TextStyle, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
 import { fontSize } from '../theme';

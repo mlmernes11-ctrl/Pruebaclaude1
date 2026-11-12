@@ -1,7 +1,7 @@
 // =====================================================================
-// Generación automática de liquidaciones
+// Generación automática de cargos
 // ---------------------------------------------------------------------
-// Cada mes crea las liquidaciones de los contratos activos (alquiler, y expensas y servicios
+// Cada mes crea los cargos de los contratos activos (alquiler, y expensas y servicios
 // si la propiedad los tiene), y actualiza las impagas si cambia un monto.
 // =====================================================================
 
@@ -11,9 +11,9 @@ import { generateId } from './id';
 import { ChargePaymentInfo } from './ledger';
 
 // Conceptos que se pueden liquidar, en el orden en que se muestran.
-export const CHARGE_CONCEPTS: ChargeConcept[] = ['alquiler', 'expensas', 'servicios'];
+const CHARGE_CONCEPTS: ChargeConcept[] = ['alquiler', 'expensas', 'servicios'];
 
-// Clave para saber si ya existe la liquidación de un contrato, concepto y mes.
+// Clave para saber si ya existe el cargo de un contrato, concepto y mes.
 function chargeKey(contractId: string, concept: ChargeConcept, period: string) {
   return `${contractId}|${concept}|${period}`;
 }
@@ -46,7 +46,7 @@ function firstBillablePeriod(contract: Contract): string {
 
 // ── Generación mensual ────────────────────────────────────────────────
 
-// Las liquidaciones que faltan crear, desde el primer mes a liquidar hasta este mes.
+// Los cargos que faltan crear, desde el primer mes a cargar hasta este mes.
 export function buildMissingCharges(
   contracts: Contract[],
   properties: Property[],
@@ -90,7 +90,7 @@ export function buildMissingCharges(
 
 // ── Actualización de montos ───────────────────────────────────────────
 
-// Si se corrige el alquiler o las expensas, las liquidaciones automáticas impagas de este mes
+// Si se corrige el alquiler o las expensas, los cargos automáticos impagos de este mes
 // en adelante toman el valor nuevo; las pasadas o pagadas en parte quedan como estaban.
 export function syncUnpaidAutoCharges(
   charges: Charge[],

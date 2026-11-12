@@ -2,7 +2,6 @@
 // Botón de texto de la barra superior
 // =====================================================================
 
-import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 

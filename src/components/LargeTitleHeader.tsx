@@ -28,7 +28,7 @@ export default function LargeTitleHeader({
   middle?: React.ReactNode;
 }) {
   const styles = useStyles();
-  // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar pago").
+  // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar cobro").
   const desktop = useIsDesktop();
   return (
     <View style={styles.row}>

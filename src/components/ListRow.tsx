@@ -16,7 +16,7 @@ import StatusDot, { DotTone } from './StatusDot';
 export type ValueTone = 'default' | 'muted' | 'danger' | 'primary' | 'success' | 'warning';
 
 // Una fila de lista. Con subtítulo: nombre y monto arriba, detalle abajo (dos líneas).
-// Sin subtítulo: etiqueta a la izquierda y valor gris a la derecha (estilo Ajustes).
+// Sin subtítulo: etiqueta a la izquierda y valor gris a la derecha (estilo Menú).
 function ListRow({
   title,
   subtitle,

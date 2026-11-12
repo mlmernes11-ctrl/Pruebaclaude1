@@ -3,7 +3,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';

@@ -4,7 +4,6 @@
 // Para elegir una opción entre pocas (moneda, tipo de propiedad, estado…).
 // =====================================================================
 
-import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles } from '../context/ThemeContext';

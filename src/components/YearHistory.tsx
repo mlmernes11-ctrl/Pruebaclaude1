@@ -5,7 +5,6 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
@@ -30,7 +29,7 @@ const inPesos = (totals: MoneyTotals, rate?: number) => describeTotals(totals, r
 
 // ── Componente ────────────────────────────────────────────────────────
 
-// Vista del año: cuánto se cobró de lo liquidado y una fila por mes.
+// Vista del año: cuánto se cobró del importe total y una fila por mes.
 export default function YearHistory({
   views,
   year,

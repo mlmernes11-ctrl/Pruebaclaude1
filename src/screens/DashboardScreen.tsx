@@ -6,7 +6,6 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -53,7 +52,7 @@ export default function DashboardScreen() {
   const desktop = useIsDesktop();
   const isEmpty = properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
 
-  // — Carpetas: con deuda, por vencer y sin pendientes —
+  // — Propiedades: con deuda, por vencer y sin pendientes —
   const summaries = properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
   const inDebt = summaries
     .filter((s) => s.collection === 'deuda')
@@ -69,7 +68,7 @@ export default function DashboardScreen() {
   ] as const;
 
   // — Bloque grande: mora y avance del mes —
-  // Total en mora: lo que falta pagar de todas las liquidaciones vencidas.
+  // Total en mora: lo que falta pagar de todos los cargos vencidos.
   const overdueTotals = emptyTotals();
   chargeViews
     .filter((v) => v.status === 'vencido')
@@ -123,7 +122,7 @@ export default function DashboardScreen() {
     })
     .sort((a, b) => a.sort.localeCompare(b.sort));
 
-  // Últimos pagos recibidos (en pantalla grande van al lado de las carpetas).
+  // Últimos cobros (en pantalla grande van al lado de las propiedades).
   const latestPayments = [...payments].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 5);
 
   // Mora y avance del mes: en el celular van en un mismo bloque; en pantalla grande, uno al lado del otro.

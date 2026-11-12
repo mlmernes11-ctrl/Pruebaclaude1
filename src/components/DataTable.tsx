@@ -2,10 +2,9 @@
 // Tabla (versión de escritorio)
 // ---------------------------------------------------------------------
 // Filas con columnas alineadas, para listas largas en pantalla grande (por ejemplo las
-// liquidaciones y los pagos). Cada celda puede resaltar lo buscado.
+// cargos y los cobros). Cada celda puede resaltar lo buscado.
 // =====================================================================
 
-import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { makeStyles } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';

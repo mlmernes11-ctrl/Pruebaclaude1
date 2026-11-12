@@ -4,7 +4,6 @@
 // Rectangulito con texto y color de estado (por ejemplo "Vencida" en rojo).
 // =====================================================================
 
-import React from 'react';
 import { Text, View } from 'react-native';
 import { fontSize, Palette, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';

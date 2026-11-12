@@ -6,18 +6,18 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import Screen from '../../components/Screen';
-import YearHistory from '../../components/YearHistory';
-import { useData } from '../../context/DataContext';
-import { makeStyles } from '../../context/ThemeContext';
-import { fontSize, spacing } from '../../theme';
+import Screen from '../components/Screen';
+import YearHistory from '../components/YearHistory';
+import { useData } from '../context/DataContext';
+import { makeStyles } from '../context/ThemeContext';
+import { fontSize, spacing } from '../theme';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 // Al tocar un mes se ven sus cargos.
-export default function PropertyPaymentsScreen() {
+export default function HistoryScreen() {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();

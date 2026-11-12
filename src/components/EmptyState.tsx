@@ -1,11 +1,10 @@
 // =====================================================================
 // Pantalla vacía
 // ---------------------------------------------------------------------
-// Ícono y mensaje cuando una lista no tiene nada (por ejemplo "Sin pagos").
+// Ícono y mensaje cuando una lista no tiene nada (por ejemplo "Sin cobros").
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Text, View } from 'react-native';
 import { fontSize, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';

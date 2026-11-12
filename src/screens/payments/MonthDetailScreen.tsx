@@ -1,11 +1,10 @@
 // =====================================================================
 // Pantalla: Detalle de un mes
 // ---------------------------------------------------------------------
-// Las liquidaciones de un mes con su total liquidado, cobrado y sin cobrar.
+// Los cargos de un mes con su importe total, lo cobrado y el saldo.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import EmptyState from '../../components/EmptyState';
 import ListRow from '../../components/ListRow';

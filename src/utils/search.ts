@@ -1,7 +1,7 @@
 // =====================================================================
 // Buscador
 // ---------------------------------------------------------------------
-// La lógica de búsqueda que usan el buscador de Alquileres, el de Pagos y el filtro por
+// La lógica de búsqueda que usan el buscador de Alquileres, el de Cobros y el filtro por
 // propiedad, y el cálculo de qué partes del texto se resaltan.
 // =====================================================================
 

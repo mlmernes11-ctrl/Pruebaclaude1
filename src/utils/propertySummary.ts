@@ -14,9 +14,9 @@ import { plural } from './text';
 export type CollectionState = 'deuda' | 'por-vencer' | 'al-dia' | 'sin-contrato' | 'mantenimiento';
 
 // Días antes del fin de un contrato en que se empieza a avisar.
-export const CONTRACT_ENDING_SOON_DAYS = 60;
+const CONTRACT_ENDING_SOON_DAYS = 60;
 
-// Cantidad y total de un grupo de liquidaciones.
+// Cantidad y total de un grupo de cargos.
 export interface PaymentBucket {
   count: number;
   totals: MoneyTotals;
@@ -56,7 +56,7 @@ function bucket(): PaymentBucket {
   return { count: 0, totals: emptyTotals() };
 }
 
-// Arma el resumen de una propiedad con sus contratos y liquidaciones.
+// Arma el resumen de una propiedad con sus contratos y cargos.
 export function summarizeProperty(
   property: Property,
   contracts: Contract[],

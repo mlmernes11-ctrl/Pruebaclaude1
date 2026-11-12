@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { Linking, ScrollView, Text, View } from 'react-native';
 import HeaderTextButton from '../../components/HeaderTextButton';
 import ListRow from '../../components/ListRow';

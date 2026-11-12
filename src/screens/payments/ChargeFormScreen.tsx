@@ -1,11 +1,11 @@
 // =====================================================================
-// Pantalla: Liquidación
+// Pantalla: Cargo
 // ---------------------------------------------------------------------
-// Ver una liquidación (lo pagado y lo que falta), editarla, anularla o crear una a mano.
+// Ver un cargo (lo pagado y lo que falta), editarlo, anularlo o crear uno a mano.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -84,7 +84,7 @@ export default function ChargeFormScreen() {
   const tenant = getTenantById(contract?.tenantId);
   const appliedPayments = charge ? paymentsForCharge(charge.id) : [];
 
-  // Al crear una liquidación, se sugieren el monto y el vencimiento que correspondan al contrato.
+  // Al crear un cargo, se sugieren el monto y el vencimiento que correspondan al contrato.
   const suggest = (targetContractId: string, targetConcept: ChargeConcept, targetPeriod: string) => {
     if (charge) return;
     const target = getContractById(targetContractId);
@@ -95,7 +95,7 @@ export default function ChargeFormScreen() {
     setDueDate(periodToDueDate(targetPeriod, target.paymentDay));
   };
 
-  // — Guardar (avisa si ya hay una liquidación igual) —
+  // — Guardar (avisa si ya hay un cargo igual) —
   const handleSave = () => {
     if (!contract) {
       showAlert('Falta el contrato', 'Elegí a qué contrato corresponde el cargo.');

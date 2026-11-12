@@ -8,7 +8,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
 import Screen from '../../components/Screen';

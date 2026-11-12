@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Sidebar from '../components/Sidebar';
@@ -19,13 +19,13 @@ import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './b
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import MenuScreen from '../screens/MenuScreen';
 import ImportsScreen from '../screens/imports/ImportsScreen';
 import AccessScreen from '../screens/auth/AccessScreen';
 import RentalsScreen from '../screens/rentals/RentalsScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
 import PropertyDetailScreen from '../screens/properties/PropertyDetailScreen';
-import PropertyPaymentsScreen from '../screens/properties/PropertyPaymentsScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import TenantFormScreen from '../screens/tenants/TenantFormScreen';
 import TenantDetailScreen from '../screens/tenants/TenantDetailScreen';
 import ContractFormScreen from '../screens/contracts/ContractFormScreen';
@@ -38,15 +38,13 @@ import MonthDetailScreen from '../screens/payments/MonthDetailScreen';
 import { formatPeriod } from '../utils/format';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 
-// ── Constantes y funciones auxiliares ─────────────────────────────────
-
 // ── Pilas de pantallas de cada pestaña ──────────────────────────────
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
 const RentalsStack = createNativeStackNavigator();
 const PaymentsStack = createNativeStackNavigator();
-const SettingsStack = createNativeStackNavigator();
+const MenuStack = createNativeStackNavigator();
 
 function useScreenOptions() {
   const { colors } = useTheme();
@@ -97,8 +95,8 @@ function RentalsStackNavigator() {
       />
       <RentalsStack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Propiedad' }} />
       <RentalsStack.Screen
-        name="PropertyPayments"
-        component={PropertyPaymentsScreen}
+        name="History"
+        component={HistoryScreen}
         options={{ title: 'Historial por mes' }}
       />
       <RentalsStack.Screen
@@ -155,7 +153,7 @@ function PaymentsStackNavigator() {
       />
       <PaymentsStack.Screen
         name="History"
-        component={PropertyPaymentsScreen}
+        component={HistoryScreen}
         options={{ title: 'Historial por mes' }}
       />
       <PaymentsStack.Screen
@@ -167,18 +165,18 @@ function PaymentsStackNavigator() {
   );
 }
 
-function SettingsStackNavigator() {
+function MenuStackNavigator() {
   const screenOptions = useScreenOptions();
   return (
-    <SettingsStack.Navigator screenOptions={screenOptions}>
-      <SettingsStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
-      <SettingsStack.Screen
+    <MenuStack.Navigator screenOptions={screenOptions}>
+      <MenuStack.Screen name="Menu" component={MenuScreen} options={{ headerShown: false }} />
+      <MenuStack.Screen
         name="ExchangeRate"
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
-      <SettingsStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
-    </SettingsStack.Navigator>
+      <MenuStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
+    </MenuStack.Navigator>
   );
 }
 
@@ -189,7 +187,7 @@ const TAB_ICONS: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Io
   DashboardTab: ['home', 'home-outline'],
   RentalsTab: ['business', 'business-outline'],
   PaymentsTab: ['wallet', 'wallet-outline'],
-  SettingsTab: ['menu', 'menu-outline'],
+  MenuTab: ['menu', 'menu-outline'],
 };
 
 const navigationRef = createNavigationContainerRef();
@@ -213,8 +211,6 @@ function useBrowserBackButton() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 }
-
-// ── Componente ────────────────────────────────────────────────────────
 
 // ── Navegación principal ─────────────────────────────────────────────
 
@@ -280,7 +276,7 @@ export default function RootNavigator() {
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
         <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
         <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Cobros' }} />
-        <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Menú' }} />
+        <Tab.Screen name="MenuTab" component={MenuStackNavigator} options={{ title: 'Menú' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

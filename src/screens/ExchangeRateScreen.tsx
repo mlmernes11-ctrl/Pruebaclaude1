@@ -4,7 +4,7 @@
 // Elegir qué dólar usar, ver las cotizaciones del día o cargar un valor a mano.
 // =====================================================================
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';

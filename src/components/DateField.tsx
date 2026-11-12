@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import {

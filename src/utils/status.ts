@@ -14,23 +14,23 @@ import { formatDayMonth, formatMoney } from './format';
 import { ChargeView } from './ledger';
 import { CollectionState, contractEndBadge } from './propertySummary';
 
-// ── Liquidaciones ────────────────────────────────────────────────────
+// ── Cargos ────────────────────────────────────────────────────
 
-// Nombre del estado de una liquidación.
+// Nombre del estado de un cargo.
 export const CHARGE_STATUS_LABEL: Record<ChargeStatus, string> = {
   vencido: 'Vencido',
   pendiente: 'A vencer',
   pagado: 'Pagado',
 };
 
-// Punto de color al lado de cada liquidación en las listas.
+// Punto de color al lado de cada cargo en las listas.
 export const CHARGE_STATUS_DOT: Record<ChargeStatus, DotTone> = {
   vencido: 'danger',
   pendiente: 'warning',
   pagado: 'success',
 };
 
-// Color de la etiqueta con el estado (en la ficha de la liquidación).
+// Color de la etiqueta con el estado (en la ficha de el cargo).
 export const CHARGE_STATUS_BADGE: Record<ChargeStatus, BadgeTone> = {
   vencido: 'danger',
   pendiente: 'warning',
@@ -44,12 +44,12 @@ export const CHARGE_VALUE_TONE: Record<ChargeStatus, ValueTone> = {
   pagado: 'muted',
 };
 
-// Monto que se muestra de una liquidación: lo que falta pagar, o el total si ya está paga.
+// Monto que se muestra de un cargo: el saldo, o el total si ya está pago.
 export function chargeShownAmount(view: ChargeView): number {
   return view.status === 'pagado' ? view.charge.amount : view.balance;
 }
 
-// Cómo va el pago, en pocas palabras: "pagada el 10/10", "pagó US$ 600 de US$ 1.100"
+// Cómo va el cobro, en pocas palabras: "pagado el 10/10", "pago parcial: US$ 600 de US$ 1.100"
 // o "vence el 10/11".
 export function chargeProgress(view: ChargeView): string {
   const { charge } = view;

@@ -10,7 +10,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/Button';
 import { showConfirm } from '../../components/DialogHost';

@@ -6,7 +6,6 @@
 // Solo dibuja; los cálculos y las reglas (qué cambia a "Manual") los hace la pantalla.
 // =====================================================================
 
-import React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RATE_SOURCE_LABEL, RateSource } from '../../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../../context/ThemeContext';
