@@ -6,12 +6,15 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
+
+// Logo de Locatia (la L con la casita), el mismo del ícono de la app.
+const BRAND_TILE = require('../../../assets/brand-tile.png');
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -83,12 +86,11 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.logo}>
-            <Ionicons name="business" size={34} color={colors.white} />
-          </View>
-          <Text style={styles.title} accessibilityRole="header">
-            Gestión de Alquileres
+          <Image source={BRAND_TILE} style={styles.logo} accessibilityIgnoresInvertColors />
+          <Text style={styles.title} accessibilityRole="header" accessibilityLabel="Locatia">
+            locatia
           </Text>
+          <Text style={styles.tagline}>Gestión de alquileres</Text>
           <Text style={styles.subtitle}>
             {creating ? 'Creá tu cuenta para empezar' : 'Ingresá a tu cuenta'}
           </Text>
@@ -204,21 +206,26 @@ const useStyles = makeStyles((colors) => ({
     alignSelf: 'center',
   },
   logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: colors.primarySolid,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 72,
+    height: 72,
     alignSelf: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: -1.2,
     color: colors.text,
     textAlign: 'center',
+  },
+  tagline: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: 2,
   },
   subtitle: {
     fontSize: fontSize.md,

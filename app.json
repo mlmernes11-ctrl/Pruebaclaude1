@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Gestión de Alquileres",
+    "name": "Locatia",
     "slug": "gestion-alquileres",
     "scheme": "gestionalquileres",
     "version": "1.0.0",
@@ -13,7 +13,7 @@
     "android": {
       "package": "com.gestionalquileres.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0A4FA8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -21,7 +21,9 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Locatia",
+      "shortName": "Locatia"
     },
     "extra": {
       "eas": {

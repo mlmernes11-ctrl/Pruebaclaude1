@@ -1,4 +1,4 @@
-# Gestión de Alquileres
+# Locatia
 
 App (Expo + React Native + TypeScript + Supabase) para administrar una cartera de alquileres: propiedades, contratos con su inquilino, cargos de cada mes y cobros. Funciona como app de Android (APK) y como web; la web se adapta sola a celular o computadora.
 

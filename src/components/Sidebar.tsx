@@ -5,14 +5,16 @@
 // secciones y, abajo, la cotización en uso y la cuenta.
 // =====================================================================
 
-import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, spacing } from '../theme';
 import { formatMoney } from '../utils/format';
+
+// Logo de Locatia (la L con la casita), el mismo del ícono de la app.
+const BRAND_TILE = require('../../assets/brand-tile.png');
 
 // ── Componente ────────────────────────────────────────────────────────
 
@@ -25,10 +27,8 @@ export default function Sidebar({ state, descriptors, navigation }: BottomTabBar
   return (
     <View style={styles.sidebar} accessibilityRole="tablist">
       <View style={styles.brand}>
-        <View style={styles.logo}>
-          <Ionicons name="business" size={18} color={colors.white} />
-        </View>
-        <Text style={styles.brandText}>Gestión de{'\n'}Alquileres</Text>
+        <Image source={BRAND_TILE} style={styles.logo} accessibilityIgnoresInvertColors />
+        <Text style={styles.brandText} accessibilityLabel="Locatia">locatia</Text>
       </View>
 
       {state.routes.map((route, index) => {
@@ -87,15 +87,11 @@ const useStyles = makeStyles((colors) => ({
   logo: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.primarySolid,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   brandText: {
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    lineHeight: 18,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.8,
     color: colors.text,
   },
   item: {
