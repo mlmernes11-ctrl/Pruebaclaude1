@@ -40,7 +40,22 @@
   /* Índice */
   main { padding: 0 20px 64px; }
   .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
-  .index { margin: -28px auto 0; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; position: relative; }
+  .index { margin: 40px auto 0; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; position: relative; }
+  .intro { margin: -28px auto 0; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 32px; position: relative; }
+  .intro h2 { font-size: clamp(28px, 4.5vw, 40px); margin-bottom: 12px; }
+  .intro > p:not(.eyebrow) { font-size: 19px; color: var(--muted); max-width: 820px; margin: 0 0 10px; }
+  .intro h3 { font-size: 22px; margin: 28px 0 12px; }
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .how div { background: var(--bg); border-radius: 18px; padding: 18px; }
+  .how b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 28px; color: var(--accent); line-height: 1; margin-bottom: 8px; }
+  .how p, .can p, .result p { margin: 0; color: var(--muted); font-size: 16px; }
+  .how strong, .can strong, .result strong { color: var(--text); }
+  .can { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 24px; }
+  .can p { padding-left: 26px; position: relative; }
+  .can p::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .result { background: var(--soft); border-radius: 18px; padding: 18px; }
+  .result h4 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; margin: 0 0 6px; }
   .index ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 24px; }
   .index li a { display: flex; gap: 12px; align-items: baseline; text-decoration: none; color: var(--text); padding: 6px 0; font-weight: 600; }
   .index li span { font-family: 'Space Grotesk', sans-serif; color: var(--accent); min-width: 24px; }
@@ -84,7 +99,8 @@
   @media (max-width: 760px) {
     .figure, .figure.two { grid-template-columns: 1fr; padding: 20px; gap: 22px; }
     .phone { max-width: 260px; }
-    .index { padding: 22px; }
+    .index, .intro { padding: 22px; }
+    .how { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -104,6 +120,40 @@
 
 <main>
   <div class="wrap">
+
+    <section class="intro" id="que-es" aria-labelledby="que-es-titulo">
+      <p class="eyebrow">Antes de empezar</p>
+      <h2 id="que-es-titulo">Qué es Locatia</h2>
+      <p>Locatia es una aplicación para administrar alquileres. Reúne en un solo lugar tus propiedades, los contratos con cada inquilino, lo que te tienen que pagar cada mes y lo que ya cobraste.</p>
+      <p>Está pensada para administradores de propiedades, inmobiliarias y propietarios con varias propiedades en alquiler. Se usa desde el celular o la computadora, con la misma cuenta.</p>
+
+      <h3>Cómo funciona</h3>
+      <div class="how">
+        <div><b>1</b><p><strong>Cargás tus propiedades.</strong> Una vez, con sus datos y, si corresponde, sus expensas y servicios.</p></div>
+        <div><b>2</b><p><strong>Cargás el contrato de cada una</strong> con su inquilino: fechas, alquiler, moneda, día de vencimiento y ajuste.</p></div>
+        <div><b>3</b><p><strong>Cada mes, Locatia crea lo que hay que cobrar.</strong> Vos registrás lo que te pagan; los estados, saldos, avisos y ajustes los calcula la app.</p></div>
+      </div>
+
+      <h3>Qué podés hacer</h3>
+      <div class="can">
+        <p>Ver de un vistazo <strong>quién te debe, cuánto y desde cuándo</strong>, y qué alquileres están por vencer.</p>
+        <p>Generar solos los <strong>cargos de cada mes</strong>: alquiler, expensas y servicios.</p>
+        <p><strong>Ajustar alquileres</strong> por IPC, ICL o un porcentaje fijo, sin hacer cuentas.</p>
+        <p><strong>Registrar cobros</strong> en pesos o en dólares, totales o parciales, y mandar el <strong>recibo por WhatsApp</strong>.</p>
+        <p><strong>Recordar deudas por WhatsApp</strong> con el detalle ya escrito.</p>
+        <p>Recibir aviso de los <strong>contratos que terminan</strong> y renovarlos con los mismos datos.</p>
+        <p>Consultar la <strong>cuenta corriente</strong> de cada inquilino y el <strong>historial por mes</strong> de cada propiedad.</p>
+        <p>Usar la <strong>cotización del dólar</strong> del día (blue, oficial o MEP) para los cobros en pesos.</p>
+      </div>
+
+      <h3>Qué podés esperar</h3>
+      <div class="results">
+        <div class="result"><h4>Menos planillas y cuentas</h4><p>Los cargos, los ajustes y los saldos se calculan solos. Vos solo registrás lo que cobrás.</p></div>
+        <div class="result"><h4>Ningún cobro se pasa</h4><p>Lo vencido y lo que está por vencer aparece apenas abrís la app, con nombre, monto y fecha.</p></div>
+        <div class="result"><h4>Cuentas claras con cada inquilino</h4><p>Cada cargo y cada cobro quedan registrados, y el recibo sale en el momento.</p></div>
+        <div class="result"><h4>Todo en un solo lugar</h4><p>Tu información, guardada en la nube y a mano en el celular y en la computadora.</p></div>
+      </div>
+    </section>
 
     <nav class="index" aria-label="Índice">
       <p class="eyebrow">Índice</p>
