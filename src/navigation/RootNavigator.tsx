@@ -16,6 +16,7 @@ import Sidebar from '../components/Sidebar';
 import { useData } from '../context/DataContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
+import { resetOnTabLeave } from './resetOnTabLeave';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
@@ -46,6 +47,12 @@ const RentalsStack = createNativeStackNavigator();
 const PaymentsStack = createNativeStackNavigator();
 const MenuStack = createNativeStackNavigator();
 
+// La primera pantalla de cada pestaña vuelve a empezar al salir de ella (ver resetOnTabLeave).
+const DashboardRoot = resetOnTabLeave(DashboardScreen as any);
+const RentalsRoot = resetOnTabLeave(RentalsScreen as any, ['filter']);
+const PaymentsRoot = resetOnTabLeave(PaymentsListScreen as any, ['mode', 'status', 'month', 'propertyId']);
+const MenuRoot = resetOnTabLeave(MenuScreen as any);
+
 function useScreenOptions() {
   const { colors } = useTheme();
   return useMemo(
@@ -67,7 +74,7 @@ function DashboardStackNavigator() {
     <DashboardStack.Navigator screenOptions={screenOptions}>
       <DashboardStack.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={DashboardRoot}
         options={{ headerShown: false }}
       />
       <DashboardStack.Screen
@@ -85,7 +92,7 @@ function RentalsStackNavigator() {
   const screenOptions = useScreenOptions();
   return (
     <RentalsStack.Navigator screenOptions={screenOptions}>
-      <RentalsStack.Screen name="Rentals" component={RentalsScreen} options={{ headerShown: false }} />
+      <RentalsStack.Screen name="Rentals" component={RentalsRoot} options={{ headerShown: false }} />
       <RentalsStack.Screen
         name="PropertyForm"
         component={PropertyFormScreen}
@@ -135,7 +142,7 @@ function PaymentsStackNavigator() {
     <PaymentsStack.Navigator screenOptions={screenOptions}>
       <PaymentsStack.Screen
         name="PaymentsList"
-        component={PaymentsListScreen}
+        component={PaymentsRoot}
         options={{ headerShown: false }}
       />
       <PaymentsStack.Screen
@@ -173,7 +180,7 @@ function MenuStackNavigator() {
   const screenOptions = useScreenOptions();
   return (
     <MenuStack.Navigator screenOptions={screenOptions}>
-      <MenuStack.Screen name="Menu" component={MenuScreen} options={{ headerShown: false }} />
+      <MenuStack.Screen name="Menu" component={MenuRoot} options={{ headerShown: false }} />
       <MenuStack.Screen
         name="ExchangeRate"
         component={ExchangeRateScreen}
@@ -260,6 +267,8 @@ export default function RootNavigator() {
         tabBar={(props) => (desktop ? <Sidebar {...props} /> : <BottomTabBar {...props} />)}
         screenOptions={({ route }) => ({
           headerShown: false,
+          // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
+          popToTopOnBlur: true,
           tabBarPosition: desktop ? 'left' : 'bottom',
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,

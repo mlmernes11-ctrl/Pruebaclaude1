@@ -114,6 +114,7 @@ export default function PropertiesList({
     { value: 'disponibles', label: 'Disponibles', dot: 'empty', count: count('disponibles') },
     { value: 'mora', label: 'Vencidas', dot: 'danger', count: count('mora') },
   ];
+  const activeFilter = filter !== 'todas' ? filters.find((f) => f.value === filter) : undefined;
 
   // Lo de la derecha: alquiler por mes y hasta cuándo, o la situación si está libre.
   const rightOf = (s: PropertySummary): { main: string; sub?: string; mainColor: string; subColor?: string } => {
@@ -157,6 +158,20 @@ export default function PropertiesList({
           <SearchLauncher scope="propiedades" style={styles.search} />
           <FilterSortMenu filters={filters} filter={filter} onFilter={onFilter} sorts={SORTS} sort={sort} onSort={onSort} />
         </View>
+      ) : null}
+      {/* Si hay un filtro puesto (a mano o desde Inicio), se ve y se quita de un toque. */}
+      {activeFilter ? (
+        <TouchableOpacity
+          style={styles.filterChip}
+          onPress={() => onFilter('todas')}
+          accessibilityRole="button"
+          accessibilityLabel={`Quitar el filtro ${activeFilter.label}`}
+        >
+          <Text style={styles.filterChipText}>
+            Solo {activeFilter.label.toLowerCase()} · {summaries.length}
+          </Text>
+          <Ionicons name="close-circle" size={16} color={colors.primary} />
+        </TouchableOpacity>
       ) : null}
       {summaries.length ? (
         <View style={styles.list}>
@@ -258,6 +273,22 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    minHeight: 32,
+    borderRadius: radius.round,
+    backgroundColor: colors.primaryMuted,
+  },
+  filterChipText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.primary,
   },
   search: {
     flex: 1,
