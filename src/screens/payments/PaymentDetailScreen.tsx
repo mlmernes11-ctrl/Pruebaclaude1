@@ -18,8 +18,9 @@ import { RATE_SOURCE_LABEL } from '../../context/ExchangeRateContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
 import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
-import { unallocatedAmount } from '../../utils/ledger';
+import { isOutstanding, unallocatedAmount } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
+import { openWhatsapp, receiptText } from '../../utils/whatsapp';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -28,7 +29,10 @@ export default function PaymentDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { paymentId } = route.params;
-  const { getPaymentById, getContractById, getPropertyById, getTenantById, charges, payments, deletePayment } = useData();
+  const {
+    getPaymentById, getContractById, getPropertyById, getTenantById, charges, payments, deletePayment,
+    chargeViewsForContract,
+  } = useData();
   const payment = getPaymentById(paymentId);
 
   if (!payment) {
@@ -49,11 +53,13 @@ export default function PaymentDetailScreen() {
 
   const handleDelete = () => {
     showConfirm({
-      title: 'Anular pago',
-      message: sameReceipt.length
-        ? `Se anula solo ${CONCEPT_LABEL[payment.concept].toLowerCase()}; lo demás del recibo queda registrado. Las liquidaciones que cubría vuelven a figurar como deuda. ¿Continuar?`
-        : 'Las liquidaciones que cubría este pago vuelven a figurar como deuda. ¿Continuar?',
-      confirmLabel: 'Anular pago',
+      title: 'Eliminar pago',
+      message:
+        (sameReceipt.length
+          ? `Se elimina solo ${CONCEPT_LABEL[payment.concept].toLowerCase()}; lo demás del recibo queda registrado. `
+          : '') +
+        'La deuda que cubría este pago vuelve a quedar pendiente. No se puede deshacer.',
+      confirmLabel: 'Eliminar pago',
       destructive: true,
       onConfirm: () => {
         deletePayment(payment.id);
@@ -120,7 +126,26 @@ export default function PaymentDetailScreen() {
         ) : null}
 
         <ListSection>
-          <ListRow title="Anular pago" destructive onPress={handleDelete} />
+          <ListRow
+            title="Enviar comprobante por WhatsApp"
+            icon="logo-whatsapp"
+            onPress={() =>
+              openWhatsapp(
+                tenant?.phone,
+                receiptText(
+                  [payment, ...sameReceipt],
+                  tenant,
+                  property,
+                  (chargeId) => charges.find((c) => c.id === chargeId)?.period,
+                  contract ? chargeViewsForContract(contract.id).filter(isOutstanding) : [],
+                ),
+              )
+            }
+          />
+        </ListSection>
+
+        <ListSection>
+          <ListRow title="Eliminar pago" destructive onPress={handleDelete} />
         </ListSection>
       </ScrollView>
     </Screen>

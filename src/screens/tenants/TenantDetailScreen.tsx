@@ -17,16 +17,11 @@ import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
 import { formatDate } from '../../utils/format';
 import { contractEndBadge } from '../../utils/propertySummary';
+import { whatsappUrl } from '../../utils/whatsapp';
 import { contractDot } from '../../utils/status';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
-// Celulares argentinos para WhatsApp: código de país 54 más el 9 de los celulares.
-function whatsappUrl(phone: string): string {
-  let digits = phone.replace(/\D/g, '').replace(/^0/, '');
-  if (!digits.startsWith('54')) digits = `549${digits}`;
-  return `https://wa.me/${digits}`;
-}
 
 const openUrl = (url: string) => Linking.openURL(url).catch(() => undefined);
 

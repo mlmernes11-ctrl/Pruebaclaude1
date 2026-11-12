@@ -58,6 +58,9 @@ export interface Tenant {
 
 export type ContractStatus = 'activo' | 'finalizado' | 'cancelado';
 
+// Cómo se ajusta el alquiler: por IPC (INDEC), por ICL (BCRA) o un porcentaje fijo.
+export type AdjustmentIndex = 'ipc' | 'icl' | 'fijo';
+
 export interface Contract {
   id: string;
   propertyId: string;
@@ -70,6 +73,12 @@ export interface Contract {
   paymentDay: number;
   // Primer mes que la app liquida sola (AAAA-MM).
   billingStartPeriod?: string;
+  // Ajuste del alquiler cada tantos meses desde el inicio. Lo aplica el servidor: actualiza
+  // rentAmount y anota en lastAdjustedPeriod el mes del último ajuste (AAAA-MM).
+  adjustmentIndex?: AdjustmentIndex;
+  adjustmentMonths?: number;
+  adjustmentPercent?: number;
+  lastAdjustedPeriod?: string;
   status: ContractStatus;
   notes?: string;
   createdAt: string;

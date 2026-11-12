@@ -20,6 +20,8 @@ import { fontSize, spacing } from '../../theme';
 import { formatDate, formatMoney, formatTotals } from '../../utils/format';
 import { openInTab } from '../../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../../utils/propertySummary';
+import { isOutstanding } from '../../utils/ledger';
+import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
 import { plural } from '../../utils/text';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
@@ -111,7 +113,10 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
   const propertyContracts = contractsForProperty(property.id);
   const pastContracts = propertyContracts.filter((c) => c.id !== active?.id);
   const contractIds = new Set(propertyContracts.map((c) => c.id));
-  const chargeCount = chargeViewsForProperty(property.id).length;
+  const propertyCharges = chargeViewsForProperty(property.id);
+  const chargeCount = propertyCharges.length;
+  // Lo que debe el inquilino actual: vencido o por vencer de su contrato.
+  const owed = active ? propertyCharges.filter((v) => v.charge.contractId === active.id && isOutstanding(v)) : [];
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
   // Abre la pestaña Pagos ya filtrada por esta propiedad.
   const openPayments = (view: 'pagos' | 'liquidaciones') =>
@@ -148,11 +153,20 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
       </StatusHero>
 
       {active ? (
-        <Button
-          label="Registrar pago"
-          onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
-          style={styles.primaryAction}
-        />
+        <View style={styles.primaryAction}>
+          <Button
+            label="Registrar pago"
+            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
+          />
+          {owed.length ? (
+            <Button
+              label="Recordar deuda por WhatsApp"
+              variant="secondary"
+              onPress={() => openWhatsapp(tenant?.phone, debtReminderText(tenant, property, owed))}
+              style={styles.secondaryAction}
+            />
+          ) : null}
+        </View>
       ) : (
         <View style={styles.heroGap} />
       )}
@@ -310,6 +324,9 @@ const useStyles = makeStyles((colors) => ({
   },
   primaryAction: {
     marginBottom: spacing.xl,
+  },
+  secondaryAction: {
+    marginTop: spacing.sm,
   },
   heroGap: {
     height: spacing.md,

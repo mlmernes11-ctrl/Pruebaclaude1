@@ -154,22 +154,22 @@ export default function ChargeFormScreen() {
     save();
   };
 
-  // — Anular —
+  // — Eliminar —
   const handleVoid = () => {
-    if (!charge) return;
+    if (!charge || !existing) return;
+    const what = `la liquidación de ${CONCEPT_LABEL[charge.concept].toLowerCase()} de ${formatPeriod(charge.period)}`;
     showConfirm({
-      title: 'Anular liquidación',
-      message: `La liquidación de ${CONCEPT_LABEL[charge.concept].toLowerCase()} de ${formatPeriod(
-        charge.period,
-      )} deja de figurar como deuda y no se vuelve a generar.`,
-      confirmLabel: 'Anular',
+      title: 'Eliminar liquidación',
+      message:
+        existing.paid > 0
+          ? `Se elimina ${what}. Tiene ${formatMoney(existing.paid, charge.currency)} pagados: esa plata queda a favor ` +
+            'del inquilino y se usa sola para su próxima deuda del mismo concepto. Si ese pago fue un error, ' +
+            'eliminá también el pago.'
+          : `Se elimina ${what}: deja de figurar como deuda y no se vuelve a generar.`,
+      confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
-        const result = voidCharge(charge.id);
-        if (!result.ok) {
-          showAlert('No se puede anular', result.reason ?? 'Operación no permitida');
-          return;
-        }
+        voidCharge(charge.id);
         smartGoBack(navigation, 'PaymentsList');
       },
     });
@@ -289,7 +289,7 @@ export default function ChargeFormScreen() {
 
         <Button label={charge ? 'Guardar cambios' : 'Crear liquidación'} onPress={handleSave} />
         {charge ? (
-          <Button label="Anular liquidación" variant="dangerOutline" onPress={handleVoid} style={styles.voidButton} />
+          <Button label="Eliminar liquidación" variant="dangerOutline" onPress={handleVoid} style={styles.voidButton} />
         ) : null}
       </ScrollView>
     </Screen>

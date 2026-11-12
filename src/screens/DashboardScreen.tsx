@@ -22,7 +22,9 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { useRefresh } from '../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../theme';
+import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import {
+  addMonthsToPeriod,
   addToTotals,
   describeTotals,
   emptyTotals,
@@ -33,7 +35,7 @@ import {
 } from '../utils/format';
 import { buildPeriodRow } from '../utils/history';
 import { openInTab } from '../utils/navigation';
-import { daysUntil, summarizeProperty } from '../utils/propertySummary';
+import { contractEndBadge, daysUntil, summarizeProperty } from '../utils/propertySummary';
 import { plural } from '../utils/text';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
@@ -83,6 +85,39 @@ export default function DashboardScreen() {
       screen: 'PaymentsList',
       params: { view: 'liquidaciones', filter: hasOverdue ? 'vencido' : 'pendiente' },
     });
+
+  // — Avisos de contratos: los que vencen pronto y los que ajustan este mes o el que viene —
+  const nextPeriod = addMonthsToPeriod(period, 1);
+  const contractNotices = contracts
+    .filter((c) => c.status === 'activo')
+    .flatMap((contract) => {
+      const property = properties.find((p) => p.id === contract.propertyId);
+      const tenant = tenants.find((t) => t.id === contract.tenantId);
+      const who = [property?.title ?? 'Propiedad', tenant?.name].filter(Boolean).join(' · ');
+      const notices: { key: string; title: string; subtitle: string; tone: 'danger' | 'warning'; sort: string }[] = [];
+      const end = contractEndBadge(contract);
+      if (end) {
+        notices.push({
+          key: `${contract.id}-fin`,
+          title: who,
+          subtitle: `Contrato: ${end.label.toLowerCase()} (${formatDayMonth(contract.endDate)})`,
+          tone: end.tone,
+          sort: contract.endDate,
+        });
+      }
+      const adjust = nextAdjustmentPeriod(contract);
+      if (adjust && adjust <= nextPeriod) {
+        notices.push({
+          key: `${contract.id}-ajuste`,
+          title: who,
+          subtitle: `Ajusta en ${formatPeriod(adjust).split(' ')[0]} · ${describeAdjustment(contract)}`,
+          tone: 'warning',
+          sort: `${adjust}-01`,
+        });
+      }
+      return notices.map((n) => ({ ...n, contractId: contract.id }));
+    })
+    .sort((a, b) => a.sort.localeCompare(b.sort));
 
   // Últimos pagos recibidos (en pantalla grande van al lado de las carpetas).
   const latestPayments = [...payments].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 5);
@@ -189,6 +224,23 @@ export default function DashboardScreen() {
               {desktop ? <View style={[styles.hero, styles.heroNarrow]}>{monthBlock}</View> : null}
             </View>
           )}
+
+          {contractNotices.length ? (
+            <>
+              <SectionHeader title="Contratos" />
+              <ListSection>
+                {contractNotices.map((n) => (
+                  <ListRow
+                    key={n.key}
+                    dot={n.tone}
+                    title={n.title}
+                    subtitle={n.subtitle}
+                    onPress={() => openInTab(navigation, 'RentalsTab', 'ContractDetail', { contractId: n.contractId })}
+                  />
+                ))}
+              </ListSection>
+            </>
+          ) : null}
 
           {summaries.length ? (
             <View style={desktop ? styles.row : undefined}>

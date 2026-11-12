@@ -16,9 +16,13 @@ import { CONCEPT_LABEL, CONTRACT_STATUS_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { makeStyles } from '../../context/ThemeContext';
 import { fontSize, spacing } from '../../theme';
-import { addToTotals, emptyTotals, formatDate, formatMoney, formatPeriodShort, formatTotals } from '../../utils/format';
+import { describeAdjustment, nextAdjustmentPeriod } from '../../utils/adjustments';
+import {
+  addToTotals, emptyTotals, formatDate, formatMoney, formatPeriod, formatPeriodShort, formatTotals,
+} from '../../utils/format';
 import { unallocatedAmount } from '../../utils/ledger';
 import { openInTab } from '../../utils/navigation';
+import { confirmFinishContract } from '../../utils/contractActions';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { capitalize } from '../../utils/text';
@@ -53,7 +57,8 @@ export default function ContractDetailScreen() {
 export function ContractDetail({ contractId, embedded }: { contractId: string; embedded?: boolean }) {
   const styles = useStyles();
   const navigation = useNavigation<any>();
-  const { getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract } = useData();
+  const { getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract, updateContract } =
+    useData();
   const contract = getContractById(contractId);
 
   if (!contract) return <Text style={styles.notFound}>Contrato no encontrado.</Text>;
@@ -62,6 +67,8 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
   const tenant = getTenantById(contract.tenantId);
   const charges = chargeViewsForContract(contract.id);
   const end = contractEndBadge(contract);
+  const adjustment = describeAdjustment(contract);
+  const nextAdjustment = contract.status === 'activo' ? nextAdjustmentPeriod(contract) : undefined;
   const credit = emptyTotals();
   paymentsForContract(contract.id).forEach((p) => addToTotals(credit, unallocatedAmount(p), p.currency));
   const openPayments = (screen: string, params: object) => openInTab(navigation, 'PaymentsTab', screen, params);
@@ -113,6 +120,14 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
           valueTone={end ? (end.tone === 'danger' ? 'danger' : 'warning') : 'muted'}
         />
         <ListRow title="Alquiler" value={formatMoney(contract.rentAmount, contract.currency)} valueTone="muted" />
+        {adjustment ? (
+          <ListRow
+            title="Ajuste"
+            subtitle={nextAdjustment ? `Próximo: ${formatPeriod(nextAdjustment)}` : 'Sin más ajustes antes del fin'}
+            value={adjustment}
+            valueTone="muted"
+          />
+        ) : null}
         {contract.depositAmount ? (
           <ListRow title="Depósito" value={formatMoney(contract.depositAmount, contract.currency)} valueTone="muted" />
         ) : null}
@@ -140,6 +155,16 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
           onPress={() => openPayments('ChargeForm', { contractId: contract.id })}
         />
       </ListSection>
+
+      {contract.status === 'activo' ? (
+        <ListSection footer="Termina el contrato hoy y conserva todo su historial. Lo que quedó debiendo se puede seguir cobrando.">
+          <ListRow
+            title="Finalizar contrato"
+            icon="flag-outline"
+            onPress={() => confirmFinishContract(contract, updateContract)}
+          />
+        </ListSection>
+      ) : null}
     </ScrollView>
   );
 }

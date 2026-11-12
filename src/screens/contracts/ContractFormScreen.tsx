@@ -4,9 +4,10 @@
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';
+import { confirmDeleteContract } from '../../utils/contractActions';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -14,14 +15,24 @@ import Screen from '../../components/Screen';
 import SelectField from '../../components/SelectField';
 import { CONTRACT_STATUS_OPTIONS, CURRENCY_OPTIONS, DEFAULT_RENT_CURRENCY } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { spacing } from '../../theme';
-import { ContractStatus, Currency } from '../../types';
+import { fontSize, spacing } from '../../theme';
+import { AdjustmentIndex, ContractStatus, Currency } from '../../types';
+import { ADJUSTMENT_MONTH_OPTIONS, lastPassedAdjustmentPeriod } from '../../utils/adjustments';
 import { CURRENCY_SYMBOL, parseAmount, todayISO } from '../../utils/format';
 import { compareTitles } from '../../utils/text';
 import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
+
+type AdjustmentChoice = AdjustmentIndex | 'ninguno';
+
+const ADJUSTMENT_OPTIONS: { value: AdjustmentChoice; label: string }[] = [
+  { value: 'ninguno', label: 'Sin ajuste' },
+  { value: 'ipc', label: 'IPC' },
+  { value: 'icl', label: 'ICL' },
+  { value: 'fijo', label: '% fijo' },
+];
 
 function isValidDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value).getTime());
@@ -37,8 +48,10 @@ export default function ContractFormScreen() {
   const presetPropertyId = route.params?.propertyId as string | undefined;
   const presetTenantId = route.params?.tenantId as string | undefined;
 
-  const { getContractById, addContract, updateContract, deleteContract, properties, tenants, contracts, getPropertyById } =
-    useData();
+  const {
+    getContractById, addContract, updateContract, deleteContract, properties, tenants, contracts, getPropertyById,
+    chargeViewsForContract, paymentsForContract, mode,
+  } = useData();
   const existing = getContractById(contractId);
 
   const [propertyId, setPropertyId] = useState(existing?.propertyId ?? presetPropertyId ?? '');
@@ -58,6 +71,12 @@ export default function ContractFormScreen() {
   const [paymentDay, setPaymentDay] = useState(existing ? String(existing.paymentDay) : '1');
   const [status, setStatus] = useState<ContractStatus>(existing?.status ?? 'activo');
   const [notes, setNotes] = useState(existing?.notes ?? '');
+  // Ajuste del alquiler: tipo, cada cuántos meses y el porcentaje (si es fijo).
+  const [adjustment, setAdjustment] = useState<AdjustmentChoice>(existing?.adjustmentIndex ?? 'ninguno');
+  const [adjustmentMonths, setAdjustmentMonths] = useState(String(existing?.adjustmentMonths ?? 3));
+  const [adjustmentPercent, setAdjustmentPercent] = useState(
+    existing?.adjustmentPercent ? String(existing.adjustmentPercent) : '',
+  );
 
   const handleSelectProperty = (id: string) => {
     setPropertyId(id);
@@ -99,6 +118,26 @@ export default function ContractFormScreen() {
       return;
     }
 
+    const index = adjustment === 'ninguno' ? undefined : adjustment;
+    const months = Number(adjustmentMonths);
+    const percent = index === 'fijo' ? parseAmount(adjustmentPercent) : undefined;
+    if (index === 'fijo' && !percent) {
+      showAlert('Falta el porcentaje', 'Ingresá el porcentaje de cada ajuste, por ejemplo 10.');
+      return;
+    }
+    // El alquiler escrito es el de hoy: si el ajuste es nuevo o cambió, los ajustes que ya pasaron
+    // se dan por aplicados y el servidor aplica solo los que vienen.
+    const adjustmentChanged =
+      !existing ||
+      existing.adjustmentIndex !== index ||
+      existing.adjustmentMonths !== months ||
+      existing.startDate !== startDate;
+    const lastAdjustedPeriod = !index
+      ? undefined
+      : adjustmentChanged
+        ? lastPassedAdjustmentPeriod(startDate, months)
+        : existing?.lastAdjustedPeriod;
+
     const payload = {
       propertyId,
       tenantId,
@@ -108,6 +147,10 @@ export default function ContractFormScreen() {
       currency,
       depositAmount: parsedDeposit || undefined,
       paymentDay: parsedDay,
+      adjustmentIndex: index,
+      adjustmentMonths: index ? months : undefined,
+      adjustmentPercent: percent,
+      lastAdjustedPeriod,
       status,
       notes: notes.trim() || undefined,
     };
@@ -177,6 +220,34 @@ export default function ContractFormScreen() {
           keyboardType="numeric"
           required
         />
+        <OptionChips label="Ajuste del alquiler" options={ADJUSTMENT_OPTIONS} value={adjustment} onChange={setAdjustment} />
+        {adjustment !== 'ninguno' ? (
+          <>
+            <OptionChips
+              label="Cada"
+              options={ADJUSTMENT_MONTH_OPTIONS.map((m) => ({ value: String(m), label: `${m} meses` }))}
+              value={adjustmentMonths}
+              onChange={setAdjustmentMonths}
+            />
+            {adjustment === 'fijo' ? (
+              <FormField
+                label="Porcentaje de cada ajuste (%)"
+                value={adjustmentPercent}
+                onChangeText={setAdjustmentPercent}
+                placeholder="Ej: 10"
+                keyboardType="numeric"
+                required
+              />
+            ) : null}
+            <Text style={styles.hint}>
+              {mode === 'demo'
+                ? 'En el modo demo el ajuste no se aplica solo; con una cuenta, la app lo calcula y actualiza el alquiler cuando toca.'
+                : adjustment === 'fijo'
+                  ? 'Cuando toca, el alquiler sube solo ese porcentaje y la cuota del mes lo indica.'
+                  : `Cuando toca, la app toma el ${adjustment === 'ipc' ? 'IPC del INDEC (últimos meses publicados)' : 'ICL del BCRA'}, actualiza el alquiler y la cuota del mes lo indica. El monto de arriba es el alquiler de hoy.`}
+            </Text>
+          </>
+        ) : null}
         <FormField
           label={`Depósito de garantía (${CURRENCY_SYMBOL[currency]})`}
           value={depositAmount}
@@ -201,15 +272,14 @@ export default function ContractFormScreen() {
             variant="dangerOutline"
             style={styles.deleteButton}
             onPress={() =>
-              showConfirm({
-                title: 'Eliminar contrato',
-                message: 'También se eliminan sus liquidaciones y pagos registrados. ¿Continuar?',
-                confirmLabel: 'Eliminar',
-                destructive: true,
-                onConfirm: () => {
-                  deleteContract(existing.id);
-                  navigation.popToTop();
-                },
+              confirmDeleteContract({
+                contract: existing,
+                charges: chargeViewsForContract(existing.id),
+                payments: paymentsForContract(existing.id),
+                deleteContract,
+                updateContract,
+                onDeleted: () => navigation.popToTop(),
+                onFinished: () => navigation.goBack(),
               })
             }
           />
@@ -221,7 +291,15 @@ export default function ContractFormScreen() {
 
 // ── Estilos ───────────────────────────────────────────────────────────
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((colors) => ({
+  hint: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.xs,
+  },
   deleteButton: {
     marginTop: spacing.md,
   },

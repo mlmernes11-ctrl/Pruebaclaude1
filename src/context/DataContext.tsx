@@ -67,7 +67,7 @@ interface DataContextValue extends AppData {
   deleteContract: (id: string) => void;
   addCharge: (data: Omit<Charge, 'id' | 'createdAt'>) => Charge;
   updateCharge: (id: string, data: Partial<Charge>) => void;
-  voidCharge: (id: string) => ActionResult;
+  voidCharge: (id: string) => void;
   addPayment: (data: Omit<Payment, 'id' | 'createdAt'>) => Payment;
   deletePayment: (id: string) => void;
 
@@ -224,6 +224,31 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     };
   }, []);
 
+  // Cuenta real: al volver a la app (o a la pestaña del navegador) se vuelve a leer lo del
+  // servidor, que pudo cambiar desde otro dispositivo o por las tareas diarias (liquidaciones
+  // nuevas, ajustes del alquiler). Va en la misma fila que los guardados y solo reemplaza los
+  // datos si no hay cambios propios sin enviar, así nunca pisa algo que todavía no se guardó.
+  const lastRefreshRef = useRef(0);
+  useEffect(() => {
+    if (mode !== 'remote' || loading || loadError) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || Date.now() - lastRefreshRef.current < 30_000) return;
+      lastRefreshRef.current = Date.now();
+      queueRef.current = queueRef.current.then(async () => {
+        if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
+        try {
+          const remote = await loadRemoteData();
+          if (hasChanges(diffData(syncedRef.current, dataRef.current))) return;
+          syncedRef.current = remote;
+          setData(remote);
+        } catch {
+          // Sin conexión: se sigue con lo que hay y se reintenta la próxima vez.
+        }
+      });
+    });
+    return () => subscription.remove();
+  }, [mode, loading, loadError]);
+
   // Crea las liquidaciones del mes (y las de meses que falten desde que se cargó el contrato).
   useEffect(() => {
     if (loading || loadError) return;
@@ -361,17 +386,20 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     setData((prev) => ({ ...prev, charges: prev.charges.map((c) => (c.id === id ? { ...c, ...values } : c)) }));
   }, []);
 
-  // Anular no borra: la liquidación queda guardada para que la generación mensual no la vuelva a crear.
-  const voidCharge = useCallback<DataContextValue['voidCharge']>(
-    (id) => {
-      if ((ledger.get(id)?.paid ?? 0) > 0) {
-        return { ok: false, reason: 'Esta liquidación tiene pagos registrados. Anulá primero esos pagos.' };
-      }
-      setData((prev) => ({ ...prev, charges: prev.charges.map((c) => (c.id === id ? { ...c, voided: true } : c)) }));
-      return { ok: true };
-    },
-    [ledger],
-  );
+  // Eliminar una liquidación no la borra de la base: queda marcada como anulada para que la
+  // generación mensual no la vuelva a crear. Si tenía pagos, esa plata se desvincula y queda a
+  // favor del inquilino (y se aplica sola a su próxima deuda del mismo concepto).
+  const voidCharge = useCallback<DataContextValue['voidCharge']>((id) => {
+    setData((prev) => ({
+      ...prev,
+      charges: prev.charges.map((c) => (c.id === id ? { ...c, voided: true } : c)),
+      payments: prev.payments.map((p) =>
+        p.allocations.some((a) => a.chargeId === id)
+          ? { ...p, allocations: p.allocations.filter((a) => a.chargeId !== id) }
+          : p,
+      ),
+    }));
+  }, []);
 
   // ── Pagos ──────────────────────────────────────────────────────────
 

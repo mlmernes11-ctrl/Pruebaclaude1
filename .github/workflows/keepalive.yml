@@ -1,0 +1,23 @@
+# Mantener activo el servidor
+# ---------------------------------------------------------------------
+# Supabase pausa los proyectos gratis después de 7 días sin uso. Este workflow le hace una
+# consulta mínima cada 3 días para que no se pause aunque nadie abra la app.
+# La clave publicable es la misma que va dentro de la app (no es secreta).
+name: Mantener activo el servidor
+
+on:
+  schedule:
+    - cron: '17 13 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima a la base
+        run: |
+          curl --fail --silent --show-error -X POST \
+            'https://txuobaovrmdcecdkmrgd.supabase.co/rest/v1/rpc/keepalive' \
+            -H 'apikey: sb_publishable_Lk7JJHh9TGYVlZ7ljm-2Tg_6tyLTR5f' \
+            -H 'Content-Type: application/json' \
+            -d '{}'
