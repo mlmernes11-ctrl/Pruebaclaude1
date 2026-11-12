@@ -22,6 +22,7 @@ export default function LargeTitleHeader({
   onAdd,
   addLabel = 'Agregar',
   middle,
+  overlap = 0,
 }: {
   title: string;
   // Texto chico arriba a la izquierda (por ejemplo, la fecha del día).
@@ -34,12 +35,14 @@ export default function LargeTitleHeader({
   addLabel?: string;
   // Algo entre el título y el botón (en pantalla grande, el selector de vistas).
   middle?: React.ReactNode;
+  // Alto extra abajo para que lo que sigue se monte sobre la franja (los accesos del Inicio).
+  overlap?: number;
 }) {
   const styles = useStyles();
   // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar cobro").
   const desktop = useIsDesktop();
   return (
-    <View style={[styles.band, desktop && styles.bandDesktop]}>
+    <View style={[styles.band, desktop && styles.bandDesktop, overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null]}>
       {eyebrow || right ? (
         <View style={styles.topRow}>
           <Text style={styles.eyebrow} numberOfLines={1}>
