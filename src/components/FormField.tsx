@@ -24,6 +24,7 @@ export default function FormField({
   multiline,
   required,
   autoCapitalize,
+  secureTextEntry,
 }: {
   label: string;
   value: string;
@@ -33,6 +34,8 @@ export default function FormField({
   multiline?: boolean;
   required?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  // Contraseñas: no se ve lo que se escribe.
+  secureTextEntry?: boolean;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -49,6 +52,7 @@ export default function FormField({
         placeholderTextColor={colors.textMuted}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
+        secureTextEntry={secureTextEntry}
         multiline={multiline}
         style={[styles.input, multiline && styles.multiline]}
       />

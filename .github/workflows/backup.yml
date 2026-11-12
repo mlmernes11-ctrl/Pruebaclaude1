@@ -1,0 +1,45 @@
+# Respaldo diario de la base de datos (gratis, fuera de Supabase).
+# Todas las noches copia la base (datos y cuentas), la cifra con una contraseña y la guarda 30
+# días en GitHub › Actions › "Respaldo de la base" › la corrida › Artifacts.
+# El repositorio es público: por eso la copia va cifrada y sin la contraseña no se puede abrir.
+#
+# Necesita dos secretos en GitHub › Settings › Secrets and variables › Actions:
+#   SUPABASE_DB_URL     la "Connection string" de Supabase › Connect › Session pooler (con la contraseña de la base)
+#   BACKUP_PASSPHRASE   una contraseña larga inventada por vos (guardala: sin ella no se recupera nada)
+#
+# Para recuperar una copia: bajar el .gpg y correr
+#   gpg --decrypt respaldo-AAAA-MM-DD.dump.gpg > respaldo.dump
+#   pg_restore --clean --if-exists --no-owner -d "<connection string>" respaldo.dump
+name: Respaldo de la base
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copiar y cifrar la base
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASSPHRASE" ]; then
+            echo "::warning::Faltan los secretos SUPABASE_DB_URL y BACKUP_PASSPHRASE: no se hizo el respaldo."
+            exit 0
+          fi
+          name="respaldo-$(date -u +%Y-%m-%d).dump"
+          docker run --rm -e DB_URL postgres:17 sh -c 'pg_dump "$DB_URL" --schema=public --schema=auth -Fc' > "$name"
+          test -s "$name"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASSPHRASE" --symmetric --cipher-algo AES256 -o "$name.gpg" "$name"
+          rm "$name"
+          echo "FILE=$name.gpg" >> "$GITHUB_ENV"
+      - name: Guardar la copia
+        if: env.FILE != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}
+          retention-days: 30

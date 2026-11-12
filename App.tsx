@@ -9,15 +9,21 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import DialogHost from './src/components/DialogHost';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import SyncBanner from './src/components/SyncBanner';
 import UpdatePrompt from './src/components/UpdatePrompt';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
 import { ExchangeRateProvider } from './src/context/ExchangeRateContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { installErrorReporting } from './src/lib/errorReporting';
 import RootNavigator from './src/navigation/RootNavigator';
 import AccessScreen from './src/screens/auth/AccessScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
+import NewPasswordScreen from './src/screens/auth/NewPasswordScreen';
+
+// Los errores que nadie atrapó se anotan solos (ver errorReporting).
+installErrorReporting();
 
 export default function App() {
   return (
@@ -25,7 +31,9 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <Gate />
+            <ErrorBoundary>
+              <Gate />
+            </ErrorBoundary>
             <DialogHost />
             <UpdatePrompt />
             <ThemedStatusBar />
@@ -38,13 +46,14 @@ export default function App() {
 
 // Con sesión → los datos de esa cuenta en Supabase; modo demo → datos de ejemplo del celular; si no, pantalla de ingreso.
 function Gate() {
-  const { status, userId } = useAuth();
+  const { status, userId, recovering } = useAuth();
   if (status === 'signedOut') return <LoginScreen />;
+  if (recovering) return <NewPasswordScreen />;
   if (status === 'demo' || status === 'signedIn') {
     const mode = status === 'demo' ? 'demo' : 'remote';
     // "key" hace que al cambiar de cuenta (o pasar a demo) todo arranque de cero.
     return (
-      <DataProvider key={mode === 'demo' ? 'demo' : userId} mode={mode}>
+      <DataProvider key={mode === 'demo' ? 'demo' : userId} mode={mode} userId={userId}>
         <ExchangeRateProvider key={mode === 'demo' ? 'demo' : userId} mode={mode} userId={userId}>
           <RootNavigator />
           <SyncBanner />

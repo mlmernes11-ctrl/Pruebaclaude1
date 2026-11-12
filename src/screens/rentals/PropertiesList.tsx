@@ -36,11 +36,11 @@ const EMPTY_MESSAGE: Record<PropertyFilterKey, string> = {
   todas: 'Tocá + para agregar tu primera propiedad.',
   alquiladas: 'Ninguna propiedad tiene contrato vigente.',
   disponibles: 'Todas las propiedades están alquiladas.',
-  mora: 'No hay propiedades en mora.',
+  mora: 'No hay propiedades con cargos vencidos.',
 };
 
 const LEGEND: { tone: DotTone; label: string }[] = [
-  { tone: 'danger', label: 'En mora' },
+  { tone: 'danger', label: 'Vencido' },
   { tone: 'warning', label: 'A vencer' },
   { tone: 'success', label: 'Al día' },
   { tone: 'empty', label: 'Disponible' },

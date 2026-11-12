@@ -19,7 +19,7 @@ import { fontSize, radius, spacing } from '../../theme';
 export default function LoginScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { signIn, signUp, signInWithGoogle, enterDemo } = useAuth();
+  const { signIn, signUp, signInWithGoogle, enterDemo, resetPassword } = useAuth();
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,6 +55,21 @@ export default function LoginScreen() {
       if (message) setError(message);
     }
     setBusy(false);
+  };
+
+  // "Olvidé mi contraseña": usa el mail escrito arriba.
+  const forgot = async () => {
+    setError(undefined);
+    setNotice(undefined);
+    if (!email.trim()) {
+      setError('Escribí tu mail arriba y tocá de nuevo "¿Olvidaste tu contraseña?".');
+      return;
+    }
+    setBusy(true);
+    const message = await resetPassword(email);
+    setBusy(false);
+    if (message) setError(message);
+    else setNotice('Te mandamos un mail para crear una contraseña nueva. Abrí el enlace desde este mismo dispositivo.');
   };
 
   const google = async () => {
@@ -140,6 +155,11 @@ export default function LoginScreen() {
           {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
           <Button label={creating ? 'Crear cuenta' : 'Ingresar'} onPress={submit} loading={busy} style={styles.primary} />
+          {creating ? null : (
+            <TouchableOpacity onPress={forgot} style={styles.link} accessibilityRole="button">
+              <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={() => {
               setCreating(!creating);

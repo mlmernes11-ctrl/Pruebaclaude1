@@ -178,8 +178,8 @@ export default function DashboardScreen() {
   // — Propiedades: filtro, orden y conteo de cada estado —
   const filters: MenuOption<FilterKey>[] = [
     { value: 'todas', label: 'Todas', count: summaries.length },
-    { value: 'deuda', label: 'Con deuda', dot: 'danger', count: inDebt.length },
-    { value: 'por-vencer', label: 'Vence pronto', dot: 'warning', count: summaries.filter((s) => matches(s, 'por-vencer')).length },
+    { value: 'deuda', label: 'Vencidas', dot: 'danger', count: inDebt.length },
+    { value: 'por-vencer', label: 'A vencer', dot: 'warning', count: summaries.filter((s) => matches(s, 'por-vencer')).length },
     { value: 'al-dia', label: 'Al día', dot: 'success', count: summaries.filter((s) => matches(s, 'al-dia')).length },
     { value: 'disponibles', label: 'Disponibles', dot: 'empty', count: summaries.filter((s) => matches(s, 'disponibles')).length },
   ];
@@ -205,7 +205,7 @@ export default function DashboardScreen() {
     switch (s.collection) {
       case 'deuda': {
         const days = Math.max(1, -daysUntil(s.oldestOverdueDate ?? today));
-        return { color: colors.danger, bg: colors.dangerMuted, main: formatTotals(s.overdue.totals), sub: `Debe · ${plural(days, 'día', 'días')}` };
+        return { color: colors.danger, bg: colors.dangerMuted, main: formatTotals(s.overdue.totals), sub: `Vencido hace ${plural(days, 'día', 'días')}` };
       }
       case 'por-vencer':
         return { color: colors.warning, bg: colors.warningMuted, main: formatTotals(s.pending.totals), sub: `Vence el ${formatDayMonth(s.nextDueDate)}` };
@@ -478,10 +478,10 @@ const useStyles = makeStyles((colors) => ({
     alignItems: 'flex-end',
     gap: 2,
     flexShrink: 1,
-    maxWidth: '50%',
+    maxWidth: '45%',
   },
   valueMain: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     fontWeight: '700',
     textAlign: 'right',
     fontVariant: ['tabular-nums'],

@@ -33,6 +33,11 @@ interface AuthContextValue {
   // Devuelve un mensaje si no se pudo; si sale bien, la sesión se cierra.
   deleteAccount: () => Promise<string | undefined>;
   enterDemo: () => Promise<void>;
+  // "Olvidé mi contraseña": manda un mail con un enlace. Devuelve un mensaje si no se pudo.
+  resetPassword: (email: string) => Promise<string | undefined>;
+  // true al volver del enlace del mail: hay que elegir la contraseña nueva.
+  recovering: boolean;
+  setNewPassword: (password: string) => Promise<string | undefined>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -45,6 +50,7 @@ function describeAuthError(message: string): string {
   if (/email not confirmed/i.test(message)) return 'Confirmá tu mail desde el correo que te enviamos y volvé a ingresar.';
   if (/already registered|already exists/i.test(message)) return 'Ya existe una cuenta con ese mail. Ingresá con tu contraseña.';
   if (/password should be at least|weak password/i.test(message)) return 'La contraseña tiene que tener al menos 6 caracteres.';
+  if (/same.*password|different from the old/i.test(message)) return 'La contraseña nueva tiene que ser distinta de la anterior.';
   if (/rate limit|too many/i.test(message)) return 'Demasiados intentos. Esperá unos minutos y volvé a probar.';
   if (/provider is not enabled|unsupported provider/i.test(message)) return 'El ingreso con Google todavía no está activado.';
   if (/fetch|network/i.test(message)) return connectionErrorMessage();
@@ -57,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [email, setEmail] = useState<string>();
   const [userId, setUserId] = useState<string>();
+  const [recovering, setRecovering] = useState(false);
 
   // Al abrir: modo demo si quedó elegido; si no, la sesión guardada (si hay).
   useEffect(() => {
@@ -84,15 +91,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserId(undefined);
         setStatus((current) => (current === 'demo' ? current : 'signedOut'));
       }
+      // Volvió del enlace de "Olvidé mi contraseña": entra y se le pide la contraseña nueva.
+      if (event === 'PASSWORD_RECOVERY' && session?.user) {
+        setEmail(session.user.email ?? undefined);
+        setUserId(session.user.id);
+        setStatus('signedIn');
+        setRecovering(true);
+      }
       if (event === 'SIGNED_IN' && session?.user) {
         setEmail(session.user.email ?? undefined);
         setUserId(session.user.id);
         setStatus((current) => (current === 'demo' ? current : 'signedIn'));
       }
     });
+    // Celular: el enlace del mail vuelve a la app con un código que se canjea por la sesión.
+    const openUrl = (url: string | null) => {
+      const code = url ? Linking.parse(url).queryParams?.code : undefined;
+      if (typeof code === 'string') supabase.auth.exchangeCodeForSession(code).catch(() => undefined);
+    };
+    const urlListener = Platform.OS === 'web' ? undefined : Linking.addEventListener('url', (e) => openUrl(e.url));
+    if (Platform.OS !== 'web') Linking.getInitialURL().then(openUrl).catch(() => undefined);
     return () => {
       active = false;
       listener.subscription.unsubscribe();
+      urlListener?.remove();
     };
   }, []);
 
@@ -146,14 +168,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return undefined;
   }, [signOut]);
 
+  const resetPassword = useCallback<AuthContextValue['resetPassword']>(async (address) => {
+    const redirectTo =
+      Platform.OS === 'web' ? window.location.origin + window.location.pathname : Linking.createURL(NATIVE_REDIRECT);
+    const { error } = await supabase.auth.resetPasswordForEmail(address.trim(), { redirectTo });
+    return error ? describeAuthError(error.message) : undefined;
+  }, []);
+
+  const setNewPassword = useCallback<AuthContextValue['setNewPassword']>(async (password) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return describeAuthError(error.message);
+    setRecovering(false);
+    return undefined;
+  }, []);
+
   const enterDemo = useCallback(async () => {
     await AsyncStorage.setItem(DEMO_KEY, '1').catch(() => undefined);
     setStatus('demo');
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo }),
-    [status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo],
+    () => ({
+      status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo,
+      resetPassword, recovering, setNewPassword,
+    }),
+    [status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo, resetPassword, recovering, setNewPassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

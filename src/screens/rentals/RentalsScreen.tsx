@@ -28,7 +28,7 @@ const FILTERS: { value: PropertyFilterKey; label: string }[] = [
   { value: 'todas', label: 'Todas' },
   { value: 'alquiladas', label: 'Alquiladas' },
   { value: 'disponibles', label: 'Disponibles' },
-  { value: 'mora', label: 'En mora' },
+  { value: 'mora', label: 'Vencidas' },
 ];
 
 // ── Pantalla ──────────────────────────────────────────────────────────

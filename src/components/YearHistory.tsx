@@ -19,7 +19,7 @@ import { plural } from '../utils/text';
 
 const SEGMENTS = [
   { key: 'paid', label: 'Cobrado', colorKey: 'chartPaid' },
-  { key: 'overdue', label: 'En mora', colorKey: 'chartOverdue' },
+  { key: 'overdue', label: 'Vencido', colorKey: 'chartOverdue' },
   { key: 'pending', label: 'A vencer', colorKey: 'chartPending' },
 ] as const;
 
@@ -127,7 +127,7 @@ function MonthRow({ row, rate, first, onPress }: { row: HistoryRow; rate?: numbe
   let caption = 'Todo cobrado';
   let captionColor = colors.success;
   if (row.overdueCount) {
-    caption = `En mora ${inPesos(row.overdue, rate)} · ${plural(row.overdueCount, 'cargo', 'cargos')}`;
+    caption = `Vencido ${inPesos(row.overdue, rate)} · ${plural(row.overdueCount, 'cargo', 'cargos')}`;
     captionColor = colors.danger;
   } else if (hasAmount(unpaid)) {
     caption = `Por cobrar ${inPesos(unpaid, rate)}`;

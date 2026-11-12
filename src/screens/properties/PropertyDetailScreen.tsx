@@ -34,9 +34,9 @@ function heroFor(summary: PropertySummary, today: string) {
     const days = Math.max(1, -daysUntil(oldestOverdueDate ?? today));
     return {
       tone: 'danger' as const,
-      label: 'Con deuda',
+      label: 'Vencido',
       value: formatTotals(overdue.totals),
-      detail: `${plural(overdue.count, 'cargo vencido', 'cargos vencidos')} · ${plural(days, 'día', 'días')} de mora`,
+      detail: `${plural(overdue.count, 'cargo vencido', 'cargos vencidos')} · hace ${plural(days, 'día', 'días')}`,
     };
   }
   if (collection === 'por-vencer') {
@@ -247,7 +247,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <ListRow
           title="Cargos"
           icon="document-text-outline"
-          value={summary.overdue.count ? `${summary.overdue.count} en mora` : String(chargeCount)}
+          value={summary.overdue.count ? `${summary.overdue.count} vencidos` : String(chargeCount)}
           valueTone={summary.overdue.count ? 'danger' : 'muted'}
           onPress={() => openPayments('cargos')}
         />

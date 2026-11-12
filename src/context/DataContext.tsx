@@ -19,6 +19,7 @@ import {
   isConflict,
   loadRemoteData,
   pushChanges,
+  RemoteChanges,
   readAccountVersion,
   runAccountBilling,
 } from '../lib/remoteStore';
@@ -134,7 +135,19 @@ const newRecordFields = () => ({ id: generateId(), createdAt: new Date().toISOSt
 
 // ── Proveedor de datos ───────────────────────────────────────────────
 
-export function DataProvider({ children, mode }: { children: React.ReactNode; mode: DataMode }) {
+// Cambios de la cuenta real que todavía no llegaron al servidor (por ejemplo, sin señal). Se
+// guardan en el celular para no perderlos si se cierra la app, y se envían al volver a abrirla.
+const PENDING_KEY_PREFIX = 'gestion_alquileres_sin_enviar_';
+
+export function DataProvider({
+  children,
+  mode,
+  userId,
+}: {
+  children: React.ReactNode;
+  mode: DataMode;
+  userId?: string;
+}) {
   const [data, setData] = useState<AppData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
@@ -204,6 +217,20 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     (async () => {
       if (mode === 'remote') {
         try {
+          // Primero lo que quedó sin enviar la vez anterior; si no se puede, no se pierde.
+          const pendingKey = PENDING_KEY_PREFIX + userId;
+          const pending = await AsyncStorage.getItem(pendingKey).catch(() => null);
+          if (pending) {
+            try {
+              await pushChanges(JSON.parse(pending) as RemoteChanges);
+            } catch (e) {
+              // Sin señal: se reintenta al volver a abrir. Si el servidor los rechaza (por ejemplo,
+              // algo que ya se borró desde otro celular), se apartan para no trabar la app.
+              if (/fetch|network|timeout/i.test(String((e as Error)?.message ?? e))) throw e;
+              await AsyncStorage.setItem(`${pendingKey}_rechazados`, pending).catch(() => undefined);
+            }
+            await AsyncStorage.removeItem(pendingKey).catch(() => undefined);
+          }
           const version = await readAccountVersion().catch(() => undefined);
           const remote = await loadRemoteData();
           if (!active) return;
@@ -235,7 +262,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
     return () => {
       active = false;
     };
-  }, [mode, reloadKey, runServerBilling]);
+  }, [mode, reloadKey, runServerBilling, userId]);
 
   // ── Guardado ───────────────────────────────────────────────────────
 
@@ -246,9 +273,14 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
       const snapshot = dataRef.current;
       const changes = diffData(syncedRef.current, snapshot);
       if (!hasChanges(changes)) return;
+      const pendingKey = PENDING_KEY_PREFIX + userId;
+      // Se guardan antes de enviarlos: si se corta la señal o se cierra la app, quedan en el celular.
+      await AsyncStorage.setItem(pendingKey, JSON.stringify(changes)).catch(() => undefined);
       try {
         await pushChanges(changes);
         syncedRef.current = snapshot;
+        // Si mientras tanto hubo otro cambio, el próximo envío lo vuelve a guardar.
+        await AsyncStorage.removeItem(pendingKey).catch(() => undefined);
         setSyncError(undefined);
         // Lo guardado puede pedir cargos nuevos (un contrato nuevo) o usar saldo a favor.
         void runServerBilling();
@@ -258,7 +290,7 @@ export function DataProvider({ children, mode }: { children: React.ReactNode; mo
         if (isConflict(e)) setReloadKey((k) => k + 1);
       }
     });
-  }, [runServerBilling]);
+  }, [runServerBilling, userId]);
 
   // Cada vez que cambian los datos, se guardan (en el servidor o en el celular).
   useEffect(() => {
