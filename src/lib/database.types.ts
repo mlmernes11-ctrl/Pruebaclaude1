@@ -23,6 +23,7 @@ export type Database = {
           amount: number;
           auto_generated: boolean;
           concept: string;
+          confirmed: boolean;
           contract_id: string;
           created_at: string;
           currency: string;

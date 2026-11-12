@@ -4,6 +4,7 @@
 // Bloque grande con la mora (o "Todo al día"), el avance del mes y las propiedades que piden atención.
 // =====================================================================
 
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -37,6 +38,7 @@ import { buildPeriodRow } from '../utils/history';
 import { openInTab } from '../utils/navigation';
 import { contractEndBadge, daysUntil, summarizeProperty } from '../utils/propertySummary';
 import { plural } from '../utils/text';
+import { pendingImportsCount, totalImportsCount } from './imports/importsLogic';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -77,6 +79,8 @@ export default function DashboardScreen() {
   const period = today.slice(0, 7);
   const month = buildPeriodRow(chargeViews, period, toPesos);
   const monthName = formatPeriod(period).split(' ')[0];
+  const pendingImports = pendingImportsCount(chargeViews, period);
+  const totalImports = totalImportsCount(chargeViews, period);
   const shares = month.shares;
 
   const openProperty = (propertyId: string) => openInTab(navigation, 'RentalsTab', 'PropertyDetail', { propertyId });
@@ -214,6 +218,28 @@ export default function DashboardScreen() {
               </View>
             ) : null}
           </TouchableOpacity>
+
+          {/* Aviso del mes: expensas y servicios sin revisar. Desaparece cuando están todos. */}
+          {pendingImports > 0 ? (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.imports}
+              onPress={() => navigation.navigate('Imports')}
+              accessibilityRole="button"
+            >
+              <View style={styles.importsIcon}>
+                <Ionicons name="document-text-outline" size={22} color={colors.warning} />
+              </View>
+              <View style={styles.importsText}>
+                <Text style={styles.importsLabel}>Importes de {monthName.toLowerCase()}</Text>
+                <Text style={styles.importsTitle}>
+                  Faltan {pendingImports} de {totalImports} por actualizar
+                </Text>
+                <Text style={styles.importsDetail}>Expensas y servicios del mes</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
 
           {isEmpty && mode === 'remote' ? (
             <Card style={styles.welcome}>
@@ -394,6 +420,45 @@ const useStyles = makeStyles((colors) => ({
   },
   dollarValueInUse: {
     color: colors.text,
+  },
+  imports: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.warningMuted,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  importsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importsText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  importsLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: colors.warning,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  importsTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 2,
+  },
+  importsDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   welcome: {
     marginBottom: spacing.xl,

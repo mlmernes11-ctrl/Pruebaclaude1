@@ -20,6 +20,7 @@ import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './b
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ImportsScreen from '../screens/imports/ImportsScreen';
 import AccessScreen from '../screens/auth/AccessScreen';
 import RentalsScreen from '../screens/rentals/RentalsScreen';
 import PropertyFormScreen from '../screens/properties/PropertyFormScreen';
@@ -76,6 +77,7 @@ function DashboardStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
+      <DashboardStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
     </DashboardStack.Navigator>
   );
 }
@@ -120,6 +122,7 @@ function RentalsStackNavigator() {
         })}
       />
       <RentalsStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />
+      <RentalsStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
     </RentalsStack.Navigator>
   );
 }
@@ -174,6 +177,7 @@ function SettingsStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
+      <SettingsStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
     </SettingsStack.Navigator>
   );
 }

@@ -20,6 +20,7 @@ import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, THEME_PREFERENCE_LABEL, ThemePreference, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
+import { pendingImportsCount } from './imports/importsLogic';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -35,7 +36,8 @@ export default function SettingsScreen() {
   const styles = useStyles();
   const { preference, setPreference } = useTheme();
   const navigation = useNavigation<any>();
-  const { mode, properties, tenants, contracts, payments, loadSampleData, clearAllData } = useData();
+  const { mode, properties, tenants, contracts, payments, loadSampleData, clearAllData, chargeViews } = useData();
+  const pendingImports = pendingImportsCount(chargeViews);
   const { email, signOut, deleteAccount } = useAuth();
   const { rate, source } = useExchangeRate();
   const [deleting, setDeleting] = useState(false);
@@ -114,6 +116,13 @@ export default function SettingsScreen() {
           ) : null}
 
           <ListSection>
+            <ListRow
+              title="Actualizar importes"
+              icon="document-text-outline"
+              value={pendingImports ? `${pendingImports} pendientes` : undefined}
+              valueTone={pendingImports ? 'warning' : 'muted'}
+              onPress={() => navigation.navigate('Imports')}
+            />
             <ListRow
               title="Cotización del dólar"
               icon="cash-outline"

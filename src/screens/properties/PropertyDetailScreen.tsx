@@ -5,8 +5,9 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useLayoutEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/Button';
 import HeaderTextButton from '../../components/HeaderTextButton';
 import ListRow from '../../components/ListRow';
@@ -15,9 +16,10 @@ import Screen from '../../components/Screen';
 import StatusHero from '../../components/StatusHero';
 import { CONTRACT_STATUS_LABEL, PROPERTY_TYPE_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
-import { makeStyles } from '../../context/ThemeContext';
-import { fontSize, spacing } from '../../theme';
-import { formatDate, formatMoney, formatTotals } from '../../utils/format';
+import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { fontSize, radius, spacing } from '../../theme';
+import { Currency } from '../../types';
+import { addMonthsToPeriod, currentPeriod, formatDate, formatMoney, formatPeriodShort, formatTotals } from '../../utils/format';
 import { openInTab } from '../../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../../utils/propertySummary';
 import { isOutstanding } from '../../utils/ledger';
@@ -88,6 +90,7 @@ export default function PropertyDetailScreen() {
 // lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
 export function PropertyDetail({ propertyId, embedded }: { propertyId: string; embedded?: boolean }) {
   const styles = useStyles();
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const {
     getPropertyById,
@@ -117,6 +120,31 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
   const chargeCount = propertyCharges.length;
   // Lo que debe el inquilino actual: vencido o por vencer de su contrato.
   const owed = active ? propertyCharges.filter((v) => v.charge.contractId === active.id && isOutstanding(v)) : [];
+  // Últimos tres meses de importes (expensas, servicios y alquiler, con sus ajustes aparte).
+  const importOf = (period: string, concept: 'expensas' | 'servicios' | 'alquiler') =>
+    propertyCharges
+      .filter((v) => v.charge.period === period && v.charge.concept === concept)
+      .reduce((sum, v) => sum + v.charge.amount, 0);
+  const recentImports = [0, -1, -2].map((offset) => {
+    const period = addMonthsToPeriod(currentPeriod(), offset);
+    const before = addMonthsToPeriod(period, -1);
+    const expensas = importOf(period, 'expensas');
+    const servicios = importOf(period, 'servicios');
+    const alquiler = importOf(period, 'alquiler');
+    const alquilerCurrency: Currency =
+      propertyCharges.find((v) => v.charge.period === period && v.charge.concept === 'alquiler')?.charge.currency ?? 'ARS';
+    const changed = (now: number, prev: number) => now > 0 && prev > 0 && now !== prev;
+    return {
+      period,
+      expensas,
+      servicios,
+      alquiler,
+      alquilerCurrency,
+      expensasChanged: changed(expensas, importOf(before, 'expensas')),
+      serviciosChanged: changed(servicios, importOf(before, 'servicios')),
+      alquilerChanged: changed(alquiler, importOf(before, 'alquiler')),
+    };
+  });
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
   // Abre la pestaña Cobros ya filtrada por esta propiedad (todos sus cargos o todos sus cobros).
   const openPayments = (mode: 'cargos' | 'cobros') =>
@@ -229,6 +257,44 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         />
       </ListSection>
 
+      {recentImports.some((m) => m.expensas || m.servicios || m.alquiler) ? (
+        <>
+          <Text style={styles.importsHeader}>ÚLTIMOS IMPORTES</Text>
+          <View style={styles.importsCard}>
+            <View style={styles.importsRow}>
+              {['Mes', 'Expensas', 'Servicios', 'Alquiler'].map((label, i) => (
+                <Text key={label} style={[styles.importsHead, i === 3 && styles.importsRight]}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+            {recentImports.map((m) => (
+              <View key={m.period} style={[styles.importsRow, styles.importsRowBorder]}>
+                <Text style={styles.importsCell}>{formatPeriodShort(m.period)}</Text>
+                <Text style={[styles.importsCell, m.expensasChanged && styles.importsChanged]}>
+                  {m.expensas ? formatMoney(m.expensas, 'ARS') : '—'}
+                </Text>
+                <Text style={[styles.importsCell, m.serviciosChanged && styles.importsChanged]}>
+                  {m.servicios ? formatMoney(m.servicios, 'ARS') : '—'}
+                </Text>
+                <Text style={[styles.importsCell, styles.importsRight, m.alquilerChanged && styles.importsChanged]}>
+                  {m.alquiler ? formatMoney(m.alquiler, m.alquilerCurrency) : '—'}
+                </Text>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={[styles.importsRow, styles.importsRowBorder, styles.importsLink]}
+              onPress={() => navigation.navigate('Imports')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.importsLinkText}>Actualizar importes</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.importsFoot}>En negrita, el importe que cambió respecto del mes anterior.</Text>
+        </>
+      ) : null}
+
       <ListSection header="Detalles" footer={property.notes ? `Notas: ${property.notes}` : undefined}>
         <ListRow title="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} valueTone="muted" />
         {property.rentAmount ? (
@@ -270,6 +336,63 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
 // ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
+  importsHeader: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  importsCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  importsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+  },
+  importsRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  importsHead: {
+    flex: 1,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  importsCell: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
+  },
+  importsChanged: {
+    fontWeight: '700',
+    color: colors.text,
+  },
+  importsRight: {
+    textAlign: 'right',
+  },
+  importsLink: {
+    justifyContent: 'space-between',
+    minHeight: 48,
+  },
+  importsLinkText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  importsFoot: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
