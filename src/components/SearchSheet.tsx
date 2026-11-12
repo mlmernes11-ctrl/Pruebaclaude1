@@ -17,6 +17,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -78,7 +80,7 @@ interface SearchResult {
 // ── Componente ────────────────────────────────────────────────────────
 
 // Barra de búsqueda de las listas: al tocarla se abre un buscador a pantalla completa.
-export default function SearchLauncher({ scope }: { scope: SearchScope }) {
+export default function SearchLauncher({ scope, style }: { scope: SearchScope; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [open, setOpen] = useState(false);
@@ -86,7 +88,7 @@ export default function SearchLauncher({ scope }: { scope: SearchScope }) {
   return (
     <>
       <TouchableOpacity
-        style={styles.launcher}
+        style={[styles.launcher, style]}
         onPress={() => setOpen(true)}
         accessibilityRole="search"
         accessibilityLabel="Buscar"

@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
+import { PROPERTY_TYPE_ICON } from '../constants';
 import Card from '../components/Card';
 import FilterSortMenu, { MenuOption } from '../components/FilterSortMenu';
 import LargeTitleHeader, { HeaderChip } from '../components/LargeTitleHeader';
@@ -20,7 +21,6 @@ import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateConte
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useRefresh } from '../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../theme';
-import { PropertyType } from '../types';
 import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import {
   addMonthsToPeriod,
@@ -56,14 +56,6 @@ const STATE_ORDER: Record<CollectionState, number> = {
   'sin-contrato': 4,
 };
 
-const TYPE_ICON: Record<PropertyType, keyof typeof Ionicons.glyphMap> = {
-  apartamento: 'business-outline',
-  casa: 'home-outline',
-  local: 'storefront-outline',
-  oficina: 'briefcase-outline',
-  terreno: 'map-outline',
-  otro: 'cube-outline',
-};
 
 function matches(s: PropertySummary, filter: FilterKey): boolean {
   if (filter === 'todas') return true;
@@ -340,7 +332,7 @@ export default function DashboardScreen() {
                         accessibilityRole="button"
                       >
                         <View style={[styles.square, { backgroundColor: status.bg }]}>
-                          <Ionicons name={TYPE_ICON[s.property.type] ?? 'cube-outline'} size={20} color={status.color} />
+                          <Ionicons name={PROPERTY_TYPE_ICON[s.property.type] ?? 'cube-outline'} size={20} color={status.color} />
                         </View>
                         <View style={styles.texts}>
                           <Text style={styles.title} numberOfLines={1}>

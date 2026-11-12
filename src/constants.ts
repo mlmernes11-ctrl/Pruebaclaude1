@@ -5,6 +5,7 @@
 // conceptos y métodos de pago) y las opciones de los formularios.
 // =====================================================================
 
+import { Ionicons } from '@expo/vector-icons';
 import { ContractStatus, Currency, ChargeConcept, PropertyStatus, PropertyType } from './types';
 
 // ── Monedas ───────────────────────────────────────────────────────────
@@ -26,6 +27,16 @@ export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   oficina: 'Oficina',
   terreno: 'Terreno',
   otro: 'Otro',
+};
+
+// Ícono de cada tipo de propiedad (Inicio y Alquileres).
+export const PROPERTY_TYPE_ICON: Record<PropertyType, keyof typeof Ionicons.glyphMap> = {
+  apartamento: 'business-outline',
+  casa: 'home-outline',
+  local: 'storefront-outline',
+  oficina: 'briefcase-outline',
+  terreno: 'map-outline',
+  otro: 'cube-outline',
 };
 
 export const PROPERTY_TYPE_OPTIONS = Object.entries(PROPERTY_TYPE_LABEL).map(
