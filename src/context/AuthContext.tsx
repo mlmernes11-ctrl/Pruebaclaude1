@@ -30,6 +30,8 @@ interface AuthContextValue {
   // Devuelve un mensaje si no se pudo; si sale bien, la sesión llega sola.
   signInWithGoogle: () => Promise<string | undefined>;
   signOut: () => Promise<void>;
+  // Devuelve un mensaje si no se pudo; si sale bien, la sesión se cierra.
+  deleteAccount: () => Promise<string | undefined>;
   enterDemo: () => Promise<void>;
 }
 
@@ -136,14 +138,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('signedOut');
   }, []);
 
+  // Borra la cuenta y todos sus datos (lo hace el servidor) y cierra la sesión.
+  const deleteAccount = useCallback<AuthContextValue['deleteAccount']>(async () => {
+    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    if (error) return describeAuthError(error.message);
+    await signOut();
+    return undefined;
+  }, [signOut]);
+
   const enterDemo = useCallback(async () => {
     await AsyncStorage.setItem(DEMO_KEY, '1').catch(() => undefined);
     setStatus('demo');
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, userId, signIn, signUp, signInWithGoogle, signOut, enterDemo }),
-    [status, email, userId, signIn, signUp, signInWithGoogle, signOut, enterDemo],
+    () => ({ status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo }),
+    [status, email, userId, signIn, signUp, signInWithGoogle, signOut, deleteAccount, enterDemo],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

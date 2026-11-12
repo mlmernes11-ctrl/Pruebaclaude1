@@ -22,7 +22,7 @@ import {
 } from '../../utils/format';
 import { unallocatedAmount } from '../../utils/ledger';
 import { openInTab } from '../../utils/navigation';
-import { confirmFinishContract } from '../../utils/contractActions';
+import { confirmDeleteContract, confirmFinishContract } from '../../utils/contractActions';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { capitalize } from '../../utils/text';
@@ -57,8 +57,10 @@ export default function ContractDetailScreen() {
 export function ContractDetail({ contractId, embedded }: { contractId: string; embedded?: boolean }) {
   const styles = useStyles();
   const navigation = useNavigation<any>();
-  const { getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract, updateContract } =
-    useData();
+  const {
+    getContractById, getPropertyById, getTenantById, chargeViewsForContract, paymentsForContract, updateContract,
+    deleteContract,
+  } = useData();
   const contract = getContractById(contractId);
 
   if (!contract) return <Text style={styles.notFound}>Contrato no encontrado.</Text>;
@@ -156,15 +158,25 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
         />
       </ListSection>
 
-      {contract.status === 'activo' ? (
-        <ListSection footer="Termina el contrato hoy y conserva todo su historial. Lo que quedó debiendo se puede seguir cobrando.">
-          <ListRow
-            title="Finalizar contrato"
-            icon="flag-outline"
+      {/* Uno arriba del otro: primero lo recomendado (finalizar) y abajo lo irreversible. */}
+      <View style={styles.endActions}>
+        {contract.status === 'activo' ? (
+          <Button
+            label="Finalizar contrato"
+            variant="secondary"
             onPress={() => confirmFinishContract(contract, updateContract)}
           />
-        </ListSection>
-      ) : null}
+        ) : null}
+        <Button
+          label="Eliminar contrato"
+          variant="dangerOutline"
+          onPress={() =>
+            confirmDeleteContract(contract, deleteContract, () => {
+              if (!embedded) navigation.goBack();
+            })
+          }
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -201,5 +213,9 @@ const useStyles = makeStyles((colors) => ({
   },
   primaryAction: {
     marginBottom: spacing.xl,
+  },
+  endActions: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
 }));

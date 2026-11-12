@@ -1,7 +1,7 @@
 // =====================================================================
 // Función del servidor: eliminar la cuenta
 // ---------------------------------------------------------------------
-// La llama la app (Ajustes → Eliminar cuenta) con la sesión de quien la usa. Borra ese usuario
+// La llama la app (Menú → Eliminar cuenta) con la sesión de quien la usa. Borra ese usuario
 // y, con él, todos sus datos: las tablas tienen user_id con "on delete cascade".
 // Solo puede borrar la cuenta que hace el pedido: el usuario sale del token de la sesión.
 // =====================================================================

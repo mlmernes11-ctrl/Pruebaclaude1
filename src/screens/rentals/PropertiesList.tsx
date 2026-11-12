@@ -38,7 +38,7 @@ function rightValue(summary: PropertySummary): { value: string; tone: ValueTone 
   if (collection === 'mantenimiento') return { value: 'En mantenimiento', tone: 'muted' };
   const amount = activeContract?.rentAmount ?? property.rentAmount;
   const currency = activeContract?.currency ?? property.rentCurrency;
-  return { value: `${formatMoney(amount, currency)}/mes`, tone: 'muted' };
+  return { value: amount ? `${formatMoney(amount, currency)}/mes` : '', tone: 'muted' };
 }
 
 // ── Pantalla ──────────────────────────────────────────────────────────

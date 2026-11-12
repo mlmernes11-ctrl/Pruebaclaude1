@@ -1,7 +1,7 @@
 // =====================================================================
 // Navegación
 // ---------------------------------------------------------------------
-// Las 4 pestañas de abajo (Inicio, Alquileres, Pagos, Ajustes) y las pantallas que se abren
+// Las 4 pestañas de abajo (Inicio, Alquileres, Pagos, Menú) y las pantallas que se abren
 // dentro de cada una. Para agregar una pantalla nueva, se registra acá.
 // =====================================================================
 
@@ -180,7 +180,7 @@ const TAB_ICONS: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Io
   DashboardTab: ['home', 'home-outline'],
   RentalsTab: ['business', 'business-outline'],
   PaymentsTab: ['wallet', 'wallet-outline'],
-  SettingsTab: ['settings', 'settings-outline'],
+  SettingsTab: ['menu', 'menu-outline'],
 };
 
 const navigationRef = createNavigationContainerRef();
@@ -271,7 +271,7 @@ export default function RootNavigator() {
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
         <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
         <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Pagos' }} />
-        <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Ajustes' }} />
+        <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} options={{ title: 'Menú' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );

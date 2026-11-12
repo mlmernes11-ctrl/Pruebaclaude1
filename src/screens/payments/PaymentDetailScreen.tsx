@@ -53,13 +53,9 @@ export default function PaymentDetailScreen() {
 
   const handleDelete = () => {
     showConfirm({
-      title: 'Eliminar pago',
-      message:
-        (sameReceipt.length
-          ? `Se elimina solo ${CONCEPT_LABEL[payment.concept].toLowerCase()}; lo demás del recibo queda registrado. `
-          : '') +
-        'La deuda que cubría este pago vuelve a quedar pendiente. No se puede deshacer.',
-      confirmLabel: 'Eliminar pago',
+      title: '¿Eliminar pago?',
+      message: 'La deuda que cubría vuelve a quedar pendiente. Es una acción permanente e irreversible.',
+      confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {
         deletePayment(payment.id);

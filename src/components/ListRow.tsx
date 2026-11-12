@@ -161,11 +161,14 @@ const useStyles = makeStyles((colors) => ({
     flex: 1,
     minWidth: 0,
   },
+  // Si el título y el monto no entran juntos, el monto baja a la línea de abajo (a la derecha):
+  // así no se corta ninguno de los dos.
   topLine: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    gap: spacing.sm,
+    columnGap: spacing.sm,
   },
   titleStrong: {
     flexShrink: 1,
@@ -192,11 +195,13 @@ const useStyles = makeStyles((colors) => ({
     marginTop: 2,
   },
   valueStrong: {
+    marginLeft: 'auto',
     fontSize: fontSize.lg,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   valueSoft: {
+    marginLeft: 'auto',
     fontSize: fontSize.md,
     fontVariant: ['tabular-nums'],
   },

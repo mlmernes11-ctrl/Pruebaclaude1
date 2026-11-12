@@ -232,11 +232,13 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
 
       <ListSection header="Detalles" footer={property.notes ? `Notas: ${property.notes}` : undefined}>
         <ListRow title="Tipo" value={PROPERTY_TYPE_LABEL[property.type]} valueTone="muted" />
-        <ListRow
-          title="Alquiler publicado"
-          value={formatMoney(property.rentAmount, property.rentCurrency)}
-          valueTone="muted"
-        />
+        {property.rentAmount ? (
+          <ListRow
+            title="Precio publicado"
+            value={formatMoney(property.rentAmount, property.rentCurrency)}
+            valueTone="muted"
+          />
+        ) : null}
         {property.expensasAmount ? (
           <ListRow title="Expensas" value={formatMoney(property.expensasAmount, 'ARS')} valueTone="muted" />
         ) : null}

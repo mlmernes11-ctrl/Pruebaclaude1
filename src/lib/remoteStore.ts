@@ -7,6 +7,7 @@
 
 import { AppData } from '../types';
 import { connectionErrorMessage } from '../utils/platform';
+import { Database } from './database.types';
 import { supabase } from './supabase';
 
 type Collection = keyof AppData;
@@ -16,8 +17,21 @@ type Collection = keyof AppData;
 // Primero las tablas "padre" y después las "hijas", para que las relaciones existan al guardar (al borrar, al revés).
 const ORDER: Collection[] = ['properties', 'tenants', 'contracts', 'charges', 'payments'];
 
+// — Verificación contra la base (database.types.ts) —
+// "rentAmount" → "rent_amount", pero hecho con tipos: lo comprueba el verificador antes de publicar.
+type CamelToSnake<S extends string> = S extends `${infer Head}${infer Tail}`
+  ? `${Head extends Uppercase<Head> ? (Head extends Lowercase<Head> ? Head : `_${Lowercase<Head>}`) : Head}${CamelToSnake<Tail>}`
+  : S;
+type DbRow<C extends Collection> = Database['public']['Tables'][C]['Row'];
+type AppField<C extends Collection> = Extract<keyof AppData[C][number], string>;
+// Campos de la app que tienen su columna en la base.
+type DbField<C extends Collection> = {
+  [K in AppField<C>]: CamelToSnake<K> extends keyof DbRow<C> ? K : never;
+}[AppField<C>];
+
 // Columnas de cada tabla, con el nombre que usa la app (en la base van en snake_case).
-const COLUMNS: Record<Collection, string[]> = {
+// Si acá se nombra un campo sin columna en la base, el verificador da error.
+const COLUMNS = {
   properties: [
     'id', 'title', 'address', 'neighborhood', 'type', 'rooms', 'bathrooms', 'area', 'rentAmount', 'rentCurrency',
     'expensasAmount', 'serviciosAmount', 'status', 'notes', 'createdAt',
@@ -35,7 +49,24 @@ const COLUMNS: Record<Collection, string[]> = {
     'id', 'contractId', 'concept', 'date', 'amount', 'currency', 'method', 'exchangeRate', 'allocations', 'notes',
     'receiptId', 'paidAmount', 'paidCurrency', 'rateSource', 'createdAt',
   ],
-};
+} as const satisfies { [C in Collection]: readonly DbField<C>[] };
+
+// Y al revés: si la base tiene una columna que la app no lee ni guarda (por ejemplo, una nueva
+// que se olvidó agregar arriba), el verificador da error acá y dice cuál falta.
+type MissingColumns<C extends Collection> = Exclude<
+  keyof DbRow<C>,
+  'user_id' | CamelToSnake<(typeof COLUMNS)[C][number]>
+>;
+type AssertNone<T extends never> = T;
+export type AllColumnsCovered = AssertNone<
+  | MissingColumns<'properties'>
+  | MissingColumns<'tenants'>
+  | MissingColumns<'contracts'>
+  | MissingColumns<'charges'>
+  | MissingColumns<'payments'>
+>;
+
+const columnsOf = (collection: Collection): readonly string[] => COLUMNS[collection];
 
 // La base puede devolver los montos como texto; la app trabaja con números.
 const NUMERIC = new Set([
@@ -52,7 +83,7 @@ const toSnake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase(
 function toRow(collection: Collection, item: object): Record<string, unknown> {
   const source = item as Record<string, unknown>;
   const row: Record<string, unknown> = {};
-  COLUMNS[collection].forEach((key) => {
+  columnsOf(collection).forEach((key) => {
     const value = source[key];
     row[toSnake(key)] = value === undefined ? null : value;
   });
@@ -67,7 +98,7 @@ function toRow(collection: Collection, item: object): Record<string, unknown> {
 // Fila de la tabla → registro de la app.
 function fromRow<T>(collection: Collection, row: Record<string, unknown>): T {
   const item: Record<string, unknown> = {};
-  COLUMNS[collection].forEach((key) => {
+  columnsOf(collection).forEach((key) => {
     const value = row[toSnake(key)];
     if (value === null || value === undefined) return;
     if (NUMERIC.has(key)) item[key] = Number(value);

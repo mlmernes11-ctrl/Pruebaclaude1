@@ -19,8 +19,6 @@ interface DialogRequest {
   confirmLabel?: string;
   destructive?: boolean;
   onConfirm?: () => void;
-  // Una salida más suave que la acción principal (por ejemplo "Finalizar en su lugar" al eliminar).
-  alternative?: { label: string; onPress: () => void };
 }
 
 // Los avisos nativos no funcionan en la web, así que los cuadros de diálogo se dibujan dentro de la app.
@@ -36,7 +34,6 @@ export function showConfirm(options: {
   confirmLabel: string;
   destructive?: boolean;
   onConfirm: () => void;
-  alternative?: { label: string; onPress: () => void };
 }) {
   listener?.(options);
 }
@@ -69,25 +66,8 @@ export default function DialogHost() {
         <View style={styles.card}>
           <Text style={styles.title}>{request.title}</Text>
           <Text style={styles.message}>{request.message}</Text>
-          <View style={[styles.actions, request.alternative && styles.actionsStacked]}>
-            {request.onConfirm && request.alternative ? (
-              <>
-                <Button
-                  label={request.alternative.label}
-                  onPress={() => {
-                    const onPress = request.alternative?.onPress;
-                    close();
-                    onPress?.();
-                  }}
-                />
-                <Button
-                  label={request.confirmLabel ?? 'Aceptar'}
-                  variant={request.destructive ? 'dangerOutline' : 'secondary'}
-                  onPress={confirm}
-                />
-                <Button label="Cancelar" variant="secondary" onPress={close} />
-              </>
-            ) : request.onConfirm ? (
+          <View style={styles.actions}>
+            {request.onConfirm ? (
               <>
                 <Button label="Cancelar" variant="secondary" onPress={close} style={styles.action} />
                 <Button
@@ -139,11 +119,6 @@ const useStyles = makeStyles((colors) => ({
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
-  },
-  // Con tres botones van uno abajo del otro: primero la opción recomendada.
-  actionsStacked: {
-    flexDirection: 'column',
-    gap: spacing.sm,
   },
   action: {
     flex: 1,

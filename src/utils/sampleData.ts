@@ -16,7 +16,8 @@ export function buildSampleData(): AppData {
   const monthStart = (offset: number) => periodToDueDate(addMonthsToPeriod(thisPeriod, offset), 1);
 
   // — Propiedades —
-  const property = (values: Omit<Property, 'id' | 'createdAt'>): Property => ({
+  // Las de ejemplo siempre tienen precio publicado: se usa como alquiler de sus contratos.
+  const property = (values: Omit<Property, 'id' | 'createdAt' | 'rentAmount'> & { rentAmount: number }) => ({
     ...values,
     id: generateId(),
     createdAt: now,

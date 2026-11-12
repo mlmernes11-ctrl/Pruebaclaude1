@@ -32,7 +32,8 @@ export interface Property {
   rooms?: number;
   bathrooms?: number;
   area?: number;
-  rentAmount: number;
+  // Precio publicado (opcional): solo de referencia. Lo que se cobra es el alquiler del contrato.
+  rentAmount?: number;
   rentCurrency: Currency;
   // Las expensas y los servicios siempre se liquidan en pesos.
   expensasAmount?: number;

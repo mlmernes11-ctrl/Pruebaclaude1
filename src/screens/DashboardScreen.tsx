@@ -17,7 +17,7 @@ import SectionHeader from '../components/SectionHeader';
 import StatusDot from '../components/StatusDot';
 import { CONCEPT_LABEL } from '../constants';
 import { useData } from '../context/DataContext';
-import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
+import { QUOTE_SOURCES, RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { useRefresh } from '../hooks/useRefresh';
@@ -46,7 +46,7 @@ export default function DashboardScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const { mode, properties, tenants, contracts, payments, chargeViews, loadSampleData, today } = useData();
-  const { rate, source, toPesos } = useExchangeRate();
+  const { rate, source, toPesos, rateFor } = useExchangeRate();
   const { refreshing, onRefresh } = useRefresh();
   const desktop = useIsDesktop();
   const isEmpty = properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
@@ -181,17 +181,40 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
       >
-        <LargeTitleHeader
-          title="Inicio"
-          caption={
-            rate
-              ? `Dólar ${RATE_SOURCE_LABEL[source].toLowerCase()} ${formatMoney(rate, 'ARS')}`
-              : 'Cargar cotización ›'
-          }
-          onCaptionPress={() => navigation.navigate('ExchangeRate')}
-        />
+        <LargeTitleHeader title="Inicio" />
 
         <View style={styles.body}>
+          {/* Dólar del día siempre a la vista; el que usa la cuenta va resaltado. */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.dollar}
+            onPress={() => navigation.navigate('ExchangeRate')}
+            accessibilityRole="button"
+            accessibilityLabel="Cotización del dólar"
+          >
+            {QUOTE_SOURCES.map((s) => {
+              const value = rateFor(s);
+              const inUse = s === source;
+              return (
+                <View key={s} style={styles.dollarItem}>
+                  <Text style={[styles.dollarLabel, inUse && styles.dollarLabelInUse]}>
+                    {RATE_SOURCE_LABEL[s]}
+                    {inUse ? ' · en uso' : ''}
+                  </Text>
+                  <Text style={[styles.dollarValue, inUse && styles.dollarValueInUse]}>
+                    {value ? formatMoney(value, 'ARS') : '—'}
+                  </Text>
+                </View>
+              );
+            })}
+            {source === 'manual' && rate ? (
+              <View style={styles.dollarItem}>
+                <Text style={[styles.dollarLabel, styles.dollarLabelInUse]}>Manual · en uso</Text>
+                <Text style={[styles.dollarValue, styles.dollarValueInUse]}>{formatMoney(rate, 'ARS')}</Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
           {isEmpty && mode === 'remote' ? (
             <Card style={styles.welcome}>
               <Text style={styles.welcomeTitle}>Empezá por tu primera propiedad</Text>
@@ -338,6 +361,39 @@ const useStyles = makeStyles((colors) => ({
   },
   body: {
     paddingHorizontal: spacing.lg,
+  },
+  dollar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  dollarItem: {
+    flex: 1,
+    minWidth: 0,
+  },
+  dollarLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  dollarLabelInUse: {
+    color: colors.primary,
+  },
+  dollarValue: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+  dollarValueInUse: {
+    color: colors.text,
   },
   welcome: {
     marginBottom: spacing.xl,

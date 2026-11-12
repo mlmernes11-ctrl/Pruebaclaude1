@@ -157,15 +157,11 @@ export default function ChargeFormScreen() {
   // — Eliminar —
   const handleVoid = () => {
     if (!charge || !existing) return;
-    const what = `la liquidación de ${CONCEPT_LABEL[charge.concept].toLowerCase()} de ${formatPeriod(charge.period)}`;
     showConfirm({
-      title: 'Eliminar liquidación',
+      title: '¿Eliminar liquidación?',
       message:
-        existing.paid > 0
-          ? `Se elimina ${what}. Tiene ${formatMoney(existing.paid, charge.currency)} pagados: esa plata queda a favor ` +
-            'del inquilino y se usa sola para su próxima deuda del mismo concepto. Si ese pago fue un error, ' +
-            'eliminá también el pago.'
-          : `Se elimina ${what}: deja de figurar como deuda y no se vuelve a generar.`,
+        'Es una acción permanente e irreversible.' +
+        (existing.paid > 0 ? ' Lo que ya se pagó queda como saldo a favor del inquilino.' : ''),
       confirmLabel: 'Eliminar',
       destructive: true,
       onConfirm: () => {

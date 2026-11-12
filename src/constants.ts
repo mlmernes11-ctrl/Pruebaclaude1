@@ -38,9 +38,6 @@ export const PROPERTY_STATUS_LABEL: Record<PropertyStatus, string> = {
   mantenimiento: 'Mantenimiento',
 };
 
-export const PROPERTY_STATUS_OPTIONS = Object.entries(PROPERTY_STATUS_LABEL).map(
-  ([value, label]) => ({ value: value as PropertyStatus, label }),
-);
 
 // ── Contratos ─────────────────────────────────────────────────────────
 

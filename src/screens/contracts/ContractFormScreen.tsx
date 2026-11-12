@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { ScrollView, Text } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';
-import { confirmDeleteContract } from '../../utils/contractActions';
 import Button from '../../components/Button';
 import FormField from '../../components/FormField';
 import OptionChips from '../../components/OptionChips';
@@ -49,8 +48,7 @@ export default function ContractFormScreen() {
   const presetTenantId = route.params?.tenantId as string | undefined;
 
   const {
-    getContractById, addContract, updateContract, deleteContract, properties, tenants, contracts, getPropertyById,
-    chargeViewsForContract, paymentsForContract, mode,
+    getContractById, addContract, updateContract, properties, tenants, contracts, getPropertyById, mode,
   } = useData();
   const existing = getContractById(contractId);
 
@@ -60,7 +58,7 @@ export default function ContractFormScreen() {
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
   const presetProperty = getPropertyById(propertyId);
   const [rentAmount, setRentAmount] = useState(
-    existing ? String(existing.rentAmount) : presetProperty ? String(presetProperty.rentAmount) : '',
+    existing ? String(existing.rentAmount) : presetProperty?.rentAmount ? String(presetProperty.rentAmount) : '',
   );
   const [currency, setCurrency] = useState<Currency>(
     existing?.currency ?? presetProperty?.rentCurrency ?? DEFAULT_RENT_CURRENCY,
@@ -82,7 +80,7 @@ export default function ContractFormScreen() {
     setPropertyId(id);
     if (!existing && !rentAmount) {
       const property = getPropertyById(id);
-      if (property) {
+      if (property?.rentAmount) {
         setRentAmount(String(property.rentAmount));
         setCurrency(property.rentCurrency);
       }
@@ -266,24 +264,6 @@ export default function ContractFormScreen() {
         <OptionChips label="Estado" options={CONTRACT_STATUS_OPTIONS} value={status} onChange={setStatus} />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Cláusulas o información adicional" multiline />
         <Button label={existing ? 'Guardar cambios' : 'Crear contrato'} onPress={handleSave} />
-        {existing ? (
-          <Button
-            label="Eliminar contrato"
-            variant="dangerOutline"
-            style={styles.deleteButton}
-            onPress={() =>
-              confirmDeleteContract({
-                contract: existing,
-                charges: chargeViewsForContract(existing.id),
-                payments: paymentsForContract(existing.id),
-                deleteContract,
-                updateContract,
-                onDeleted: () => navigation.popToTop(),
-                onFinished: () => navigation.goBack(),
-              })
-            }
-          />
-        ) : null}
       </ScrollView>
     </Screen>
   );
@@ -299,9 +279,6 @@ const useStyles = makeStyles((colors) => ({
     marginTop: -spacing.sm,
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.xs,
-  },
-  deleteButton: {
-    marginTop: spacing.md,
   },
   content: {
     padding: spacing.lg,
