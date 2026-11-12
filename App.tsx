@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import DialogHost from './src/components/DialogHost';
 import SyncBanner from './src/components/SyncBanner';
+import UpdatePrompt from './src/components/UpdatePrompt';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
 import { ExchangeRateProvider } from './src/context/ExchangeRateContext';
@@ -26,6 +27,7 @@ export default function App() {
           <AuthProvider>
             <Gate />
             <DialogHost />
+            <UpdatePrompt />
             <ThemedStatusBar />
           </AuthProvider>
         </ThemeProvider>

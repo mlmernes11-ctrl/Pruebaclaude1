@@ -1,5 +1,5 @@
 # Manda los cambios de la app a los celulares que ya tienen el APK instalado, sin reinstalar
-# (EAS Update). Llegan la próxima vez que se abre la app.
+# (EAS Update). Al abrir la app aparece el cartel "Hay una nueva versión" y se actualiza al aceptar.
 # Se corre a mano desde GitHub › Actions › "Actualizar la app" › Run workflow.
 # Sirve para cambios de pantallas y lógica; si cambia algo nativo (permisos, ícono, paquetes
 # nativos) hace falta un APK nuevo con "Armar APK".
