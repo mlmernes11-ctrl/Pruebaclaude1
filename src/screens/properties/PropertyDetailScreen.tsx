@@ -118,8 +118,16 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
   const contractIds = new Set(propertyContracts.map((c) => c.id));
   const propertyCharges = chargeViewsForProperty(property.id);
   const chargeCount = propertyCharges.length;
-  // Lo que debe el inquilino actual: vencido o por vencer de su contrato.
-  const owed = active ? propertyCharges.filter((v) => v.charge.contractId === active.id && isOutstanding(v)) : [];
+  // Lo que debe el inquilino actual: vencido o por vencer de su contrato y de los anteriores con él
+  // (si se renovó, la deuda del contrato viejo sigue siendo suya).
+  const tenantContractIds = new Set(
+    propertyContracts.filter((c) => active && c.tenantId === active.tenantId).map((c) => c.id),
+  );
+  const owed = propertyCharges
+    .filter((v) => tenantContractIds.has(v.charge.contractId) && isOutstanding(v))
+    .sort((a, b) => a.charge.dueDate.localeCompare(b.charge.dueDate));
+  // "Registrar cobro" abre primero el contrato con la deuda más vieja; si no hay deuda, el vigente.
+  const collectContractId = owed[0]?.charge.contractId ?? active?.id;
   // Últimos tres meses de importes (expensas, servicios y alquiler, con sus ajustes aparte).
   const importOf = (period: string, concept: 'expensas' | 'servicios' | 'alquiler') =>
     propertyCharges
@@ -184,7 +192,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <View style={styles.primaryAction}>
           <Button
             label="Registrar cobro"
-            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: active.id })}
+            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: collectContractId })}
           />
           {owed.length ? (
             <Button

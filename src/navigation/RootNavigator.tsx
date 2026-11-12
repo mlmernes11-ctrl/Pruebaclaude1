@@ -116,7 +116,11 @@ function RentalsStackNavigator() {
         name="ContractForm"
         component={ContractFormScreen}
         options={({ route }: any) => ({
-          title: route.params?.contractId ? 'Editar contrato' : 'Nuevo contrato',
+          title: route.params?.contractId
+            ? 'Editar contrato'
+            : route.params?.renewFromId
+              ? 'Renovar contrato'
+              : 'Nuevo contrato',
         })}
       />
       <RentalsStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />

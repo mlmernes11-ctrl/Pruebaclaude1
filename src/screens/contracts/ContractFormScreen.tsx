@@ -17,7 +17,7 @@ import { useData } from '../../context/DataContext';
 import { fontSize, spacing } from '../../theme';
 import { AdjustmentIndex, ContractStatus, Currency } from '../../types';
 import { ADJUSTMENT_MONTH_OPTIONS, lastPassedAdjustmentPeriod } from '../../utils/adjustments';
-import { CURRENCY_SYMBOL, parseAmount, todayISO } from '../../utils/format';
+import { addMonthsToPeriod, CURRENCY_SYMBOL, formatDate, parseAmount, parseLocalDate, toISODate, todayISO } from '../../utils/format';
 import { compareTitles } from '../../utils/text';
 import { smartGoBack } from '../../utils/navigation';
 import { makeStyles } from '../../context/ThemeContext';
@@ -33,6 +33,18 @@ const ADJUSTMENT_OPTIONS: { value: AdjustmentChoice; label: string }[] = [
   { value: 'fijo', label: '% fijo' },
 ];
 
+// Misma fecha, N meses después ("2026-12-01" + 24 → "2028-12-01").
+function addMonthsToDate(iso: string, months: number): string {
+  const date = parseLocalDate(iso);
+  return toISODate(new Date(date.getFullYear(), date.getMonth() + months, date.getDate()));
+}
+
+function monthsBetween(from: string, to: string): number {
+  const a = parseLocalDate(from);
+  const b = parseLocalDate(to);
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
 function isValidDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value).getTime());
 }
@@ -46,17 +58,22 @@ export default function ContractFormScreen() {
   const contractId = route.params?.contractId as string | undefined;
   const presetPropertyId = route.params?.propertyId as string | undefined;
   const presetTenantId = route.params?.tenantId as string | undefined;
+  // Renovar: un contrato nuevo con los datos del anterior, que empieza cuando termina el actual.
+  const renewFromId = route.params?.renewFromId as string | undefined;
 
   const {
     getContractById, addContract, updateContract, properties, tenants, contracts, getPropertyById, mode,
-    getTenantById, addTenant, updateTenant,
+    getTenantById, addTenant, updateTenant, chargeViews,
   } = useData();
   const existing = getContractById(contractId);
+  const renewFrom = existing ? undefined : getContractById(renewFromId);
+  // De dónde salen los datos iniciales: el contrato que se edita o el que se renueva.
+  const base = existing ?? renewFrom;
 
-  const [propertyId, setPropertyId] = useState(existing?.propertyId ?? presetPropertyId ?? '');
+  const [propertyId, setPropertyId] = useState(base?.propertyId ?? presetPropertyId ?? '');
   // El inquilino va dentro del contrato: sus datos se cargan acá. Si ya existe (una renovación,
   // o alguien que alquila dos propiedades), se elige de la lista y sus datos se pueden corregir.
-  const initialTenant = getTenantById(existing?.tenantId ?? presetTenantId);
+  const initialTenant = getTenantById(base?.tenantId ?? presetTenantId);
   const [tenantId, setTenantId] = useState(initialTenant?.id ?? '');
   const [tenantName, setTenantName] = useState(initialTenant?.name ?? '');
   const [tenantDocument, setTenantDocument] = useState(initialTenant?.document ?? '');
@@ -79,26 +96,31 @@ export default function ContractFormScreen() {
     setTenantPhone('');
     setTenantEmail('');
   };
-  const [startDate, setStartDate] = useState(existing?.startDate ?? todayISO());
-  const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  const [startDate, setStartDate] = useState(renewFrom?.endDate ?? existing?.startDate ?? todayISO());
+  // Al renovar se propone la misma duración que el contrato anterior.
+  const [endDate, setEndDate] = useState(
+    renewFrom
+      ? addMonthsToDate(renewFrom.endDate, Math.max(1, monthsBetween(renewFrom.startDate, renewFrom.endDate)))
+      : existing?.endDate ?? '',
+  );
   const presetProperty = getPropertyById(propertyId);
   const [rentAmount, setRentAmount] = useState(
-    existing ? String(existing.rentAmount) : presetProperty?.rentAmount ? String(presetProperty.rentAmount) : '',
+    base ? String(base.rentAmount) : presetProperty?.rentAmount ? String(presetProperty.rentAmount) : '',
   );
   const [currency, setCurrency] = useState<Currency>(
-    existing?.currency ?? presetProperty?.rentCurrency ?? DEFAULT_RENT_CURRENCY,
+    base?.currency ?? presetProperty?.rentCurrency ?? DEFAULT_RENT_CURRENCY,
   );
   const [depositAmount, setDepositAmount] = useState(
-    existing?.depositAmount ? String(existing.depositAmount) : '',
+    base?.depositAmount ? String(base.depositAmount) : '',
   );
-  const [paymentDay, setPaymentDay] = useState(existing ? String(existing.paymentDay) : '1');
+  const [paymentDay, setPaymentDay] = useState(base ? String(base.paymentDay) : '1');
   const [status, setStatus] = useState<ContractStatus>(existing?.status ?? 'activo');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   // Ajuste del alquiler: tipo, cada cuántos meses y el porcentaje (si es fijo).
-  const [adjustment, setAdjustment] = useState<AdjustmentChoice>(existing?.adjustmentIndex ?? 'ninguno');
-  const [adjustmentMonths, setAdjustmentMonths] = useState(String(existing?.adjustmentMonths ?? 3));
+  const [adjustment, setAdjustment] = useState<AdjustmentChoice>(base?.adjustmentIndex ?? 'ninguno');
+  const [adjustmentMonths, setAdjustmentMonths] = useState(String(base?.adjustmentMonths ?? 3));
   const [adjustmentPercent, setAdjustmentPercent] = useState(
-    existing?.adjustmentPercent ? String(existing.adjustmentPercent) : '',
+    base?.adjustmentPercent ? String(base.adjustmentPercent) : '',
   );
 
   const handleSelectProperty = (id: string) => {
@@ -191,6 +213,20 @@ export default function ContractFormScreen() {
       else savedTenantId = addTenant(tenantData).id;
       if (existing) {
         updateContract(existing.id, { ...payload, tenantId: savedTenantId });
+      } else if (renewFrom) {
+        // El anterior se finaliza y el nuevo empieza a cobrar desde el mes siguiente al último
+        // cargo del anterior, así ningún mes se cobra dos veces.
+        const lastPeriod = chargeViews
+          .filter((v) => v.charge.contractId === renewFrom.id)
+          .reduce((max, v) => (v.charge.period > max ? v.charge.period : max), '');
+        updateContract(renewFrom.id, { status: 'finalizado' });
+        const created = addContract({
+          ...payload,
+          tenantId: savedTenantId,
+          billingStartPeriod: lastPeriod ? addMonthsToPeriod(lastPeriod, 1) : undefined,
+        });
+        navigation.popTo('ContractDetail', { contractId: created.id });
+        return;
       } else {
         addContract({ ...payload, tenantId: savedTenantId });
       }
@@ -199,7 +235,7 @@ export default function ContractFormScreen() {
 
     // Dos contratos vigentes en una misma propiedad generarían dos cargos por mes.
     const otherActive = contracts.find(
-      (c) => c.id !== existing?.id && c.propertyId === propertyId && c.status === 'activo',
+      (c) => c.id !== existing?.id && c.id !== renewFrom?.id && c.propertyId === propertyId && c.status === 'activo',
     );
     if (status === 'activo' && otherActive) {
       showConfirm({
@@ -224,6 +260,12 @@ export default function ContractFormScreen() {
   return (
     <Screen narrow>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {renewFrom ? (
+          <Text style={styles.renewNote}>
+            Al guardar, el contrato actual (hasta el {formatDate(renewFrom.endDate)}) pasa a Finalizado y este queda
+            vigente. Revisá las fechas y el alquiler nuevo.
+          </Text>
+        ) : null}
         <SelectField
           label="Propiedad"
           placeholder="Elegí una propiedad"
@@ -321,7 +363,7 @@ export default function ContractFormScreen() {
         />
         <OptionChips label="Estado" options={CONTRACT_STATUS_OPTIONS} value={status} onChange={setStatus} />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Cláusulas o información adicional" multiline />
-        <Button label={existing ? 'Guardar cambios' : 'Crear contrato'} onPress={handleSave} />
+        <Button label={existing ? 'Guardar cambios' : renewFrom ? 'Renovar contrato' : 'Crear contrato'} onPress={handleSave} />
       </ScrollView>
     </Screen>
   );
@@ -342,6 +384,15 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text,
+  },
+  renewNote: {
+    fontSize: fontSize.md,
+    lineHeight: 21,
+    color: colors.text,
+    backgroundColor: colors.primaryMuted,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: fontSize.lg,

@@ -20,7 +20,7 @@ import { describeAdjustment, nextAdjustmentPeriod } from '../../utils/adjustment
 import {
   addToTotals, emptyTotals, formatDate, formatMoney, formatPeriod, formatPeriodShort, formatTotals,
 } from '../../utils/format';
-import { unallocatedAmount } from '../../utils/ledger';
+import { isOutstanding, unallocatedAmount } from '../../utils/ledger';
 import { openInTab } from '../../utils/navigation';
 import { confirmDeleteContract, confirmFinishContract } from '../../utils/contractActions';
 import { contractEndBadge } from '../../utils/propertySummary';
@@ -74,6 +74,7 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
   const credit = emptyTotals();
   paymentsForContract(contract.id).forEach((p) => addToTotals(credit, unallocatedAmount(p), p.currency));
   const openPayments = (screen: string, params: object) => openInTab(navigation, 'PaymentsTab', screen, params);
+  const renew = () => openInTab(navigation, 'RentalsTab', 'ContractForm', { renewFromId: contract.id });
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -91,12 +92,17 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
         </Text>
       </View>
 
-      {contract.status === 'activo' ? (
+      {/* También en un contrato terminado si quedó deuda (por ejemplo, después de renovar). */}
+      {contract.status === 'activo' || charges.some(isOutstanding) ? (
         <Button
           label="Registrar cobro"
           onPress={() => openPayments('PaymentForm', { contractId: contract.id })}
           style={styles.primaryAction}
         />
+      ) : null}
+      {/* Si el contrato termina pronto (o ya terminó), renovar va arriba, bien a la vista. */}
+      {contract.status === 'activo' && end ? (
+        <Button label="Renovar contrato" variant="secondary" onPress={renew} style={styles.primaryAction} />
       ) : null}
 
       <ListSection>
@@ -160,6 +166,9 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
 
       {/* Uno arriba del otro: primero lo recomendado (finalizar) y abajo lo irreversible. */}
       <View style={styles.endActions}>
+        {contract.status === 'activo' && !end ? (
+          <Button label="Renovar contrato" variant="secondary" onPress={renew} />
+        ) : null}
         {contract.status === 'activo' ? (
           <Button
             label="Finalizar contrato"
