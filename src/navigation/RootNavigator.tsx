@@ -50,10 +50,10 @@ function useScreenOptions() {
   const { colors } = useTheme();
   return useMemo(
     () => ({
-      // La barra de arriba usa el mismo fondo gris que la pantalla, como en iOS.
-      headerStyle: { backgroundColor: colors.background },
-      headerTitleStyle: { color: colors.text, fontWeight: '600' as const, fontSize: 17 },
-      headerTintColor: colors.primary,
+      // La barra de arriba es la misma franja azul de los títulos de las pestañas.
+      headerStyle: { backgroundColor: colors.header },
+      headerTitleStyle: { color: colors.onHeader, fontWeight: '600' as const, fontSize: 17 },
+      headerTintColor: colors.onHeader,
       headerShadowVisible: false,
       contentStyle: { backgroundColor: colors.background },
     }),

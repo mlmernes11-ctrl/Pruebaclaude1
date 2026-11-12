@@ -158,7 +158,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
     <ScrollView contentContainerStyle={styles.content}>
       {embedded ? (
         <View style={styles.embeddedBar}>
-          <HeaderTextButton label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
+          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
         </View>
       ) : null}
       <View style={styles.titleBlock}>

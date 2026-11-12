@@ -79,7 +79,7 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
     <ScrollView contentContainerStyle={styles.content}>
       {embedded ? (
         <View style={styles.embeddedBar}>
-          <HeaderTextButton label="Editar" onPress={() => navigation.navigate('ContractForm', { contractId })} />
+          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('ContractForm', { contractId })} />
         </View>
       ) : null}
       <View style={styles.titleBlock}>

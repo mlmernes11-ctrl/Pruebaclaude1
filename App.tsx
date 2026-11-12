@@ -53,7 +53,10 @@ function Gate() {
   return <AccessScreen />;
 }
 
+// Dentro de la app la barra de arriba es azul: la hora y la batería van en blanco.
 function ThemedStatusBar() {
   const { scheme } = useTheme();
-  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+  const { status } = useAuth();
+  const inApp = status === 'demo' || status === 'signedIn';
+  return <StatusBar style={inApp || scheme === 'dark' ? 'light' : 'dark'} />;
 }

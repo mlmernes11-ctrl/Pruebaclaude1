@@ -30,7 +30,10 @@ export default function Screen({
   const styles = useStyles();
   const desktop = useIsDesktop();
   return (
-    <SafeAreaView style={styles.safe} edges={topSafe ? ['top', 'left', 'right'] : ['left', 'right']}>
+    <SafeAreaView
+      style={[styles.safe, topSafe && styles.safeHeader]}
+      edges={topSafe ? ['top', 'left', 'right'] : ['left', 'right']}
+    >
       <View
         style={[styles.container, desktop && styles.desktop, desktop && { maxWidth: narrow ? 720 : 1160 }, style]}
       >
@@ -46,6 +49,10 @@ const useStyles = makeStyles((colors) => ({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  // La franja de la hora y la batería sigue el azul del título.
+  safeHeader: {
+    backgroundColor: colors.header,
   },
   container: {
     flex: 1,

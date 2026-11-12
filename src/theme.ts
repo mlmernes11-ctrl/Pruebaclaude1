@@ -45,6 +45,11 @@ export const lightColors = {
   neutralTint: '#F2F2F7',
   segmentSelected: '#FFFFFF',
   tabBar: '#F9F9F9',
+  // Franja azul de arriba (títulos de las pestañas y barra de cada pantalla) y lo que va encima.
+  header: '#0A4FA8',
+  onHeader: '#FFFFFF',
+  onHeaderMuted: '#DCE8FA',
+  headerChip: 'rgba(255, 255, 255, 0.16)',
   // Texto sobre botones rellenos.
   white: '#FFFFFF',
   // Texto sobre un color fuerte usado de fondo.
@@ -89,6 +94,11 @@ export const darkColors: Palette = {
   neutralTint: '#2C2C2E',
   segmentSelected: '#636366',
   tabBar: '#161618',
+  // Azul más apagado para que no encandile de noche.
+  header: '#0E2A4D',
+  onHeader: '#FFFFFF',
+  onHeaderMuted: '#A9C1E3',
+  headerChip: 'rgba(255, 255, 255, 0.12)',
   white: '#FFFFFF',
   onAccent: '#000000',
   backdrop: 'rgba(0, 0, 0, 0.6)',

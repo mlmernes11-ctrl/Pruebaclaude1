@@ -67,7 +67,7 @@ export function TenantDetail({ tenantId, embedded }: { tenantId: string; embedde
     <ScrollView contentContainerStyle={styles.content}>
       {embedded ? (
         <View style={styles.embeddedBar}>
-          <HeaderTextButton label="Editar" onPress={() => navigation.navigate('TenantForm', { tenantId })} />
+          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('TenantForm', { tenantId })} />
         </View>
       ) : null}
       <View style={styles.titleBlock}>
