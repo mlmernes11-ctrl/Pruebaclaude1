@@ -4,8 +4,8 @@ App (Expo + React Native + TypeScript + Supabase) para administrar una cartera d
 
 ## Pantallas
 
-- **Inicio**: lo que está en mora, lo que vence y lo cobrado del mes; cotización del dólar; «Importes de {mes}» (cuántos faltan cargar); contratos que terminan o se ajustan pronto; propiedades que requieren atención.
-- **Alquileres**: una sola lista de propiedades con filtros (Todas, Alquiladas, Disponibles, En mora). La ficha de la propiedad muestra el contrato vigente, la cuenta corriente, los últimos importes y el historial de contratos. El inquilino se carga dentro del contrato.
+- **Inicio**: responde «¿qué hago hoy?». Cuatro accesos directos (registrar cobro, recordar deuda, cargar importes, nuevo contrato); «Tus alquileres» con quién debe y quién tiene un vencimiento cerca, con nombre, monto y fecha, y cuántas propiedades están al día o sin alquilar; debajo, los otros pendientes (importes por cargar, contratos por renovar o ajustar). Arriba, la cotización del dólar.
+- **Alquileres**: responde «¿qué tengo?». Una tarjeta por propiedad con su estado de pago, el alquiler, hasta cuándo va el contrato y el inquilino con WhatsApp y llamada; buscador y «Filtrar y ordenar». La ficha de la propiedad muestra el contrato vigente, la cuenta corriente, los últimos importes y el historial de contratos. El inquilino se carga dentro del contrato.
 - **Cobros**: Vencido, A vencer y Cobrado del mes, con «Filtrar» por propiedad, estado y mes, y el «Historial por mes». «Registrar cobro» va en 3 pasos (importe → confirmar → listo), como en el banco.
 - **Menú**: cuenta, «Actualizar importes», cotización del dólar, apariencia (Sistema / Claro / Oscuro), privacidad, cerrar sesión y eliminar cuenta.
 - **Actualizar importes**: expensas, servicios y alquiler del mes, propiedad por propiedad, con «Igual que el mes anterior» o «Mantener el importe anterior en las pendientes».

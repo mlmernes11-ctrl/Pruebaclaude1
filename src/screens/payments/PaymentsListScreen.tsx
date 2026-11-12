@@ -40,6 +40,7 @@ import {
   formatMoney,
   formatPeriod,
   formatPeriodShort,
+  hasMoney,
 } from '../../utils/format';
 import { ChargeView, unallocatedAmount } from '../../utils/ledger';
 import { matchRow, SearchField, searchWords } from '../../utils/search';
@@ -105,8 +106,6 @@ interface Row {
 }
 
 const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const hasMoney = (t: MoneyTotals) => t.USD > 0 || t.ARS > 0;
-
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PaymentsListScreen() {
@@ -130,7 +129,7 @@ export default function PaymentsListScreen() {
   const [query, setQuery] = useState('');
   const words = useMemo(() => searchWords(query), [query]);
 
-  // Otras pantallas la abren ya filtrada (por ejemplo "En mora" desde el Inicio).
+  // Otras pantallas la abren ya filtrada (por ejemplo, los cobros de una propiedad desde su ficha).
   useEffect(() => {
     const params = route.params;
     if (!params) return;

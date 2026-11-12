@@ -25,7 +25,7 @@ import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, formatTotals, parseLocalDate } from '../utils/format';
 import { openInTab } from '../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../utils/propertySummary';
-import { capitalize, compareTitles, plural } from '../utils/text';
+import { capitalize, compareTitles, initials, plural } from '../utils/text';
 import { pendingImportsCount } from './imports/importsLogic';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
@@ -40,12 +40,6 @@ const SHORTCUTS_OVERLAP = 36;
 function longDate(iso: string): string {
   const text = parseLocalDate(iso).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
   return capitalize(text.replace(',', ''));
-}
-
-// Iniciales del inquilino para el circulito ("Diego Herrera" → "DH").
-function initials(name?: string): string {
-  const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)).toUpperCase();
 }
 
 interface PendingItem {

@@ -52,6 +52,9 @@ export function addToTotals(totals: MoneyTotals, amount: number, currency: Curre
   totals[currency] += amount;
 }
 
+// ¿Hay algo de plata en alguna de las dos monedas?
+export const hasMoney = (totals: MoneyTotals) => totals.USD > 0 || totals.ARS > 0;
+
 // "US$ 1.650 + $ 405.000".
 export function formatTotals(totals: MoneyTotals): string {
   const parts: string[] = [];

@@ -29,7 +29,7 @@ export const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   otro: 'Otro',
 };
 
-// Ícono de cada tipo de propiedad (Inicio y Alquileres).
+// Ícono de cada tipo de propiedad (tarjetas de Alquileres).
 export const PROPERTY_TYPE_ICON: Record<PropertyType, keyof typeof Ionicons.glyphMap> = {
   apartamento: 'business-outline',
   casa: 'home-outline',

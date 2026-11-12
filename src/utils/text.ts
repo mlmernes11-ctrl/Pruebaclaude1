@@ -17,3 +17,9 @@ export function plural(count: number, singular: string, pluralForm: string): str
 export function compareTitles(a: string, b: string): number {
   return a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
 }
+
+// Iniciales de un nombre para los circulitos ("Diego Herrera" → "DH").
+export function initials(name?: string): string {
+  const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)).toUpperCase();
+}

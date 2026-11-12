@@ -9,7 +9,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Badge, { BadgeTone } from '../../components/Badge';
+import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import FilterSortMenu, { MenuOption } from '../../components/FilterSortMenu';
 import SearchLauncher from '../../components/SearchSheet';
@@ -18,9 +18,10 @@ import { useData } from '../../context/DataContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { useRefresh } from '../../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../../theme';
-import { formatDayMonth, formatMoney, parseLocalDate } from '../../utils/format';
-import { contractEndBadge, daysUntil, PropertySummary } from '../../utils/propertySummary';
-import { compareTitles, plural } from '../../utils/text';
+import { formatMoney, parseLocalDate } from '../../utils/format';
+import { contractEndBadge, PropertySummary } from '../../utils/propertySummary';
+import { collectionBadge } from '../../utils/status';
+import { compareTitles, initials } from '../../utils/text';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
 
 // ── Filtros y orden ───────────────────────────────────────────────────
@@ -76,30 +77,6 @@ const TYPE_SHORT: Record<PropertySummary['property']['type'], string> = {
 function monthYear(iso: string): string {
   const date = parseLocalDate(iso);
   return `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-}
-
-// Iniciales del inquilino para el circulito ("Diego Herrera" → "DH").
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)).toUpperCase();
-}
-
-// Cómo viene el pago, en la etiqueta de color de cada tarjeta.
-function paymentBadge(s: PropertySummary, today: string): { label: string; tone: BadgeTone } {
-  switch (s.collection) {
-    case 'deuda': {
-      const days = Math.max(1, -daysUntil(s.oldestOverdueDate ?? today));
-      return { label: `Debe ${plural(days, 'día', 'días')}`, tone: 'danger' };
-    }
-    case 'por-vencer':
-      return { label: `Vence el ${formatDayMonth(s.nextDueDate)}`, tone: 'warning' };
-    case 'al-dia':
-      return { label: 'Al día', tone: 'success' };
-    case 'mantenimiento':
-      return { label: 'En mantenimiento', tone: 'neutral' };
-    default:
-      return { label: 'Disponible', tone: 'primary' };
-  }
 }
 
 // ── Lista ─────────────────────────────────────────────────────────────
@@ -185,7 +162,7 @@ export default function PropertiesList({
         <View style={styles.list}>
           {summaries.map((s) => {
             const right = rightOf(s);
-            const badge = paymentBadge(s, today);
+            const badge = collectionBadge(s, today);
             const selected = s.property.id === selectedId;
             const tenant = s.activeContract ? s.tenant : undefined;
             const phone = tenant?.phone?.trim();

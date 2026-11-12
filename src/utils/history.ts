@@ -2,7 +2,7 @@
 // Historial por mes
 // ---------------------------------------------------------------------
 // Agrupa los cargos por mes y calcula el importe, lo cobrado, lo que está en mora y lo a vencer,
-// para la vista Historial y el resumen del mes en el Inicio.
+// para la vista Historial y el detalle de cada mes.
 // =====================================================================
 
 import { Currency, MoneyTotals } from '../types';
@@ -112,7 +112,7 @@ export function buildYearHistory(
   return { months, total: buildRow(String(year), inYear, toPesos) };
 }
 
-// La fila de un solo mes (la usan el Inicio y el detalle del mes).
+// La fila de un solo mes (la usa el detalle del mes).
 export function buildPeriodRow(views: ChargeView[], period: string, toPesos: ToPesos): HistoryRow {
   return buildRow(period, views.filter((v) => v.charge.period === period), toPesos);
 }

@@ -30,7 +30,7 @@ import { QuoteSource, RATE_SOURCE_LABEL, RateSource, useExchangeRate } from '../
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 import { MoneyTotals, Payment } from '../../types';
-import { emptyTotals, formatDate, formatMoney, formatPeriod, formatTotals, parseAmount, todayISO } from '../../utils/format';
+import { emptyTotals, formatDate, formatMoney, formatPeriod, formatTotals, hasMoney, parseAmount, todayISO } from '../../utils/format';
 import { generateId } from '../../utils/id';
 import { isOutstanding, roundMoney } from '../../utils/ledger';
 import { compareTitles } from '../../utils/text';
@@ -48,8 +48,6 @@ const STEP_TITLE: Record<Step, string> = {
 };
 // El último medio de pago usado queda guardado en el dispositivo.
 const LAST_METHOD_KEY = 'gestion_alquileres_ultimo_medio_de_pago';
-const hasMoney = (t: MoneyTotals) => t.USD > 0 || t.ARS > 0;
-
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PaymentFormScreen() {

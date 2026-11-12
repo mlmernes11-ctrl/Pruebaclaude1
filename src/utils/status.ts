@@ -12,7 +12,8 @@ import { DotTone } from '../components/StatusDot';
 import { ChargeStatus, Contract } from '../types';
 import { formatDayMonth, formatMoney } from './format';
 import { ChargeView } from './ledger';
-import { CollectionState, contractEndBadge } from './propertySummary';
+import { contractEndBadge, daysUntil, PropertySummary } from './propertySummary';
+import { plural } from './text';
 
 // ── Cargos ────────────────────────────────────────────────────
 
@@ -62,14 +63,24 @@ export function chargeProgress(view: ChargeView): string {
 
 // ── Propiedades ──────────────────────────────────────────────────────
 
-// Punto de color de cada propiedad según cómo viene el cobro.
-export const COLLECTION_DOT: Record<CollectionState, DotTone> = {
-  deuda: 'danger',
-  'por-vencer': 'warning',
-  'al-dia': 'success',
-  'sin-contrato': 'empty',
-  mantenimiento: 'empty',
-};
+// Cómo viene el pago de una propiedad, en la etiqueta de color: "Debe 38 días", "Vence el 01/12",
+// "Al día", "Disponible" o "En mantenimiento".
+export function collectionBadge(summary: PropertySummary, today: string): { label: string; tone: BadgeTone } {
+  switch (summary.collection) {
+    case 'deuda': {
+      const days = Math.max(1, -daysUntil(summary.oldestOverdueDate ?? today));
+      return { label: `Debe ${plural(days, 'día', 'días')}`, tone: 'danger' };
+    }
+    case 'por-vencer':
+      return { label: `Vence el ${formatDayMonth(summary.nextDueDate)}`, tone: 'warning' };
+    case 'al-dia':
+      return { label: 'Al día', tone: 'success' };
+    case 'mantenimiento':
+      return { label: 'En mantenimiento', tone: 'neutral' };
+    default:
+      return { label: 'Disponible', tone: 'primary' };
+  }
+}
 
 // ── Contratos ────────────────────────────────────────────────────────
 

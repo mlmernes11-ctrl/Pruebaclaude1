@@ -1,9 +1,9 @@
 // =====================================================================
 // Pantalla: Alquileres
 // ---------------------------------------------------------------------
-// La cartera: todas las propiedades con su alquiler y hasta cuándo va el contrato. Buscador y
-// "Filtrar y ordenar" arriba, igual que en el Inicio. Los contratos y los inquilinos viven
-// dentro de cada propiedad; el buscador los encuentra igual.
+// La cartera: una tarjeta por propiedad con su estado de pago, el alquiler, hasta cuándo va el
+// contrato y el inquilino con su contacto. Buscador y "Filtrar y ordenar" arriba. Los contratos
+// y los inquilinos viven dentro de cada propiedad; el buscador los encuentra igual.
 // En pantalla grande: la lista a la izquierda y la ficha de la propiedad a la derecha.
 // =====================================================================
 
