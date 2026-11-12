@@ -50,7 +50,7 @@ where (a ->> 'amount')::numeric > 0
   and exists (select 1 from public.charges c where c.id = a ->> 'chargeId' and c.user_id = p.user_id)
 group by p.id, p.user_id, a ->> 'chargeId';
 
-alter table public.payments drop column allocations;
+-- La columna JSON vieja se borra en la migración siguiente (drop_payments_allocations_json).
 
 -- ── 2. Todo lo automático de una cuenta ───────────────────────────────
 
