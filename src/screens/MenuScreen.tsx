@@ -20,6 +20,7 @@ import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, THEME_PREFERENCE_LABEL, ThemePreference, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
+import { openWhatsapp } from '../utils/whatsapp';
 import { pendingImportsCount } from './imports/importsLogic';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
@@ -30,6 +31,9 @@ const APPEARANCE: ThemePreference[] = ['system', 'light', 'dark'];
 const SITE = Platform.OS === 'web' ? '' : 'https://gestion-alquileres-sero0.vercel.app';
 const MANUAL_URL = `${SITE}/manual.html`;
 const PRIVACY_URL = `${SITE}/privacidad.html`;
+// WhatsApp de soporte: comentarios, ideas y problemas de los que usan la app.
+const SUPPORT_WHATSAPP = '1173608892';
+const SUPPORT_TEXT = `Hola, uso Locatia (${Platform.OS === 'web' ? 'web' : 'app de Android'}). Te quería comentar: `;
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -150,6 +154,12 @@ export default function MenuScreen() {
               subtitle="Manual de uso, paso a paso"
               icon="help-circle-outline"
               onPress={() => Linking.openURL(MANUAL_URL).catch(() => undefined)}
+            />
+            <ListRow
+              title="Enviar comentarios"
+              subtitle="Ideas, dudas o un problema, por WhatsApp"
+              icon="chatbubbles-outline"
+              onPress={() => openWhatsapp(SUPPORT_WHATSAPP, SUPPORT_TEXT)}
             />
             <ListRow
               title="Política de privacidad"
