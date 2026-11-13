@@ -106,6 +106,11 @@ export default function PropertyFormScreen() {
     }
     // Propiedad nueva: se ofrece cargar el contrato (con el inquilino) en el mismo recorrido.
     const created = addProperty(payload);
+    // Se creó desde «Nuevo contrato»: vuelve al contrato con la propiedad ya elegida.
+    if (route.params?.returnToContract) {
+      navigation.popTo('ContractForm', { createdPropertyId: created.id }, { merge: true });
+      return;
+    }
     navigation.goBack();
     showConfirm({
       title: 'Propiedad creada',

@@ -7,14 +7,15 @@
 //   - En el celular, si con un formulario empezado se toca otra pestaña, se pregunta antes de
 //     borrarlo (confirmLeaveForm, desde RootNavigator).
 //   - En la computadora se abren como una ventana al frente: el resto se oscurece y no se puede
-//     tocar; se cierra con la X (o Escape), que también pregunta si había algo cargado.
+//     tocar; se cierra con la X (o Escape), que también pregunta si había algo cargado. Si se abre
+//     otra encima (Nueva propiedad desde un contrato), la de abajo espera sin perder lo escrito.
 // Cambiar de pestaña del navegador o recargar la página no pregunta nada.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationContext, useIsFocused } from '@react-navigation/native';
 import { ComponentType, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { showConfirm } from '../components/DialogHost';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
@@ -78,7 +79,7 @@ interface FormOptions {
 // Opciones de navegación de un formulario: en la computadora se dibuja encima de la pantalla
 // anterior, sin barra de arriba (la ventana trae su propio título y la X).
 export function formScreenOptions(desktop: boolean, title: string) {
-  return desktop
+  return desktop && Platform.OS === 'web'
     ? {
         title,
         presentation: 'transparentModal' as const,
@@ -99,7 +100,8 @@ export function formScreen<P extends ScreenProps>(
     const { navigation, route } = props;
     const styles = useStyles();
     const { colors } = useTheme();
-    const desktop = useIsDesktop();
+    // La ventana al frente es solo para la web en pantalla grande (en una tablet con el APK, como en el celular).
+    const desktop = useIsDesktop() && Platform.OS === 'web';
     const focused = useIsFocused();
     const key: string = route.key;
     const [title, setTitle] = useState(() => titleOf(route.params));
@@ -129,6 +131,20 @@ export function formScreen<P extends ScreenProps>(
       else leave();
     }, [navigation, key]);
 
+    // Escape cierra la ventana (como la X), salvo que haya otra ventanita abierta encima
+    // (una lista para elegir, el calendario o un aviso).
+    useEffect(() => {
+      if (!desktop || !focused) return undefined;
+      const onKey = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape') return;
+        const modals = document.querySelectorAll('[aria-modal="true"]');
+        if (modals[modals.length - 1]?.getAttribute('data-form-window') !== key) return;
+        close();
+      };
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }, [desktop, focused, close, key]);
+
     const content = (
       <FormGuardContext.Provider value={guard}>
         <NavigationContext.Provider value={navigationForForm}>
@@ -139,11 +155,20 @@ export function formScreen<P extends ScreenProps>(
 
     if (!desktop) return content;
 
+    // La ventana queda fija sobre toda la pantalla (también la barra lateral). Cuando se abre otra
+    // encima (por ejemplo, «Nueva propiedad» desde un contrato) se oculta sin desarmarse, así no se
+    // pierde lo que ya estaba escrito.
     return (
-      <Modal transparent visible={focused} animationType="fade" onRequestClose={close}>
-        {/* El fondo oscuro tapa todo (también la barra lateral) y no responde a los toques. */}
+      <View
+        style={[styles.overlay, !focused && styles.hidden]}
+        role="dialog"
+        aria-modal={focused}
+        aria-label={title}
+        {...({ dataSet: { formWindow: key } } as object)}
+      >
+        {/* El fondo oscuro no responde a los toques: solo se usa el formulario. */}
         <View style={styles.backdrop}>
-          <View style={[styles.window, wide && styles.windowWide]} accessibilityViewIsModal>
+          <View style={[styles.window, wide && styles.windowWide]}>
             <View style={styles.header}>
               <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
                 {title}
@@ -161,7 +186,7 @@ export function formScreen<P extends ScreenProps>(
             <View style={styles.body}>{content}</View>
           </View>
         </View>
-      </Modal>
+      </View>
     );
   }
   FormScreen.displayName = `FormScreen(${Screen.displayName ?? Screen.name ?? 'Screen'})`;
@@ -171,6 +196,18 @@ export function formScreen<P extends ScreenProps>(
 // ── Estilos ───────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((colors) => ({
+  overlay: {
+    // Solo en la web: fija sobre toda la ventana del navegador.
+    position: 'fixed' as 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1000,
+  },
+  hidden: {
+    display: 'none',
+  },
   backdrop: {
     flex: 1,
     // Más oscuro que el de los avisos: el formulario es lo único que se puede usar.

@@ -3,7 +3,7 @@
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import DateField from '../../components/DateField';
 import { showAlert, showConfirm } from '../../components/DialogHost';
@@ -133,6 +133,12 @@ export default function ContractFormScreen() {
       }
     }
   };
+
+  // Volviendo de «Nueva propiedad» (desde la lista de propiedades), queda elegida la recién creada.
+  const createdPropertyId = route.params?.createdPropertyId as string | undefined;
+  useEffect(() => {
+    if (createdPropertyId) handleSelectProperty(createdPropertyId);
+  }, [createdPropertyId]);
 
   const handleSave = () => {
     if (!propertyId || !tenantName.trim()) {
@@ -272,8 +278,10 @@ export default function ContractFormScreen() {
           required
           selectedId={propertyId}
           onSelect={handleSelectProperty}
-          emptyMessage="No hay propiedades. Creá una primero."
+          emptyMessage="Todavía no hay propiedades."
           options={propertyOptions}
+          createLabel={existing ? undefined : 'Nueva propiedad'}
+          onCreate={() => navigation.navigate('PropertyForm', { returnToContract: true })}
         />
         <View style={styles.tenantHeader}>
           <Text style={styles.tenantTitle}>Inquilino</Text>

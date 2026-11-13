@@ -1,7 +1,8 @@
 // =====================================================================
 // Campo de selección
 // ---------------------------------------------------------------------
-// Abre una lista desde abajo para elegir una opción (contrato, propiedad, inquilino).
+// Abre una lista desde abajo para elegir una opción (contrato, propiedad, inquilino). Puede
+// ofrecer arriba de todo crear una nueva (por ejemplo, «Nueva propiedad» al cargar un contrato).
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useFormGuard } from '../navigation/formScreen';
@@ -35,6 +37,8 @@ export default function SelectField({
   onSelect,
   required,
   emptyMessage,
+  createLabel,
+  onCreate,
 }: {
   label: string;
   placeholder: string;
@@ -43,10 +47,14 @@ export default function SelectField({
   onSelect: (id: string) => void;
   required?: boolean;
   emptyMessage?: string;
+  // Fila para crear una opción nueva (se abre otra pantalla y se vuelve con ella elegida).
+  createLabel?: string;
+  onCreate?: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const { markDirty } = useFormGuard();
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const selected = options.find((o) => o.id === selectedId);
 
@@ -65,13 +73,27 @@ export default function SelectField({
 
       <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
         <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+          {/* Abajo deja lugar para los botones del celular, así la última opción no queda tapada. */}
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>{label}</Text>
               <TouchableOpacity onPress={() => setVisible(false)}>
                 <Ionicons name="close" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
+            {onCreate && createLabel ? (
+              <TouchableOpacity
+                style={styles.option}
+                onPress={() => {
+                  setVisible(false);
+                  onCreate();
+                }}
+                accessibilityRole="button"
+              >
+                <Ionicons name="add-circle-outline" size={22} color={colors.primary} style={styles.createIcon} />
+                <Text style={styles.createLabel}>{createLabel}</Text>
+              </TouchableOpacity>
+            ) : null}
             {options.length === 0 ? (
               <Text style={styles.emptyText}>{emptyMessage ?? 'No hay opciones disponibles'}</Text>
             ) : (
@@ -150,8 +172,7 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: '70%',
-    paddingBottom: spacing.xl,
+    maxHeight: '75%',
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -183,6 +204,14 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  createIcon: {
+    marginRight: spacing.sm,
+  },
+  createLabel: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.primary,
   },
   emptyText: {
     padding: spacing.xl,
