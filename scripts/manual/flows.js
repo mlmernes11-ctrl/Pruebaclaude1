@@ -16,9 +16,9 @@ const FR = path.join(os.tmpdir(), 'locatia-recorridos');
 
 const flows = {
   async propiedad(page, r) {
-    await page.getByRole('tab', { name: 'Alquileres' }).click(); await page.waitForTimeout(900);
     await r.shot(900);
-    await r.tap(vis(page, page.getByRole('button', { name: 'Nueva propiedad' })), 'En Alquileres, tocá el + de arriba para cargar una propiedad.');
+    await r.tap(page.getByRole('tab', { name: 'Alquileres' }), 'Las propiedades se cargan en Alquileres: tocá esa pestaña, abajo.');
+    await r.tap(vis(page, page.getByRole('button', { name: 'Nueva propiedad' })), 'Tocá el + de arriba para cargar una propiedad.');
     await r.type(vis(page, page.getByPlaceholder('Ej: Carpeta 102')), 'Carpeta 150', 'Nombre: cómo la llamás. Tocá el campo y se completa solo.');
     await r.type(vis(page, page.getByPlaceholder('Calle, número y piso')), 'Av. Cabildo 1500 3°B', 'Dirección: calle, número y piso.');
     await r.type(vis(page, page.getByPlaceholder('Ej: Belgrano')), 'Belgrano', 'Barrio: ayuda a buscar y ordenar.');
@@ -34,9 +34,9 @@ const flows = {
 
   async contrato(page, r) {
     await r.shot(900);
-    await r.tap(vis(page, page.getByRole('button', { name: 'Nuevo contrato', exact: true })), 'En Inicio, tocá Nuevo contrato.');
-    await r.tap(vis(page, page.getByText('Elegí una propiedad', { exact: true })), 'Elegí la propiedad que se alquila.', { settle: 600 });
-    await r.tap(vis(page, page.getByText('Carpeta 9', { exact: true })), 'Tocá Carpeta 9: está disponible.');
+    await r.tap(page.getByRole('tab', { name: 'Alquileres' }), 'Los contratos se cargan desde la propiedad: tocá Alquileres, abajo.');
+    await r.tap(vis(page, page.getByText('Carpeta 9', { exact: true })), 'Abrí la propiedad que se alquila: Carpeta 9 está disponible.');
+    await r.tap(vis(page, page.getByText('Nuevo contrato', { exact: true })), 'En su ficha, tocá Nuevo contrato. La propiedad ya viene elegida.');
     await r.type(vis(page, field(page, 'Nombre y apellido (o razón social)')), 'Ana Gómez', 'Inquilino: nombre y apellido.');
     await r.type(vis(page, field(page, 'DNI o CUIT')), '30123456', 'DNI o CUIT.');
     await r.type(vis(page, field(page, 'Teléfono')), '1155550000', 'Teléfono: con esto andan los botones de WhatsApp y llamar.');
@@ -49,12 +49,13 @@ const flows = {
     await r.tap(vis(page, page.getByText('IPC', { exact: true })), 'El alquiler vino del precio publicado. Elegí cómo se ajusta: por IPC, cada 3 meses.', { settle: 500 });
     await r.type(vis(page, field(page, 'Día de vencimiento')), '10', 'Día de vencimiento: hasta qué día de cada mes tiene para pagar.', { clear: true });
     await r.tap(vis(page, page.getByText('Crear contrato', { exact: true })), 'Tocá Crear contrato.', { settle: 1000 });
-    await r.finish('¡Listo! Carpeta 9 ya figura alquilada a Ana Gómez, y la app creó sola el cargo del mes.');
+    await r.finish('¡Listo! La ficha de Carpeta 9 ya muestra el contrato con Ana Gómez y el primer cargo, a vencer.');
   },
 
   async cobro(page, r) {
     await r.shot(900);
-    await r.tap(vis(page, page.getByRole('button', { name: 'Registrar cobro', exact: true })), 'En Inicio, tocá Registrar cobro.');
+    await r.tap(page.getByRole('tab', { name: 'Cobros' }), 'Los cobros se registran en Cobros: tocá esa pestaña, abajo.');
+    await r.tap(vis(page, page.getByRole('button', { name: 'Registrar cobro', exact: true })), 'Tocá el + de arriba para registrar un cobro.');
     await r.tap(vis(page, page.getByText('Elegí un contrato', { exact: true })), 'Elegí de quién es el cobro.', { settle: 600 });
     await r.tap(vis(page, page.getByText('Carpeta 64', { exact: true })), 'Tocá Carpeta 64 (Diego Herrera).');
     await r.shot(900);
@@ -68,7 +69,8 @@ const flows = {
 
   async importes(page, r) {
     await r.shot(900);
-    await r.tap(vis(page, page.getByRole('button', { name: 'Expensas y servicios', exact: true })), 'En Inicio, tocá Expensas y servicios (el último acceso de arriba).');
+    await r.tap(page.getByRole('tab', { name: 'Menú' }), 'La actualización de importes está en el Menú: tocá esa pestaña, abajo.');
+    await r.tap(vis(page, page.getByText('Expensas y servicios', { exact: true })), 'Tocá Expensas y servicios.');
     await r.tap(vis(page, page.getByRole('button', { name: /Carpeta 64/ })), 'Están las expensas del mes. Tocá una fila para cargar el importe nuevo.', { settle: 500 });
     const input = (name) => vis(page, page.getByLabel(`Importe de ${name}`, { exact: true }));
     await r.type(input('Carpeta 64'), '128000', 'Escribí el importe nuevo.', { clear: true });
