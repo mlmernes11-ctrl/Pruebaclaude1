@@ -3,7 +3,7 @@ const { Recorder, openDemo, vis, chromium } = require('./recorder');
 // Recorridos del manual: los cuatro trámites
 // ---------------------------------------------------------------------
 // Cargar una propiedad, nuevo contrato, registrar cobro y cargar importes. Cada paso dice qué
-// tocar o escribir y el texto que muestra el manual. Uso: node scripts/recorridos/flows.js
+// tocar o escribir y el texto que muestra el manual. Uso: node scripts/manual/flows.js
 // [propiedad contrato cobro importes]. Deja el video, la portada y recorridos.json en
 // public/manual/recorridos/.
 // =====================================================================
@@ -68,7 +68,7 @@ const flows = {
 
   async importes(page, r) {
     await r.shot(900);
-    await r.tap(vis(page, page.getByRole('button', { name: 'Cargar importes', exact: true })), 'En Inicio, tocá Cargar importes.');
+    await r.tap(vis(page, page.getByRole('button', { name: 'Expensas y servicios', exact: true })), 'En Inicio, tocá Expensas y servicios (el último acceso de arriba).');
     await r.tap(vis(page, page.getByRole('button', { name: /Carpeta 64/ })), 'Están las expensas del mes. Tocá una fila para cargar el importe nuevo.', { settle: 500 });
     const input = (name) => vis(page, page.getByLabel(`Importe de ${name}`, { exact: true }));
     await r.type(input('Carpeta 64'), '128000', 'Escribí el importe nuevo.', { clear: true });

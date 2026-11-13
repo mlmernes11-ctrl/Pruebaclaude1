@@ -104,12 +104,12 @@
    {
     "t": 1.02,
     "box": {
-     "x": 50,
+     "x": 72.44,
      "y": 14.22,
      "w": 22.44,
      "h": 10.19
     },
-    "text": "En Inicio, tocá Cargar importes.",
+    "text": "En Inicio, tocá Expensas y servicios (el último acceso de arriba).",
     "kind": "tap"
    },
    {
@@ -214,7 +214,7 @@
    {
     "t": 1.02,
     "box": {
-     "x": 72.44,
+     "x": 50,
      "y": 14.22,
      "w": 22.44,
      "h": 10.19

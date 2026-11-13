@@ -60,7 +60,7 @@ const tenantFormTitle = (params: any) => (params?.tenantId ? 'Editar inquilino' 
 const contractFormTitle = (params: any) =>
   params?.contractId ? 'Editar contrato' : params?.renewFromId ? 'Renovar contrato' : 'Nuevo contrato';
 const chargeFormTitle = (params: any) => (params?.chargeId ? 'Cargo' : 'Agregar cargo');
-const importsTitle = () => 'Actualizar importes';
+const importsTitle = () => 'Expensas y servicios';
 const paymentFormTitle = () => 'Registrar cobro';
 const PropertyForm = formScreen(PropertyFormScreen as any, propertyFormTitle);
 const TenantForm = formScreen(TenantFormScreen as any, tenantFormTitle);

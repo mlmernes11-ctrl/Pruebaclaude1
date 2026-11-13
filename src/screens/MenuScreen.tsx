@@ -118,8 +118,9 @@ export default function MenuScreen() {
 
           <ListSection>
             <ListRow
-              title="Actualizar importes"
-              icon="document-text-outline"
+              title="Expensas y servicios"
+              subtitle="Actualizar los importes de cada mes"
+              icon="receipt-outline"
               value={pendingImports ? `Faltan ${pendingImports}` : undefined}
               valueTone={pendingImports ? 'warning' : 'muted'}
               onPress={() => navigation.navigate('Imports')}

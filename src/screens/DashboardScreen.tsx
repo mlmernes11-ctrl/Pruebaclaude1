@@ -2,7 +2,7 @@
 // Pantalla: Inicio
 // ---------------------------------------------------------------------
 // Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, los cuatro accesos
-// directos (registrar cobro, recordar deuda, cargar importes, nuevo contrato). Debajo, «Tus
+// directos (registrar cobro, recordar deuda, nuevo contrato, expensas y servicios). Debajo, «Tus
 // alquileres»: quién debe y quién tiene un vencimiento cerca, con nombre, monto y fecha, y
 // cuántas propiedades están al día o sin alquilar. Al final, los otros pendientes (importes por
 // cargar, contratos por renovar o ajustar). La cartera completa vive en Alquileres.
@@ -94,9 +94,9 @@ export default function DashboardScreen() {
   if (pendingImports > 0) {
     pending.push({
       key: 'importes',
-      title: `Cargar ${plural(pendingImports, 'importe', 'importes')} de ${monthName.toLowerCase()}`,
-      subtitle: 'Expensas y servicios',
-      icon: 'list-outline',
+      title: 'Actualizar expensas y servicios',
+      subtitle: `${plural(pendingImports, 'importe', 'importes')} de ${monthName.toLowerCase()} sin revisar`,
+      icon: 'receipt-outline',
       tone: 'info',
       onPress: () => navigation.navigate('Imports'),
     });
@@ -141,8 +141,8 @@ export default function DashboardScreen() {
   const shortcuts: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }[] = [
     { label: 'Registrar cobro', icon: 'cash-outline', onPress: () => openInTab(navigation, 'PaymentsTab', 'PaymentForm') },
     { label: 'Recordar deuda', icon: 'chatbubble-outline', onPress: remind },
-    { label: 'Cargar importes', icon: 'list-outline', onPress: () => navigation.navigate('Imports') },
     { label: 'Nuevo contrato', icon: 'document-text-outline', onPress: () => openInTab(navigation, 'RentalsTab', 'ContractForm') },
+    { label: 'Expensas y servicios', icon: 'receipt-outline', onPress: () => navigation.navigate('Imports') },
   ];
 
   // — Dibujo de la pantalla —

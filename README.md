@@ -7,8 +7,8 @@ App (Expo + React Native + TypeScript + Supabase) para administrar una cartera d
 - **Inicio**: responde «¿qué hago hoy?». Cuatro accesos directos (registrar cobro, recordar deuda, cargar importes, nuevo contrato); «Tus alquileres» con quién debe y quién tiene un vencimiento cerca, con nombre, monto y fecha, y cuántas propiedades están al día o sin alquilar; debajo, los otros pendientes (importes por cargar, contratos por renovar o ajustar). Arriba, la cotización del dólar.
 - **Alquileres**: responde «¿qué tengo?». Una tarjeta por propiedad con su estado de pago, el alquiler, hasta cuándo va el contrato y el inquilino con WhatsApp y llamada; buscador y «Filtrar y ordenar». La ficha de la propiedad muestra el contrato vigente, la cuenta corriente, los últimos importes y el historial de contratos. El inquilino se carga dentro del contrato.
 - **Cobros**: Vencido, A vencer y Cobrado del mes, con «Filtrar» por propiedad, estado y mes, y el «Historial por mes». «Registrar cobro» va en 3 pasos (importe → confirmar → listo), como en el banco.
-- **Menú**: cuenta, «Actualizar importes», cotización del dólar, apariencia (Sistema / Claro / Oscuro), privacidad, cerrar sesión y eliminar cuenta.
-- **Actualizar importes**: expensas, servicios y alquiler del mes, propiedad por propiedad, con «Igual que el mes anterior» o «Mantener el importe anterior en las pendientes».
+- **Menú**: cuenta, «Expensas y servicios», cotización del dólar, apariencia (Sistema / Claro / Oscuro), privacidad, cerrar sesión y eliminar cuenta.
+- **Expensas y servicios** (último acceso de Inicio): los importes del mes de expensas, servicios y alquiler, propiedad por propiedad, con «Igual que el mes anterior» o «Mantener el importe anterior en las pendientes».
 
 ## Vocabulario
 
@@ -37,7 +37,8 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 - **Manual de uso**: `public/manual.html` (gestion-alquileres-sero0.vercel.app/manual.html), con capturas en `public/manual/`. En la app, Menú › Ayuda.
 - **Recorridos del manual** (video + «Probalo vos»): `public/manual/recorridos/`. Se graban de la app real en modo de ejemplo. Si cambia una de esas pantallas, volver a grabarlos (necesita Playwright y ffmpeg):
   1. `npx expo export -p web` y servir `dist/` en `http://localhost:8124/` con un servidor que acepte pedidos por partes (por ejemplo `npx serve dist -l 8124`).
-  2. `node scripts/recorridos/flows.js` (o solo algunos: `node scripts/recorridos/flows.js cobro importes`).
+  2. `node scripts/manual/flows.js` (o solo algunos: `node scripts/manual/flows.js cobro importes`).
+  3. Las capturas fijas del manual: `node scripts/manual/capturas.js`.
 - **Actualizar la app sin APK nuevo**: GitHub › Actions › «Actualizar la app» (actualización OTA de Expo).
 - **Mantener Supabase activo**: «Mantener activo el servidor» corre cada 3 días.
 - Los workflows usan el secreto `EXPO_TOKEN` de GitHub.
