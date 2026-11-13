@@ -2,22 +2,26 @@
 // «Más»: todos los accesos directos
 // ---------------------------------------------------------------------
 // Hoja que se abre con «Más» en Inicio. Muestra todas las funciones en tres columnas: la
-// primera fila (con fondo) es la que se ve en Inicio. Un toque abre la función; manteniendo
-// apretada una y arrastrándola se cambia el orden, que se guarda al soltar. En el celular sale desde abajo;
-// en la computadora, centrada (y se arrastra con el mouse).
+// primera fila (con fondo) es la que se ve en Inicio. Un toque abre la función. Manteniendo
+// apretada una se entra a «Ordenar accesos»: vibra cortito, los íconos se balancean suave y se
+// pueden arrastrar (el orden se guarda al soltar cada uno) hasta tocar «Listo». En el celular
+// sale desde abajo; en la computadora, centrada (y se arrastra con el mouse).
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityActionEvent,
+  AccessibilityInfo,
   Animated,
+  Easing,
   Modal,
   PanResponder,
   Platform,
   Pressable,
   Text,
   TouchableOpacity,
+  Vibration,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +38,10 @@ const CELL_HEIGHT = 116;
 // Cuánto hay que mantener apretado para empezar a mover, y cuánto se puede correr el dedo antes.
 const HOLD_MS = 300;
 const TAP_TOLERANCE = 8;
+// El balanceo del modo ordenar: cuánto se inclinan (grados) y cuánto tarda una ida y vuelta.
+const WIGGLE_DEGREES = 1.5;
+const WIGGLE_MS = 420;
+const useNative = Platform.OS !== 'web';
 
 // La lista con un elemento movido de lugar.
 function moved<T>(list: T[], from: number, to: number): T[] {
@@ -69,18 +77,47 @@ export default function ShortcutsSheet({
   const [draft, setDraft] = useState<ShortcutId[]>(order);
   const [gridWidth, setGridWidth] = useState(0);
   const [drag, setDrag] = useState<Drag | null>(null);
+  // «Ordenar accesos»: se entra manteniendo apretado y se sale con «Listo».
+  const [editing, setEditing] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
+  const wiggle = useRef(new Animated.Value(0)).current;
+  const strength = useRef(new Animated.Value(0)).current;
   const gridRef = useRef<View>(null);
   const origin = useRef({ x: 0, y: 0 });
 
   // Cada vez que se abre, arranca con el orden guardado.
   useEffect(() => {
     if (visible) setDraft(order);
+    else setEditing(false);
   }, [visible, order]);
 
+  // Balanceo suave mientras se ordena: arranca quieto y va tomando fuerza. Con «reducir
+  // movimiento» activado en el celular, los íconos quedan quietos.
+  useEffect(() => {
+    if (!editing) {
+      strength.setValue(0);
+      return;
+    }
+    let loop: Animated.CompositeAnimation | undefined;
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then((reduce) => {
+        if (cancelled || reduce) return;
+        wiggle.setValue(0);
+        loop = Animated.loop(Animated.timing(wiggle, { toValue: 1, duration: WIGGLE_MS, easing: Easing.linear, useNativeDriver: useNative }));
+        loop.start();
+        Animated.timing(strength, { toValue: 1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: useNative }).start();
+      });
+    return () => {
+      cancelled = true;
+      loop?.stop();
+    };
+  }, [editing, wiggle, strength]);
+
   // Lo que el arrastre necesita leer al momento (los gestos se arman una sola vez).
-  const latest = useRef({ draft, gridWidth, drag, onOpen, onSave, onClose });
-  latest.current = { draft, gridWidth, drag, onOpen, onSave, onClose };
+  const latest = useRef({ draft, gridWidth, drag, editing, onOpen, onSave, onClose });
+  latest.current = { draft, gridWidth, drag, editing, onOpen, onSave, onClose };
 
   const measure = () => gridRef.current?.measureInWindow((x, y) => (origin.current = { x, y }));
 
@@ -97,6 +134,16 @@ export default function ShortcutsSheet({
   // — Mantener apretado y mover —
   const responder = useMemo(() => {
     const gesture = { timer: undefined as ReturnType<typeof setTimeout> | undefined, active: false, cancelled: false };
+    const startDrag = (x: number, y: number) => {
+      gesture.active = true;
+      const index = indexAt(x, y);
+      setDrag({ from: index, to: index });
+      if (!latest.current.editing) {
+        // Una vibración muy corta avisa que se entró a ordenar.
+        Vibration.vibrate(12);
+        setEditing(true);
+      }
+    };
     const indexAt = (pageX: number, pageY: number) => {
       const { gridWidth: width, draft: list } = latest.current;
       const col = Math.min(COLUMNS - 1, Math.max(0, Math.floor(((pageX - origin.current.x) / width) * COLUMNS)));
@@ -126,19 +173,18 @@ export default function ShortcutsSheet({
         const x0 = g.x0;
         const y0 = g.y0;
         gesture.timer = setTimeout(() => {
-          if (gesture.cancelled) return;
-          gesture.active = true;
-          const index = indexAt(x0, y0);
-          setDrag({ from: index, to: index });
+          if (!gesture.cancelled) startDrag(x0, y0);
         }, HOLD_MS);
       },
       onPanResponderMove: (_, g) => {
         if (!gesture.active) {
           if (Math.abs(g.dx) > TAP_TOLERANCE || Math.abs(g.dy) > TAP_TOLERANCE) {
-            gesture.cancelled = true;
             clearTimeout(gesture.timer);
+            // Ordenando, se arrastra enseguida, sin volver a esperar.
+            if (latest.current.editing && !gesture.cancelled) startDrag(g.x0, g.y0);
+            else gesture.cancelled = true;
           }
-          return;
+          if (!gesture.active) return;
         }
         pan.setValue({ x: g.dx, y: g.dy });
         const to = indexAt(g.moveX, g.moveY);
@@ -148,7 +194,8 @@ export default function ShortcutsSheet({
       onPanResponderRelease: (_, g) => {
         const wasTap = !gesture.active && !gesture.cancelled;
         finish(true);
-        if (wasTap) open(latest.current.draft[indexAt(g.x0, g.y0)]);
+        // Mientras se ordena, un toque no abre nada (para no salir sin querer).
+        if (wasTap && !latest.current.editing) open(latest.current.draft[indexAt(g.x0, g.y0)]);
       },
       onPanResponderTerminate: () => finish(false),
     });
@@ -169,17 +216,30 @@ export default function ShortcutsSheet({
     if (event.nativeEvent.actionName === 'moveLater' && index < draft.length - 1) save(moved(draft, index, index + 1));
   };
 
-  const cell = (id: ShortcutId, lifted = false) => {
+  // Un vaivén con forma de ola: uno para cada lado, así los vecinos no se mueven iguales.
+  const tilt = (index: number) => {
+    const side = index % 2 ? -1 : 1;
+    return Animated.multiply(
+      wiggle.interpolate({
+        inputRange: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],
+        outputRange: [0, 0.71, 1, 0.71, 0, -0.71, -1, -0.71, 0].map((v) => v * side),
+      }),
+      strength,
+    ).interpolate({ inputRange: [-1, 1], outputRange: [`-${WIGGLE_DEGREES}deg`, `${WIGGLE_DEGREES}deg`] });
+  };
+
+  const cell = (id: ShortcutId, index: number, lifted = false) => {
     const item = INFO.get(id)!;
+    const moving = editing && !lifted;
     return (
-      <>
+      <Animated.View style={[styles.cellBody, moving && { transform: [{ rotate: tilt(index) }] }]}>
         <View style={[styles.circle, lifted && styles.circleLifted]}>
           <Ionicons name={item.icon} size={24} color={colors.primary} />
         </View>
         <Text style={styles.label} numberOfLines={2}>
           {item.label}
         </Text>
-      </>
+      </Animated.View>
     );
   };
 
@@ -191,10 +251,16 @@ export default function ShortcutsSheet({
           onPress={() => {}}
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Todos los accesos</Text>
-            <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={8}>
-              <Ionicons name="close" size={22} color={colors.text} />
-            </TouchableOpacity>
+            <Text style={styles.title}>{editing ? 'Ordenar accesos' : 'Todos los accesos'}</Text>
+            {editing ? (
+              <TouchableOpacity onPress={() => setEditing(false)} accessibilityRole="button" hitSlop={12}>
+                <Text style={styles.done}>Listo</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" hitSlop={8}>
+                <Ionicons name="close" size={22} color={colors.text} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View
@@ -234,7 +300,7 @@ export default function ShortcutsSheet({
                       ]}
                       onAccessibilityAction={(event) => onAction(id, event)}
                     >
-                      {cell(id)}
+                      {cell(id, index)}
                     </View>
                   ))
               : null}
@@ -247,7 +313,7 @@ export default function ShortcutsSheet({
                   { width: cellWidth, height: CELL_HEIGHT, transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale: 1.08 }] },
                 ]}
               >
-                {cell(draft[drag.from], true)}
+                {cell(draft[drag.from], drag.from, true)}
               </Animated.View>
             ) : null}
           </View>
@@ -314,10 +380,18 @@ const useStyles = makeStyles((colors) => ({
   },
   cell: {
     position: 'absolute',
+  },
+  cellBody: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: spacing.md,
     gap: 6,
+  },
+  done: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.primary,
   },
   circle: {
     width: 54,
