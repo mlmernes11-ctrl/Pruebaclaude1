@@ -17,28 +17,37 @@ interface ScreenProps {
   route: any;
 }
 
-// Envuelve la primera pantalla de una pestaña. paramKeys: los datos que otras pantallas le pasan
-// (filtros) y que hay que olvidar al salir.
-export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>, paramKeys: string[] = []) {
+// Cuánto esperar después de salir para volver a armarla: que primero termine de irse de la
+// pantalla, así rearmarla no frena la animación.
+const RESET_DELAY = 400;
+
+// Envuelve la primera pantalla de una pestaña. tab: el nombre de la pestaña (para deslizar).
+// paramKeys: los datos que otras pantallas le pasan (filtros) y que hay que olvidar al salir.
+export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>, tab: string, paramKeys: string[] = []) {
   function ResettingScreen(props: P) {
     const { navigation } = props;
     // Cambiar la clave vuelve a armar la pantalla desde cero.
     const [generation, setGeneration] = useState(0);
 
     useEffect(() => {
-      const tab = navigation.getParent();
-      if (!tab) return undefined;
+      const tabs = navigation.getParent();
+      if (!tabs) return undefined;
       const reset = () => {
         if (paramKeys.length) navigation.setParams(Object.fromEntries(paramKeys.map((key) => [key, undefined])));
         setGeneration((g) => g + 1);
       };
-      const offBlur = tab.addListener('blur', reset);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const offBlur = tabs.addListener('blur', () => {
+        clearTimeout(timer);
+        timer = setTimeout(reset, RESET_DELAY);
+      });
       // Tocar la pestaña en la que ya estás también la limpia.
       // Con un formulario empezado, primero se pregunta (ver formScreen); acá no se toca nada.
-      const offPress = tab.addListener('tabPress', () => {
-        if (tab.isFocused() && !hasUnsavedForm()) reset();
+      const offPress = tabs.addListener('tabPress', () => {
+        if (tabs.isFocused() && !hasUnsavedForm()) reset();
       });
       return () => {
+        clearTimeout(timer);
         offBlur();
         offPress();
       };
@@ -46,7 +55,7 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
 
     // En el celular, además, se pasa a la pestaña de al lado deslizando (ver swipeTabs).
     return (
-      <SwipeBetweenTabs navigation={navigation}>
+      <SwipeBetweenTabs navigation={navigation} tab={tab}>
         <Screen key={generation} {...props} />
       </SwipeBetweenTabs>
     );

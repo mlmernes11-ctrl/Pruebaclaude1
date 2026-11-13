@@ -18,6 +18,7 @@ import { useIsDesktop } from '../hooks/useIsDesktop';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
 import { confirmLeaveForm, formScreen, formScreenOptions, hasUnsavedForm } from './formScreen';
 import { resetOnTabLeave } from './resetOnTabLeave';
+import { tabSlide } from './swipeTabs';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
@@ -49,10 +50,10 @@ const PaymentsStack = createNativeStackNavigator();
 const MenuStack = createNativeStackNavigator();
 
 // La primera pantalla de cada pestaña vuelve a empezar al salir de ella (ver resetOnTabLeave).
-const DashboardRoot = resetOnTabLeave(DashboardScreen as any);
-const RentalsRoot = resetOnTabLeave(RentalsScreen as any, ['filter']);
-const PaymentsRoot = resetOnTabLeave(PaymentsListScreen as any, ['mode', 'status', 'month', 'propertyId']);
-const MenuRoot = resetOnTabLeave(MenuScreen as any);
+const DashboardRoot = resetOnTabLeave(DashboardScreen as any, 'DashboardTab');
+const RentalsRoot = resetOnTabLeave(RentalsScreen as any, 'RentalsTab', ['filter']);
+const PaymentsRoot = resetOnTabLeave(PaymentsListScreen as any, 'PaymentsTab', ['mode', 'status', 'month', 'propertyId']);
+const MenuRoot = resetOnTabLeave(MenuScreen as any, 'MenuTab');
 
 // Formularios: avisan antes de perder lo cargado y en la computadora se abren al frente (ver formScreen).
 const propertyFormTitle = (params: any) => (params?.propertyId ? 'Editar propiedad' : 'Nueva propiedad');
@@ -272,6 +273,8 @@ export default function RootNavigator() {
     <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack} theme={navigationTheme}>
       <Tab.Navigator
         backBehavior="history"
+        // En el celular las pestañas de al lado quedan armadas, así asoman al deslizar.
+        detachInactiveScreens={desktop}
         tabBar={(props) => (desktop ? <Sidebar {...props} /> : <BottomTabBar {...props} />)}
         // Con un formulario empezado, tocar una pestaña pregunta antes de borrar lo cargado.
         screenListeners={({ navigation, route }) => ({
@@ -286,12 +289,13 @@ export default function RootNavigator() {
             });
           },
         })}
-        screenOptions={({ route }) => ({
+        screenOptions={({ route, navigation }) => ({
           headerShown: false,
           // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
           popToTopOnBlur: true,
-          // En el celular, la pestaña nueva entra de costado (acompaña el deslizar entre pestañas).
-          animation: desktop ? 'none' : 'shift',
+          // En el celular, las pestañas están una al lado de la otra y la nueva entra de costado
+          // (acompaña el deslizar entre pestañas, ver swipeTabs).
+          ...(desktop ? { animation: 'none' as const } : { animation: 'shift' as const, ...tabSlide(route.name, navigation) }),
           tabBarPosition: desktop ? 'left' : 'bottom',
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
