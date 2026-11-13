@@ -2,8 +2,8 @@
 // «Más»: todos los accesos directos
 // ---------------------------------------------------------------------
 // Hoja que se abre con «Más» en Inicio. Muestra todas las funciones en tres columnas: la
-// primera fila es la que se ve en Inicio. Un toque abre la función; manteniendo apretada una y
-// arrastrándola se cambia el orden, que se guarda al soltar. En el celular sale desde abajo;
+// primera fila (con fondo) es la que se ve en Inicio. Un toque abre la función; manteniendo
+// apretada una y arrastrándola se cambia el orden, que se guarda al soltar. En el celular sale desde abajo;
 // en la computadora, centrada (y se arrastra con el mouse).
 // =====================================================================
 
@@ -24,13 +24,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { fontSize, radius, spacing } from '../theme';
-import { DEFAULT_ORDER, SHORTCUT_CATALOG, ShortcutId, ShortcutInfo, SHORTCUTS_ON_HOME } from '../utils/shortcuts';
+import { SHORTCUT_CATALOG, ShortcutId, ShortcutInfo, SHORTCUTS_ON_HOME } from '../utils/shortcuts';
 
 const INFO = new Map<ShortcutId, ShortcutInfo>(SHORTCUT_CATALOG.map((s) => [s.id, s]));
 
 // Una columna por cada acceso de Inicio: la primera fila es justo lo que se ve ahí.
 const COLUMNS = SHORTCUTS_ON_HOME;
-const CELL_HEIGHT = 100;
+const CELL_HEIGHT = 116;
 // Cuánto hay que mantener apretado para empezar a mover, y cuánto se puede correr el dedo antes.
 const HOLD_MS = 300;
 const TAP_TOLERANCE = 8;
@@ -160,7 +160,6 @@ export default function ShortcutsSheet({
   const cellWidth = gridWidth / COLUMNS;
   const place = (index: number) => ({ left: (index % COLUMNS) * cellWidth, top: Math.floor(index / COLUMNS) * CELL_HEIGHT });
   const rows = Math.ceil(draft.length / COLUMNS);
-  const changed = draft.some((id, i) => id !== DEFAULT_ORDER[i]);
 
   // Lectores de pantalla: abrir, o mover antes o después sin arrastrar.
   const onAction = (id: ShortcutId, event: AccessibilityActionEvent) => {
@@ -197,10 +196,6 @@ export default function ShortcutsSheet({
               <Ionicons name="close" size={22} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.hint}>
-            La primera fila es la que ves en Inicio. Tocá una para abrirla, o mantenela apretada y arrastrala para
-            cambiar el orden.
-          </Text>
 
           <View
             ref={gridRef}
@@ -257,11 +252,6 @@ export default function ShortcutsSheet({
             ) : null}
           </View>
 
-          {changed ? (
-            <TouchableOpacity onPress={() => save(DEFAULT_ORDER)} style={styles.reset} accessibilityRole="button">
-              <Text style={styles.resetText}>Restablecer orden</Text>
-            </TouchableOpacity>
-          ) : null}
         </Pressable>
       </Pressable>
     </Modal>
@@ -297,18 +287,12 @@ const useStyles = makeStyles((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text,
-  },
-  hint: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-    lineHeight: 19,
   },
   grid: {
     position: 'relative',
@@ -331,7 +315,8 @@ const useStyles = makeStyles((colors) => ({
   cell: {
     position: 'absolute',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: spacing.md,
     gap: 6,
   },
   circle: {
@@ -356,16 +341,5 @@ const useStyles = makeStyles((colors) => ({
     textAlign: 'center',
     lineHeight: 15,
     paddingHorizontal: spacing.xs,
-  },
-  reset: {
-    alignSelf: 'center',
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  resetText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.primary,
   },
 }));
