@@ -1,9 +1,10 @@
 // =====================================================================
 // Accesos directos de Inicio
 // ---------------------------------------------------------------------
-// Las funciones que se pueden poner arriba de Inicio (hasta SHORTCUTS_MAX) y cuáles van si no se
-// eligió nada. Cada una abre la misma pantalla que está en su pestaña; qué hace cada una se
-// define en DashboardScreen. Lo elegido se guarda en el dispositivo.
+// Todas las funciones que se pueden abrir desde Inicio, en el orden que eligió cada uno. Las
+// primeras SHORTCUTS_ON_HOME se ven en Inicio; el resto, al tocar «Más». El orden se cambia en
+// «Editar accesos directos» y se guarda en el dispositivo. Qué abre cada una se define en
+// DashboardScreen.
 // =====================================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,9 +21,10 @@ export interface ShortcutInfo {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-export const SHORTCUTS_MAX = 4;
+// Cuántos se ven en Inicio (el cuarto lugar es «Más»).
+export const SHORTCUTS_ON_HOME = 3;
 
-// En el orden en que se ofrecen al editar.
+// En el orden de entrada.
 export const SHORTCUT_CATALOG: ShortcutInfo[] = [
   { id: 'cobro', label: 'Registrar cobro', detail: 'Lo que te pagó un inquilino', icon: 'cash-outline' },
   { id: 'deuda', label: 'Recordar deuda', detail: 'WhatsApp con el detalle de lo que debe', icon: 'chatbubble-outline' },
@@ -34,29 +36,35 @@ export const SHORTCUT_CATALOG: ShortcutInfo[] = [
   { id: 'historial', label: 'Historial por mes', detail: 'Cuánto se cobró cada mes', icon: 'time-outline' },
 ];
 
-export const DEFAULT_SHORTCUTS: ShortcutId[] = ['cobro', 'deuda', 'contrato', 'cargo'];
+export const DEFAULT_ORDER: ShortcutId[] = SHORTCUT_CATALOG.map((s) => s.id);
 
 const STORAGE_KEY = 'locatia_accesos_directos';
-const KNOWN = new Set(SHORTCUT_CATALOG.map((s) => s.id));
+const KNOWN = new Set<string>(DEFAULT_ORDER);
 
-// Los accesos elegidos (o los de siempre) y cómo cambiarlos.
-export function useShortcuts(): [ShortcutId[], (ids: ShortcutId[]) => void] {
-  const [ids, setIds] = useState<ShortcutId[]>(DEFAULT_SHORTCUTS);
+// Un orden completo: lo guardado (sin repetidos ni desconocidos) y después lo que falte, en el
+// orden de entrada. Así una función nueva aparece sola al final.
+export function completeOrder(saved: readonly string[]): ShortcutId[] {
+  const kept = [...new Set(saved)].filter((id): id is ShortcutId => KNOWN.has(id));
+  return [...kept, ...DEFAULT_ORDER.filter((id) => !kept.includes(id))];
+}
+
+// El orden elegido (o el de entrada) y cómo cambiarlo.
+export function useShortcuts(): [ShortcutId[], (order: ShortcutId[]) => void] {
+  const [order, setOrder] = useState<ShortcutId[]>(DEFAULT_ORDER);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((saved) => {
-        if (!saved) return;
-        const parsed = (JSON.parse(saved) as string[]).filter((id): id is ShortcutId => KNOWN.has(id as ShortcutId));
-        if (parsed.length) setIds(parsed.slice(0, SHORTCUTS_MAX));
+        if (saved) setOrder(completeOrder(JSON.parse(saved) as string[]));
       })
       .catch(() => undefined);
   }, []);
 
   const save = useCallback((next: ShortcutId[]) => {
-    setIds(next);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => undefined);
+    const full = completeOrder(next);
+    setOrder(full);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(full)).catch(() => undefined);
   }, []);
 
-  return [ids, save];
+  return [order, save];
 }

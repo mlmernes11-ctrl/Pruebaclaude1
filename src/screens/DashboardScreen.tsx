@@ -1,12 +1,12 @@
 // =====================================================================
 // Pantalla: Inicio
 // ---------------------------------------------------------------------
-// Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, hasta cuatro accesos
-// directos (por defecto registrar cobro, recordar deuda, nuevo contrato y agregar cargo; se
-// cambian con el lápiz). Debajo, «Tus alquileres»: quién debe y quién tiene un vencimiento
-// cerca, con nombre, monto y fecha, y cuántas propiedades están al día o sin alquilar. Al final,
-// los otros pendientes (importes por revisar, contratos por renovar o ajustar). La cartera
-// completa vive en Alquileres.
+// Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, los accesos
+// directos: los tres primeros del orden elegido y «Más», que abre todos y deja ordenarlos.
+// Debajo, «Tus alquileres»: quién debe y quién tiene un vencimiento cerca, con nombre, monto y
+// fecha, y cuántas propiedades están al día o sin alquilar. Al final, los otros pendientes
+// (importes por revisar, contratos por renovar o ajustar). La cartera completa vive en
+// Alquileres.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +18,7 @@ import Card from '../components/Card';
 import LargeTitleHeader, { HeaderChip } from '../components/LargeTitleHeader';
 import Screen from '../components/Screen';
 import SectionHeader from '../components/SectionHeader';
-import ShortcutsEditor from '../components/ShortcutsEditor';
+import ShortcutsSheet from '../components/ShortcutsSheet';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
@@ -28,7 +28,7 @@ import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, formatTotals, parseLocalDate } from '../utils/format';
 import { openInTab } from '../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../utils/propertySummary';
-import { SHORTCUT_CATALOG, ShortcutId, useShortcuts } from '../utils/shortcuts';
+import { SHORTCUT_CATALOG, ShortcutId, SHORTCUTS_ON_HOME, useShortcuts } from '../utils/shortcuts';
 import { capitalize, compareTitles, initials, plural } from '../utils/text';
 import { pendingImportsCount } from './imports/importsLogic';
 
@@ -137,7 +137,7 @@ export default function DashboardScreen() {
   const toneColor = { warning: colors.warning, info: colors.primary };
   const toneBg = { warning: colors.warningMuted, info: colors.primaryMuted };
 
-  // — Accesos directos: los que eligió cada uno (hasta 4), con el lápiz para cambiarlos —
+  // — Accesos directos: los tres primeros del orden elegido y «Más» con todas las funciones —
   const remind = () =>
     inDebt.length === 1
       ? openProperty(inDebt[0].property.id)
@@ -152,9 +152,15 @@ export default function DashboardScreen() {
     dolar: () => navigation.navigate('ExchangeRate'),
     historial: () => openInTab(navigation, 'PaymentsTab', 'History'),
   };
-  const [shortcutIds, setShortcutIds] = useShortcuts();
-  const [editingShortcuts, setEditingShortcuts] = useState(false);
-  const shortcuts = shortcutIds.map((id) => ({ ...SHORTCUT_CATALOG.find((s) => s.id === id)!, onPress: SHORTCUT_ACTIONS[id] }));
+  const [shortcutOrder, setShortcutOrder] = useShortcuts();
+  const [showingMore, setShowingMore] = useState(false);
+  // Las tres primeras del orden elegido y, en el cuarto lugar, «Más» con todas.
+  const shortcuts = [
+    ...shortcutOrder
+      .slice(0, SHORTCUTS_ON_HOME)
+      .map((id) => ({ ...SHORTCUT_CATALOG.find((s) => s.id === id)!, onPress: SHORTCUT_ACTIONS[id] })),
+    { id: 'mas', label: 'Más', icon: 'grid-outline' as const, onPress: () => setShowingMore(true) },
+  ];
 
   // — Dibujo de la pantalla —
   return (
@@ -216,21 +222,13 @@ export default function DashboardScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-                <TouchableOpacity
-                  style={styles.shortcutsEdit}
-                  onPress={() => setEditingShortcuts(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Editar accesos directos"
-                  hitSlop={10}
-                >
-                  <Ionicons name="pencil" size={13} color={colors.textMuted} />
-                </TouchableOpacity>
               </View>
-              <ShortcutsEditor
-                visible={editingShortcuts}
-                value={shortcutIds}
-                onSave={setShortcutIds}
-                onClose={() => setEditingShortcuts(false)}
+              <ShortcutsSheet
+                visible={showingMore}
+                order={shortcutOrder}
+                onOpen={(id) => SHORTCUT_ACTIONS[id]()}
+                onSave={setShortcutOrder}
+                onClose={() => setShowingMore(false)}
               />
 
               {/* Tus alquileres: quién debe y quién vence, con monto y fecha. */}
@@ -371,16 +369,6 @@ const useStyles = makeStyles((colors) => ({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
-  },
-  shortcutsEdit: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   shortcut: {
     flex: 1,
