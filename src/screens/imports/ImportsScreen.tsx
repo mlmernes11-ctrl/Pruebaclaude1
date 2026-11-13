@@ -27,6 +27,7 @@ import { addMonthsToPeriod, currentPeriod, formatMoney, formatPeriod, parseAmoun
 import { roundMoney } from '../../utils/ledger';
 import { plural } from '../../utils/text';
 import { ImportRow, importRows, isPendingImport, percentChange, planImportChange } from './importsLogic';
+import { useFormGuard } from '../../navigation/formScreen';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export default function ImportsScreen() {
   const [period, setPeriod] = useState<string>(route.params?.period ?? currentPeriod());
   const [concept, setConcept] = useState<ChargeConcept>(route.params?.concept ?? 'expensas');
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const { markDirty, markSaved } = useFormGuard();
   const [editing, setEditing] = useState<string>();
   const [editText, setEditText] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
@@ -81,6 +83,7 @@ export default function ImportsScreen() {
 
   // — Cambiar de mes o de pestaña (lo no guardado se descarta) —
   const reset = () => {
+    markSaved();
     setDrafts({});
     setEditing(undefined);
     setSelected([]);
@@ -104,7 +107,10 @@ export default function ImportsScreen() {
     setEditText(String(draft?.kind === 'nuevo' ? draft.amount : row.total));
   };
 
-  const setDraft = (id: string, draft: Draft) => setDrafts((prev) => ({ ...prev, [id]: draft }));
+  const setDraft = (id: string, draft: Draft) => {
+    markDirty();
+    setDrafts((prev) => ({ ...prev, [id]: draft }));
+  };
 
   // "Listo · siguiente": guarda lo escrito en la fila y abre la próxima pendiente.
   const finishEditing = (row: ImportRow, amount: number | undefined) => {
@@ -118,6 +124,7 @@ export default function ImportsScreen() {
   };
 
   const keepAllPending = () => {
+    markDirty();
     setEditing(undefined);
     setDrafts((prev) => {
       const next = { ...prev };
@@ -132,6 +139,7 @@ export default function ImportsScreen() {
   const applyPercent = () => {
     const pct = parseAmount(percentText);
     if (!pct) return;
+    markDirty();
     setDrafts((prev) => {
       const next = { ...prev };
       rows
@@ -173,6 +181,7 @@ export default function ImportsScreen() {
         .join('\n\n'),
       confirmLabel: 'Guardar',
       onConfirm: () => {
+        markSaved();
         decided.forEach((row) => {
           const draft = drafts[row.view.charge.id];
           const amount = draft.kind === 'nuevo' ? draft.amount : row.total;

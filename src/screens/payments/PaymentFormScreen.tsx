@@ -37,6 +37,7 @@ import { compareTitles } from '../../utils/text';
 import { openWhatsapp, receiptText } from '../../utils/whatsapp';
 import { AmountOption, debtOf, planCollection, toInput } from './collect/collectMath';
 import PesosConverter, { AmountRow } from './collect/PesosConverter';
+import { useFormGuard } from '../../navigation/formScreen';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ export default function PaymentFormScreen() {
   const [created, setCreated] = useState<Payment[]>([]);
   // Total cobrado, guardado al confirmar (después el saldo ya bajó y el importe se recalcula).
   const [doneLabel, setDoneLabel] = useState('');
+  const { markDirty, markSaved } = useFormGuard();
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: STEP_TITLE[step] });
@@ -137,6 +139,7 @@ export default function PaymentFormScreen() {
 
   // "Otro importe" arranca vacío, como en el banco.
   const chooseOption = (o: AmountOption) => {
+    markDirty();
     setOption(o);
     if (o === 'otro') {
       setUsdText('');
@@ -200,12 +203,15 @@ export default function PaymentFormScreen() {
   };
 
   const togglePesos = (value: boolean) => {
+    markDirty();
     setInPesos(value);
     if (value && option === 'otro' && amounts.USD > 0) setPesosText(toInput(amounts.USD * rate));
   };
 
-  const toggleChosen = (id: string) =>
+  const toggleChosen = (id: string) => {
+    markDirty();
     setChosen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   // — Paso 1 → 2: validar —
   const goConfirm = () => {
@@ -225,6 +231,7 @@ export default function PaymentFormScreen() {
       showAlert('Falta la fecha', 'Elegí la fecha del cobro.');
       return;
     }
+    markDirty();
     setStep('confirmar');
   };
 
@@ -253,6 +260,7 @@ export default function PaymentFormScreen() {
     AsyncStorage.setItem(LAST_METHOD_KEY, method).catch(() => undefined);
     setDoneLabel(totalLabel);
     setCreated(saved);
+    markSaved();
     setStep('listo');
   };
 

@@ -9,6 +9,7 @@
 // =====================================================================
 
 import { ComponentType, useEffect, useState } from 'react';
+import { hasUnsavedForm } from './formScreen';
 
 interface ScreenProps {
   navigation: any;
@@ -32,8 +33,9 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
       };
       const offBlur = tab.addListener('blur', reset);
       // Tocar la pestaña en la que ya estás también la limpia.
+      // Con un formulario empezado, primero se pregunta (ver formScreen); acá no se toca nada.
       const offPress = tab.addListener('tabPress', () => {
-        if (tab.isFocused()) reset();
+        if (tab.isFocused() && !hasUnsavedForm()) reset();
       });
       return () => {
         offBlur();

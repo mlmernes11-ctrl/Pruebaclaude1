@@ -7,6 +7,7 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles } from '../context/ThemeContext';
+import { useFormGuard } from '../navigation/formScreen';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -29,6 +30,7 @@ export default function OptionChips<T extends string>({
   onChange: (value: T) => void;
 }) {
   const styles = useStyles();
+  const { markDirty } = useFormGuard();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -38,7 +40,10 @@ export default function OptionChips<T extends string>({
           return (
             <TouchableOpacity
               key={option.value}
-              onPress={() => onChange(option.value)}
+              onPress={() => {
+                markDirty();
+                onChange(option.value);
+              }}
               style={[styles.chip, active && styles.chipActive]}
               activeOpacity={0.7}
             >

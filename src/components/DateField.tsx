@@ -17,6 +17,7 @@ import {
   toISODate,
 } from '../utils/format';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+import { useFormGuard } from '../navigation/formScreen';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -56,6 +57,7 @@ export default function DateField({
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
+  const { markDirty } = useFormGuard();
   const [visible, setVisible] = useState(false);
   const [visiblePeriod, setVisiblePeriod] = useState(periodOf(value || todayISO()));
   const today = todayISO();
@@ -66,6 +68,7 @@ export default function DateField({
   };
 
   const pick = (iso: string) => {
+    markDirty();
     onChange(iso);
     setVisible(false);
   };

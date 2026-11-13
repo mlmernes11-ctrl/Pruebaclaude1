@@ -21,10 +21,12 @@ import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { Currency, PropertyStatus, PropertyType } from '../../types';
 import { fontSize, radius, spacing } from '../../theme';
 import { CURRENCY_SYMBOL, parseAmount } from '../../utils/format';
+import { useFormGuard } from '../../navigation/formScreen';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PropertyFormScreen() {
+  const { markDirty } = useFormGuard();
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -143,7 +145,10 @@ export default function PropertyFormScreen() {
           </View>
           <Switch
             value={maintenance}
-            onValueChange={setMaintenance}
+            onValueChange={(value) => {
+              markDirty();
+              setMaintenance(value);
+            }}
             trackColor={{ true: colors.primary, false: colors.border }}
             accessibilityLabel="En mantenimiento"
           />

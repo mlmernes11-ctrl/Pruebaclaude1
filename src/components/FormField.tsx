@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+import { useFormGuard } from '../navigation/formScreen';
 
 // ── Componente ────────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ export default function FormField({
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
+  const { markDirty } = useFormGuard();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>
@@ -47,7 +49,10 @@ export default function FormField({
       </Text>
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => {
+          markDirty();
+          onChangeText(text);
+        }}
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         keyboardType={keyboardType}

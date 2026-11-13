@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
+import { useFormGuard } from '../navigation/formScreen';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -45,6 +46,7 @@ export default function SelectField({
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
+  const { markDirty } = useFormGuard();
   const [visible, setVisible] = useState(false);
   const selected = options.find((o) => o.id === selectedId);
 
@@ -80,6 +82,7 @@ export default function SelectField({
                   <TouchableOpacity
                     style={styles.option}
                     onPress={() => {
+                      markDirty();
                       onSelect(item.id);
                       setVisible(false);
                     }}

@@ -17,6 +17,7 @@ interface DialogRequest {
   title: string;
   message: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   destructive?: boolean;
   onConfirm?: () => void;
 }
@@ -32,6 +33,7 @@ export function showConfirm(options: {
   title: string;
   message: string;
   confirmLabel: string;
+  cancelLabel?: string;
   destructive?: boolean;
   onConfirm: () => void;
 }) {
@@ -69,7 +71,7 @@ export default function DialogHost() {
           <View style={styles.actions}>
             {request.onConfirm ? (
               <>
-                <Button label="Cancelar" variant="secondary" onPress={close} style={styles.action} />
+                <Button label={request.cancelLabel ?? 'Cancelar'} variant="secondary" onPress={close} style={styles.action} />
                 <Button
                   label={request.confirmLabel ?? 'Aceptar'}
                   variant={request.destructive ? 'danger' : 'primary'}

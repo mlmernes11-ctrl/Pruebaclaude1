@@ -6,7 +6,7 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer, StackActions } from '@react-navigation/native';
 import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useMemo } from 'react';
@@ -16,6 +16,7 @@ import Sidebar from '../components/Sidebar';
 import { useData } from '../context/DataContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './browserBack';
+import { confirmLeaveForm, formScreen, formScreenOptions, hasUnsavedForm } from './formScreen';
 import { resetOnTabLeave } from './resetOnTabLeave';
 
 import DashboardScreen from '../screens/DashboardScreen';
@@ -53,6 +54,21 @@ const RentalsRoot = resetOnTabLeave(RentalsScreen as any, ['filter']);
 const PaymentsRoot = resetOnTabLeave(PaymentsListScreen as any, ['mode', 'status', 'month', 'propertyId']);
 const MenuRoot = resetOnTabLeave(MenuScreen as any);
 
+// Formularios: avisan antes de perder lo cargado y en la computadora se abren al frente (ver formScreen).
+const propertyFormTitle = (params: any) => (params?.propertyId ? 'Editar propiedad' : 'Nueva propiedad');
+const tenantFormTitle = (params: any) => (params?.tenantId ? 'Editar inquilino' : 'Nuevo inquilino');
+const contractFormTitle = (params: any) =>
+  params?.contractId ? 'Editar contrato' : params?.renewFromId ? 'Renovar contrato' : 'Nuevo contrato';
+const chargeFormTitle = (params: any) => (params?.chargeId ? 'Cargo' : 'Agregar cargo');
+const importsTitle = () => 'Actualizar importes';
+const paymentFormTitle = () => 'Registrar cobro';
+const PropertyForm = formScreen(PropertyFormScreen as any, propertyFormTitle);
+const TenantForm = formScreen(TenantFormScreen as any, tenantFormTitle);
+const ContractForm = formScreen(ContractFormScreen as any, contractFormTitle);
+const ChargeForm = formScreen(ChargeFormScreen as any, chargeFormTitle);
+const PaymentForm = formScreen(PaymentFormScreen as any, paymentFormTitle);
+const Imports = formScreen(ImportsScreen as any, importsTitle, { wide: true });
+
 function useScreenOptions() {
   const { colors } = useTheme();
   return useMemo(
@@ -70,6 +86,7 @@ function useScreenOptions() {
 
 function DashboardStackNavigator() {
   const screenOptions = useScreenOptions();
+  const desktop = useIsDesktop();
   return (
     <DashboardStack.Navigator screenOptions={screenOptions}>
       <DashboardStack.Screen
@@ -82,7 +99,7 @@ function DashboardStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
-      <DashboardStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
+      <DashboardStack.Screen name="Imports" component={Imports} options={formScreenOptions(desktop, importsTitle())} />
     </DashboardStack.Navigator>
   );
 }
@@ -90,15 +107,14 @@ function DashboardStackNavigator() {
 // Propiedades, inquilinos y contratos viven en una sola pestaña ("Alquileres").
 function RentalsStackNavigator() {
   const screenOptions = useScreenOptions();
+  const desktop = useIsDesktop();
   return (
     <RentalsStack.Navigator screenOptions={screenOptions}>
       <RentalsStack.Screen name="Rentals" component={RentalsRoot} options={{ headerShown: false }} />
       <RentalsStack.Screen
         name="PropertyForm"
-        component={PropertyFormScreen}
-        options={({ route }: any) => ({
-          title: route.params?.propertyId ? 'Editar propiedad' : 'Nueva propiedad',
-        })}
+        component={PropertyForm}
+        options={({ route }: any) => formScreenOptions(desktop, propertyFormTitle(route.params))}
       />
       <RentalsStack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Propiedad' }} />
       <RentalsStack.Screen
@@ -113,31 +129,24 @@ function RentalsStackNavigator() {
       />
       <RentalsStack.Screen
         name="TenantForm"
-        component={TenantFormScreen}
-        options={({ route }: any) => ({
-          title: route.params?.tenantId ? 'Editar inquilino' : 'Nuevo inquilino',
-        })}
+        component={TenantForm}
+        options={({ route }: any) => formScreenOptions(desktop, tenantFormTitle(route.params))}
       />
       <RentalsStack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Inquilino' }} />
       <RentalsStack.Screen
         name="ContractForm"
-        component={ContractFormScreen}
-        options={({ route }: any) => ({
-          title: route.params?.contractId
-            ? 'Editar contrato'
-            : route.params?.renewFromId
-              ? 'Renovar contrato'
-              : 'Nuevo contrato',
-        })}
+        component={ContractForm}
+        options={({ route }: any) => formScreenOptions(desktop, contractFormTitle(route.params))}
       />
       <RentalsStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />
-      <RentalsStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
+      <RentalsStack.Screen name="Imports" component={Imports} options={formScreenOptions(desktop, importsTitle())} />
     </RentalsStack.Navigator>
   );
 }
 
 function PaymentsStackNavigator() {
   const screenOptions = useScreenOptions();
+  const desktop = useIsDesktop();
   return (
     <PaymentsStack.Navigator screenOptions={screenOptions}>
       <PaymentsStack.Screen
@@ -147,8 +156,8 @@ function PaymentsStackNavigator() {
       />
       <PaymentsStack.Screen
         name="PaymentForm"
-        component={PaymentFormScreen}
-        options={{ title: 'Registrar cobro' }}
+        component={PaymentForm}
+        options={formScreenOptions(desktop, paymentFormTitle())}
       />
       <PaymentsStack.Screen
         name="PaymentDetail"
@@ -157,10 +166,8 @@ function PaymentsStackNavigator() {
       />
       <PaymentsStack.Screen
         name="ChargeForm"
-        component={ChargeFormScreen}
-        options={({ route }: any) => ({
-          title: route.params?.chargeId ? 'Cargo' : 'Agregar cargo',
-        })}
+        component={ChargeForm}
+        options={({ route }: any) => formScreenOptions(desktop, chargeFormTitle(route.params))}
       />
       <PaymentsStack.Screen
         name="History"
@@ -178,6 +185,7 @@ function PaymentsStackNavigator() {
 
 function MenuStackNavigator() {
   const screenOptions = useScreenOptions();
+  const desktop = useIsDesktop();
   return (
     <MenuStack.Navigator screenOptions={screenOptions}>
       <MenuStack.Screen name="Menu" component={MenuRoot} options={{ headerShown: false }} />
@@ -186,7 +194,7 @@ function MenuStackNavigator() {
         component={ExchangeRateScreen}
         options={{ title: 'Cotización del dólar' }}
       />
-      <MenuStack.Screen name="Imports" component={ImportsScreen} options={{ title: 'Actualizar importes' }} />
+      <MenuStack.Screen name="Imports" component={Imports} options={formScreenOptions(desktop, importsTitle())} />
     </MenuStack.Navigator>
   );
 }
@@ -265,6 +273,19 @@ export default function RootNavigator() {
       <Tab.Navigator
         backBehavior="history"
         tabBar={(props) => (desktop ? <Sidebar {...props} /> : <BottomTabBar {...props} />)}
+        // Con un formulario empezado, tocar una pestaña pregunta antes de borrar lo cargado.
+        screenListeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            if (!hasUnsavedForm()) return;
+            e.preventDefault();
+            confirmLeaveForm(() => {
+              const state = navigation.getState();
+              const current = state.routes[state.index];
+              if (current.key !== route.key) navigation.navigate(route.name);
+              else if (current.state?.key) navigation.dispatch({ ...StackActions.popToTop(), target: current.state.key });
+            });
+          },
+        })}
         screenOptions={({ route }) => ({
           headerShown: false,
           // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
