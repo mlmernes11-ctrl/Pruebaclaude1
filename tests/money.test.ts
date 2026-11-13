@@ -128,6 +128,27 @@ describe('reparto de un cobro', () => {
     assert.equal(allocateAmount(2000, [], [oct, nov, dic]).unallocated, 500);
   });
 
+  it('sin elegir cargos: primero el mes más viejo y, dentro del mes, alquiler → servicios → expensas', () => {
+    const debt = debtOf(
+      views([
+        charge('exp-nov', 100, { concept: 'expensas', period: '2026-11', dueDate: '2026-11-05' }),
+        charge('alq-nov', 900, { period: '2026-11', dueDate: '2026-11-05' }),
+        charge('ser-nov', 200, { concept: 'servicios', period: '2026-11', dueDate: '2026-11-05' }),
+        charge('exp-oct', 50, { concept: 'expensas', period: '2026-10', dueDate: '2026-10-05' }),
+      ]),
+    );
+    assert.deepEqual(
+      debt.outstanding.map((v) => v.charge.id),
+      ['exp-oct', 'alq-nov', 'ser-nov', 'exp-nov'],
+    );
+    // Paga 1.050: cubre las expensas viejas, el alquiler y 100 de servicios; debe 100 de servicios y 100 de expensas.
+    const plan = planCollection(contract(), { USD: 0, ARS: 1050 }, debt);
+    assert.deepEqual(
+      plan.applied.map((a) => [a.view.charge.id, a.amount]),
+      [['exp-oct', 50], ['alq-nov', 900], ['ser-nov', 100]],
+    );
+  });
+
   it('lo no aplicado de un cobro es saldo a favor', () => {
     assert.equal(unallocatedAmount(payment('x', 1200, [{ chargeId: 'a', amount: 1000 }])), 200);
   });

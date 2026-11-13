@@ -187,7 +187,7 @@
         <div class="card"><h3>Inquilino</h3><p>Quien alquila. Se carga dentro del contrato, con su teléfono para escribirle o llamarlo desde la app.</p></div>
         <div class="card"><h3>Contrato</h3><p>Une una propiedad con un inquilino: fechas, alquiler, moneda, día de vencimiento y cómo se ajusta.</p></div>
         <div class="card"><h3>Cargo</h3><p>Lo que el inquilino debe por un concepto y un mes: alquiler, expensas o servicios. La app los crea sola cada mes.</p></div>
-        <div class="card"><h3>Cobro</h3><p>Lo que el inquilino te pagó. Se aplica a sus cargos, empezando por el más viejo.</p></div>
+        <div class="card"><h3>Cobro</h3><p>Lo que el inquilino te pagó. Se aplica a sus cargos: primero el mes más viejo y, dentro de cada mes, alquiler, servicios y expensas.</p></div>
       </div>
       <h3 style="font-size:24px;margin:32px 0 12px">Los cuatro estados</h3>
       <div class="grid">
@@ -401,7 +401,7 @@
         <div>
           <ol class="steps">
             <li>Tocá <b>Registrar cobro</b> (en Inicio, en la ficha de la propiedad o en el contrato). Si entrás desde Inicio, elegí el contrato.</li>
-            <li>Arriba ves el <b>saldo total</b> y cuánto está vencido. Elegí qué te pagó: <b>Saldo total</b>, <b>Solo lo vencido</b> u <b>Otro importe</b> (un pago parcial o un adelanto). Con «Otro importe» podés tocar <b>Elegir a qué cargos se aplica</b>; si no, se aplica empezando por el más viejo.</li>
+            <li>Arriba ves el <b>saldo total</b> y cuánto está vencido. Elegí qué te pagó: <b>Saldo total</b>, <b>Solo lo vencido</b> u <b>Otro importe</b> (un pago parcial o un adelanto). Con «Otro importe» podés tocar <b>Elegir a qué cargos se aplica</b>; si no, la app lo reparte sola (ver «Cómo se reparte un cobro», abajo).</li>
             <li>Si el contrato es en dólares y te pagan en pesos, activá <b>Paga los dólares en pesos</b>: la app hace la cuenta con la cotización del día.</li>
             <li>Elegí el <b>medio de pago</b> (efectivo, transferencia, tarjeta u otro) y la <b>fecha</b>. Podés agregar una nota.</li>
             <li>Tocá <b>Continuar</b>.</li>
@@ -412,6 +412,14 @@
         <div><div class="phone"><img src="/manual/07-cobro-confirmar.jpg" alt="Registrar cobro, paso 2: confirmar" loading="lazy"></div><p class="caption">Paso 2 · Confirmar: a qué cargos se aplica</p></div>
         <div><div class="phone"><img src="/manual/08-cobro-listo.jpg" alt="Registrar cobro, paso 3: cobro registrado" loading="lazy"></div><p class="caption">Paso 3 · Listo: «Enviar recibo por WhatsApp»</p></div>
       </div>
+      <h3 style="font-size:22px;margin:28px 0 10px">Cómo se reparte un cobro</h3>
+      <p>Si no elegís a qué cargos va, la app reparte lo que te pagaron así:</p>
+      <ol class="steps">
+        <li>Primero, <b>el mes más viejo</b> que se debe. Una deuda vieja nunca queda atrás de un mes nuevo.</li>
+        <li>Dentro de cada mes, en este orden: <b>alquiler</b>, después <b>servicios</b> y al final <b>expensas</b>.</li>
+        <li>Lo que no alcanza queda como deuda en esos cargos, y así se ve en la ficha, en Cobros y en el recordatorio de WhatsApp.</li>
+      </ol>
+      <p class="tip"><b>Ejemplo:</b> el inquilino debe $ 900.000 de alquiler, $ 200.000 de servicios y $ 100.000 de expensas del mismo mes, y te paga $ 1.000.000. Quedan pagados el alquiler y $ 100.000 de servicios, y sigue debiendo $ 100.000 de servicios y $ 100.000 de expensas. Antes de confirmar, en el paso 2, ves cómo quedó repartido; si querés otra cosa, volvé y elegí los cargos a mano.</p>
       <p class="tip"><b>El recibo</b> es un mensaje de WhatsApp con el detalle del cobro (propiedad, fecha, conceptos, meses, importe y, si queda, lo que todavía debe), listo para enviar al inquilino. No es un comprobante fiscal ni un PDF. Si no lo mandaste en el momento, abrí el cobro desde la pestaña Cobros y tocá <b>Enviar recibo por WhatsApp</b>.</p>
       <p class="tip"><b>Tip:</b> si te pagan de más, lo que sobra queda como saldo a favor del inquilino y se usa solo para los próximos cargos del mismo concepto en el mismo contrato. Si te equivocaste, abrí el cobro desde la pestaña Cobros y tocá <b>Eliminar cobro</b>.</p>
     </section>

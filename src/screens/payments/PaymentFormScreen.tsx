@@ -457,7 +457,7 @@ export default function PaymentFormScreen() {
                         </TouchableOpacity>
                       );
                     })}
-                    <Text style={styles.hint}>Lo elegido se cubre primero; si sobra, sigue por el cargo más viejo.</Text>
+                    <Text style={styles.hint}>Lo elegido se cubre primero; si sobra, sigue por el mes más viejo (alquiler, servicios y expensas).</Text>
                   </View>
                 ) : null}
               </View>

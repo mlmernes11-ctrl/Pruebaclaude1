@@ -5,7 +5,7 @@
 // También reparte un cobro entre varios cargos y aplica el saldo a favor.
 // =====================================================================
 
-import { Charge, ChargeStatus, Payment, PaymentAllocation } from '../types';
+import { Charge, ChargeConcept, ChargeStatus, Payment, PaymentAllocation } from '../types';
 import { parseLocalDate, startOfToday } from './format';
 
 // Margen para comparar montos con centavos (evita errores de redondeo).
@@ -80,10 +80,19 @@ export function isOutstanding(view: ChargeView): boolean {
   return view.balance > EPSILON;
 }
 
-// De la que vence primero a la última.
+// Dentro de un mismo mes, lo más importante primero: el alquiler, después los servicios y al
+// final las expensas.
+const CONCEPT_PRIORITY: Record<ChargeConcept, number> = { alquiler: 0, servicios: 1, expensas: 2 };
+
+// Orden en que se paga lo adeudado: primero el mes más viejo; dentro del mes, alquiler →
+// servicios → expensas; y si empatan, el que vence primero.
 export function sortOldestFirst(views: ChargeView[]): ChargeView[] {
-  return [...views].sort((a, b) =>
-    a.charge.dueDate < b.charge.dueDate ? -1 : a.charge.dueDate > b.charge.dueDate ? 1 : 0,
+  const compare = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  return [...views].sort(
+    (a, b) =>
+      compare(a.charge.period, b.charge.period) ||
+      CONCEPT_PRIORITY[a.charge.concept] - CONCEPT_PRIORITY[b.charge.concept] ||
+      compare(a.charge.dueDate, b.charge.dueDate),
   );
 }
 
