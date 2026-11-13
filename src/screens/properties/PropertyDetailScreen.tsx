@@ -295,7 +295,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
               onPress={() => navigation.navigate('Imports')}
               accessibilityRole="button"
             >
-              <Text style={styles.importsLinkText}>Actualizar expensas y servicios</Text>
+              <Text style={styles.importsLinkText}>Actualización masiva</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           </View>

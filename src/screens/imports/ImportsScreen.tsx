@@ -1,5 +1,5 @@
 // =====================================================================
-// Pantalla: Expensas y servicios (actualizar los importes del mes)
+// Pantalla: Actualización masiva (los importes del mes: expensas, servicios y alquiler)
 // ---------------------------------------------------------------------
 // Las expensas, los servicios y el alquiler de un mes, una fila por contrato vigente. Se toca una
 // fila para cargar el importe nuevo (o dejar el del mes anterior); "Mantener el importe anterior"

@@ -69,8 +69,8 @@ const flows = {
 
   async importes(page, r) {
     await r.shot(900);
-    await r.tap(page.getByRole('tab', { name: 'Menú' }), 'La actualización de importes está en el Menú: tocá esa pestaña, abajo.');
-    await r.tap(vis(page, page.getByText('Expensas y servicios', { exact: true })), 'Tocá Expensas y servicios.');
+    await r.tap(page.getByRole('tab', { name: 'Menú' }), 'La actualización masiva está en el Menú: tocá esa pestaña, abajo.');
+    await r.tap(vis(page, page.getByText('Actualización masiva', { exact: true })), 'Tocá Actualización masiva: los importes del mes de todas las propiedades.');
     await r.tap(vis(page, page.getByRole('button', { name: /Carpeta 64/ })), 'Están las expensas del mes. Tocá una fila para cargar el importe nuevo.', { settle: 500 });
     const input = (name) => vis(page, page.getByLabel(`Importe de ${name}`, { exact: true }));
     await r.type(input('Carpeta 64'), '128000', 'Escribí el importe nuevo.', { clear: true });

@@ -1,5 +1,5 @@
 // =====================================================================
-// Expensas y servicios (actualizar importes): datos y reglas
+// Actualización masiva: datos y reglas
 // ---------------------------------------------------------------------
 // Una fila por contrato vigente con su cargo del mes (expensas, servicios o alquiler), el importe
 // del mes anterior y si ya se revisó. Y qué hacer al guardar:

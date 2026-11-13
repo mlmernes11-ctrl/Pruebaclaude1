@@ -1,21 +1,24 @@
 // =====================================================================
 // Pantalla: Inicio
 // ---------------------------------------------------------------------
-// Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, los cuatro accesos
-// directos (registrar cobro, recordar deuda, nuevo contrato, expensas y servicios). Debajo, «Tus
-// alquileres»: quién debe y quién tiene un vencimiento cerca, con nombre, monto y fecha, y
-// cuántas propiedades están al día o sin alquilar. Al final, los otros pendientes (importes por
-// cargar, contratos por renovar o ajustar). La cartera completa vive en Alquileres.
+// Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, hasta cuatro accesos
+// directos (por defecto registrar cobro, recordar deuda, nuevo contrato y agregar cargo; se
+// cambian con el lápiz). Debajo, «Tus alquileres»: quién debe y quién tiene un vencimiento
+// cerca, con nombre, monto y fecha, y cuántas propiedades están al día o sin alquilar. Al final,
+// los otros pendientes (importes por revisar, contratos por renovar o ajustar). La cartera
+// completa vive en Alquileres.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import LargeTitleHeader, { HeaderChip } from '../components/LargeTitleHeader';
 import Screen from '../components/Screen';
 import SectionHeader from '../components/SectionHeader';
+import ShortcutsEditor from '../components/ShortcutsEditor';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
@@ -25,6 +28,7 @@ import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, formatTotals, parseLocalDate } from '../utils/format';
 import { openInTab } from '../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../utils/propertySummary';
+import { SHORTCUT_CATALOG, ShortcutId, useShortcuts } from '../utils/shortcuts';
 import { capitalize, compareTitles, initials, plural } from '../utils/text';
 import { pendingImportsCount } from './imports/importsLogic';
 
@@ -94,9 +98,9 @@ export default function DashboardScreen() {
   if (pendingImports > 0) {
     pending.push({
       key: 'importes',
-      title: 'Actualizar expensas y servicios',
-      subtitle: `${plural(pendingImports, 'importe', 'importes')} de ${monthName.toLowerCase()} sin revisar`,
-      icon: 'receipt-outline',
+      title: 'Actualización masiva',
+      subtitle: `${pendingImports} ${pendingImports === 1 ? 'importe' : 'expensas y servicios'} sin revisar`,
+      icon: 'layers-outline',
       tone: 'info',
       onPress: () => navigation.navigate('Imports'),
     });
@@ -133,17 +137,24 @@ export default function DashboardScreen() {
   const toneColor = { warning: colors.warning, info: colors.primary };
   const toneBg = { warning: colors.warningMuted, info: colors.primaryMuted };
 
-  // — Accesos directos: lo que se hace todos los meses —
+  // — Accesos directos: los que eligió cada uno (hasta 4), con el lápiz para cambiarlos —
   const remind = () =>
     inDebt.length === 1
       ? openProperty(inDebt[0].property.id)
       : navigation.navigate('RentalsTab', { screen: 'Rentals', params: { filter: 'mora' } });
-  const shortcuts: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }[] = [
-    { label: 'Registrar cobro', icon: 'cash-outline', onPress: () => openInTab(navigation, 'PaymentsTab', 'PaymentForm') },
-    { label: 'Recordar deuda', icon: 'chatbubble-outline', onPress: remind },
-    { label: 'Nuevo contrato', icon: 'document-text-outline', onPress: () => openInTab(navigation, 'RentalsTab', 'ContractForm') },
-    { label: 'Expensas y servicios', icon: 'receipt-outline', onPress: () => navigation.navigate('Imports') },
-  ];
+  const SHORTCUT_ACTIONS: Record<ShortcutId, () => void> = {
+    cobro: () => openInTab(navigation, 'PaymentsTab', 'PaymentForm'),
+    deuda: remind,
+    contrato: () => openInTab(navigation, 'RentalsTab', 'ContractForm'),
+    cargo: () => openInTab(navigation, 'PaymentsTab', 'ChargeForm'),
+    propiedad: () => openInTab(navigation, 'RentalsTab', 'PropertyForm'),
+    masiva: () => navigation.navigate('Imports'),
+    dolar: () => navigation.navigate('ExchangeRate'),
+    historial: () => openInTab(navigation, 'PaymentsTab', 'History'),
+  };
+  const [shortcutIds, setShortcutIds] = useShortcuts();
+  const [editingShortcuts, setEditingShortcuts] = useState(false);
+  const shortcuts = shortcutIds.map((id) => ({ ...SHORTCUT_CATALOG.find((s) => s.id === id)!, onPress: SHORTCUT_ACTIONS[id] }));
 
   // — Dibujo de la pantalla —
   return (
@@ -190,7 +201,7 @@ export default function DashboardScreen() {
               <View style={styles.shortcuts}>
                 {shortcuts.map((s) => (
                   <TouchableOpacity
-                    key={s.label}
+                    key={s.id}
                     style={styles.shortcut}
                     activeOpacity={0.6}
                     onPress={s.onPress}
@@ -205,7 +216,22 @@ export default function DashboardScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
+                <TouchableOpacity
+                  style={styles.shortcutsEdit}
+                  onPress={() => setEditingShortcuts(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Editar accesos directos"
+                  hitSlop={10}
+                >
+                  <Ionicons name="pencil" size={13} color={colors.textMuted} />
+                </TouchableOpacity>
               </View>
+              <ShortcutsEditor
+                visible={editingShortcuts}
+                value={shortcutIds}
+                onSave={setShortcutIds}
+                onClose={() => setEditingShortcuts(false)}
+              />
 
               {/* Tus alquileres: quién debe y quién vence, con monto y fecha. */}
               {summaries.length ? (
@@ -345,6 +371,16 @@ const useStyles = makeStyles((colors) => ({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+  },
+  shortcutsEdit: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shortcut: {
     flex: 1,

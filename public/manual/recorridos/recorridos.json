@@ -120,7 +120,7 @@
      "w": 25,
      "h": 6.28
     },
-    "text": "La actualización de importes está en el Menú: tocá esa pestaña, abajo.",
+    "text": "La actualización masiva está en el Menú: tocá esa pestaña, abajo.",
     "kind": "tap"
    },
    {
@@ -128,10 +128,10 @@
     "box": {
      "x": 16.92,
      "y": 11.85,
-     "w": 44.33,
+     "w": 44.7,
      "h": 2.37
     },
-    "text": "Tocá Expensas y servicios.",
+    "text": "Tocá Actualización masiva: los importes del mes de todas las propiedades.",
     "kind": "tap"
    },
    {
