@@ -10,6 +10,7 @@
 
 import { ComponentType, useEffect, useState } from 'react';
 import { hasUnsavedForm } from './formScreen';
+import { SwipeBetweenTabs } from './swipeTabs';
 
 interface ScreenProps {
   navigation: any;
@@ -43,7 +44,12 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
       };
     }, [navigation]);
 
-    return <Screen key={generation} {...props} />;
+    // En el celular, además, se pasa a la pestaña de al lado deslizando (ver swipeTabs).
+    return (
+      <SwipeBetweenTabs navigation={navigation}>
+        <Screen key={generation} {...props} />
+      </SwipeBetweenTabs>
+    );
   }
   ResettingScreen.displayName = `ResetOnTabLeave(${Screen.displayName ?? Screen.name ?? 'Screen'})`;
   return ResettingScreen;

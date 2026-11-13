@@ -290,6 +290,8 @@ export default function RootNavigator() {
           headerShown: false,
           // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
           popToTopOnBlur: true,
+          // En el celular, la pestaña nueva entra de costado (acompaña el deslizar entre pestañas).
+          animation: desktop ? 'none' : 'shift',
           tabBarPosition: desktop ? 'left' : 'bottom',
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,

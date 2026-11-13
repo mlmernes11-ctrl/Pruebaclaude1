@@ -46,6 +46,7 @@ import { ChargeView, unallocatedAmount } from '../../utils/ledger';
 import { matchRow, SearchField, searchWords } from '../../utils/search';
 import { CHARGE_STATUS_DOT, CHARGE_STATUS_LABEL, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { capitalize, compareTitles, plural } from '../../utils/text';
+import { keepSwipeInside } from '../../navigation/swipeTabs';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -515,7 +516,7 @@ function Pills<T extends string>({
 }) {
   const styles = useStyles();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills} {...keepSwipeInside}>
       {options.map((option) => {
         const active = option.value === value;
         return (
