@@ -2,8 +2,9 @@
 // Marca de Locatia: genera los íconos
 // ---------------------------------------------------------------------
 // El logo es una L: el palito es un edificio con techo inclinado y ventanas, el piso es vereda y
-// calle, y al lado va la casita con su puerta. Las ventanas y la puerta son huecos (se ve el
-// fondo), así funciona igual sobre azul, blanco o transparente.
+// calle (unidas por un corte en el medio de la línea que las separa), y al lado va la casita con
+// su puerta. Las ventanas y la puerta son huecos (se ve el fondo), así funciona igual sobre azul,
+// blanco o transparente.
 // Uso: node scripts/marca/logo.js  (necesita Playwright). Deja los PNG en assets/ y public/, e
 // imprime el SVG para pegar en las páginas públicas (por ejemplo, la portada del manual).
 // =====================================================================
@@ -23,7 +24,7 @@ const WINDOWS = [48, 60, 72, 84].map((y) => win(47, y) + win(57, y)).join('');
 function mark(fill) {
   return `<g transform="translate(-2 2)" fill="${fill}">` +
     `<path fill-rule="evenodd" d="M42 40L68 28V104H42Z${WINDOWS}"/>` +
-    `<path d="M42 100H122V110H42Z"/><path d="M42 114H122V126H42Z"/>` +
+    `<path d="M42 100H122V110H42Z"/><path d="M42 114H122V126H42Z"/><path d="M80 109H84V115H80Z"/>` +
     `<path d="M74 76L98 52L122 76V94H104V80Q104 78 102 78H94Q92 78 92 80V94H74Z"/>` +
     `</g>`;
 }
