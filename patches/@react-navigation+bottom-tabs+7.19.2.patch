@@ -1,0 +1,28 @@
+diff --git a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
+index f66619e..ec1cce8 100644
+--- a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
++++ b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
+@@ -230,7 +230,7 @@ export function BottomTabView(props) {
+         const animationEnabled = hasAnimation(descriptor.options);
+         const isAnimatingRoute = lastUpdate.animating && (lastUpdate.previous === route.key || lastUpdate.current === route.key);
+         const activityState = isFocused ? STATE_ON_TOP // the screen is on top after the transition
+-        : animationEnabled && isAnimatingRoute ? STATE_TRANSITIONING_OR_BELOW_TOP // screen visible during transition
++        : animationEnabled && isAnimatingRoute || !detachInactiveScreens ? STATE_TRANSITIONING_OR_BELOW_TOP // screen visible during transition (or always, if inactive screens are kept)
+         : STATE_INACTIVE;
+         return /*#__PURE__*/_jsx(MaybeScreen, {
+           style: [StyleSheet.absoluteFill, {
+diff --git a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
+index 9b68fde..6cc6aeb 100644
+--- a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
++++ b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
+@@ -334,8 +334,8 @@ export function BottomTabView(props: Props) {
+ 
+           const activityState = isFocused
+             ? STATE_ON_TOP // the screen is on top after the transition
+-            : animationEnabled && isAnimatingRoute
+-              ? STATE_TRANSITIONING_OR_BELOW_TOP // screen visible during transition
++            : (animationEnabled && isAnimatingRoute) || !detachInactiveScreens
++              ? STATE_TRANSITIONING_OR_BELOW_TOP // screen visible during transition (or always, if inactive screens are kept)
+               : STATE_INACTIVE;
+ 
+           return (

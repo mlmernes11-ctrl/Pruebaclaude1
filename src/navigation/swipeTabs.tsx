@@ -11,7 +11,9 @@
 //
 // Para que se vea la vecina mientras se arrastra, las pestañas quedan armadas a los costados
 // (RootNavigator: sin desarmar las inactivas y con la animación de abajo), y las de al lado se
-// preparan apenas se entra a una.
+// preparan apenas se entra a una. En Android, la barra de pestañas igual ocultaba las inactivas
+// hasta el final del cambio (se veía gris al arrastrar): lo corrige un parche chico en
+// patches/@react-navigation+bottom-tabs, que se aplica solo al instalar (npm install).
 // =====================================================================
 
 import { ReactNode, useEffect, useMemo, useState } from 'react';
