@@ -2,9 +2,9 @@
 // Accesos directos de Inicio
 // ---------------------------------------------------------------------
 // Todas las funciones que se pueden abrir desde Inicio, en el orden que eligió cada uno. Las
-// primeras SHORTCUTS_ON_HOME se ven en Inicio; el resto, al tocar «Más». El orden se cambia en
-// «Editar accesos directos» y se guarda en el dispositivo. Qué abre cada una se define en
-// DashboardScreen.
+// primeras SHORTCUTS_ON_HOME se ven en Inicio; todas, al tocar «Más», donde se reordenan
+// manteniendo apretado y arrastrando (ShortcutsSheet). El orden se guarda en el dispositivo.
+// Qué abre cada una se define en DashboardScreen.
 // =====================================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
