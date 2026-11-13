@@ -39,6 +39,7 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
   1. `npx expo export -p web` y servir `dist/` en `http://localhost:8124/` con un servidor que acepte pedidos por partes (por ejemplo `npx serve dist -l 8124`).
   2. `node scripts/manual/flows.js` (o solo algunos: `node scripts/manual/flows.js cobro importes`).
   3. Las capturas fijas del manual: `node scripts/manual/capturas.js`.
+- **Logo e íconos**: se dibujan en `scripts/marca/logo.js` (L con edificio, vereda y casita). `node scripts/marca/logo.js` regenera `assets/` (ícono, Android, splash, favicon) y `public/locatia-logo.png`. El ícono del celular cambia recién con un APK nuevo.
 - **Actualizar la app sin APK nuevo**: GitHub › Actions › «Actualizar la app» (actualización OTA de Expo).
 - **Mantener Supabase activo**: «Mantener activo el servidor» corre cada 3 días.
 - Los workflows usan el secreto `EXPO_TOKEN` de GitHub.
