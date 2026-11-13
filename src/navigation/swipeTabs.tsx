@@ -5,7 +5,8 @@
 // de al lado: Inicio ↔ Alquileres ↔ Cobros ↔ Menú. Inicio es el borde izquierdo y Menú el
 // derecho: más allá la pantalla apenas se estira y vuelve. Mientras se arrastra, la pantalla
 // sigue un poco al dedo. Solo cuenta un gesto claramente horizontal, así no molesta al bajar
-// por la lista. En la computadora no se usa (está la barra lateral).
+// por la lista. Solo en el celular: la app de Android y la web usada con el dedo; en la
+// computadora (con mouse, o pantalla ancha con barra lateral) no se usa.
 // =====================================================================
 
 import { ReactNode, useMemo, useRef } from 'react';
@@ -23,6 +24,11 @@ const FOLLOW = 0.35;
 const EDGE_FOLLOW = 0.12;
 
 const useNative = Platform.OS !== 'web';
+
+// Pantalla táctil: la app, o la web en un celular o tablet (no con mouse).
+const TOUCH =
+  Platform.OS !== 'web' ||
+  (typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches);
 
 // Un gesto que empieza sobre algo que se desliza de costado (una fila de filtros) es de esa fila.
 let blocked = false;
@@ -78,7 +84,7 @@ export function SwipeBetweenTabs({ navigation, children }: { navigation: any; ch
     });
   }, [navigation, offset]);
 
-  if (desktop) return <>{children}</>;
+  if (desktop || !TOUCH) return <>{children}</>;
   return (
     <Animated.View style={{ flex: 1, transform: [{ translateX: offset }] }} {...responder.panHandlers}>
       {children}
