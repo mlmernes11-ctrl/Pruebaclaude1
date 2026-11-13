@@ -17,7 +17,7 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 ## Cómo funciona
 
 - **Cargos automáticos**: el servidor crea cada día los cargos del mes que falten (alquiler, expensas y servicios) y aplica los ajustes del alquiler por IPC (INDEC), ICL (BCRA) o porcentaje fijo. También aplica el saldo a favor a los próximos cargos del mismo concepto. Función `bill_account`, tarea diaria `cargos-del-mes`.
-- **Cobros**: un importe se reparte del cargo más viejo al más nuevo; se registra un cobro por concepto y lo que sobra queda como saldo a favor. Se puede cobrar en pesos un alquiler en dólares, con la cotización del día o una manual.
+- **Cobros**: un importe cubre primero el mes más viejo y, dentro del mes, alquiler → servicios → expensas; se registra un cobro por concepto y lo que sobra queda como saldo a favor. Se puede cobrar en pesos un alquiler en dólares, con la cotización del día o una manual.
 - **Sincronización**: cada cambio se envía al momento (solo lo que cambió). La app consulta cada minuto si hubo cambios en la cuenta (`account_versions`) y relee solo si los hubo; también al volver a la app y al deslizar hacia abajo. Sin conexión, aparece un aviso con «Reintentar» y los cambios quedan pendientes.
 - **Modo demo**: «Probar con datos de ejemplo» abre una cartera de prueba guardada solo en el dispositivo; ahí los cargos y el saldo a favor los calcula la app.
 
@@ -35,6 +35,9 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 - **APK**: GitHub › Actions › «Armar APK». Lo arma Expo (EAS, `eas.json`); el enlace queda en expo.dev › Builds o en «Estado del APK».
 - **Link para descargar el APK**: `/descargar` (por ejemplo, gestion-alquileres-sero0.vercel.app/descargar) lleva al último APK. Cuando se arma uno nuevo, se cambia su destino en `vercel.json` por el enlace que muestra «Estado del APK».
 - **Manual de uso**: `public/manual.html` (gestion-alquileres-sero0.vercel.app/manual.html), con capturas en `public/manual/`. En la app, Menú › Ayuda.
+- **Recorridos del manual** (video + «Probalo vos»): `public/manual/recorridos/`. Se graban de la app real en modo de ejemplo. Si cambia una de esas pantallas, volver a grabarlos (necesita Playwright y ffmpeg):
+  1. `npx expo export -p web` y servir `dist/` en `http://localhost:8124/` con un servidor que acepte pedidos por partes (por ejemplo `npx serve dist -l 8124`).
+  2. `node scripts/recorridos/flows.js` (o solo algunos: `node scripts/recorridos/flows.js cobro importes`).
 - **Actualizar la app sin APK nuevo**: GitHub › Actions › «Actualizar la app» (actualización OTA de Expo).
 - **Mantener Supabase activo**: «Mantener activo el servidor» corre cada 3 días.
 - Los workflows usan el secreto `EXPO_TOKEN` de GitHub.

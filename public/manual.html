@@ -102,6 +102,25 @@
     .index, .intro { padding: 22px; }
     .how { grid-template-columns: 1fr; }
   }
+
+  /* ── Recorridos: video y «Probalo vos» ── */
+  .tour { width: 100%; max-width: 300px; margin: 0 auto; }
+  .tour-modes { display: flex; gap: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 4px; margin-bottom: 14px; }
+  .tour-modes button { flex: 1; border: 0; background: transparent; color: var(--muted); font: 600 15px/1.2 inherit; font-family: inherit; padding: 10px 6px; border-radius: 10px; cursor: pointer; }
+  .tour-modes button[aria-pressed="true"] { background: var(--card); color: var(--accent); box-shadow: 0 1px 4px rgba(16, 33, 63, 0.12); }
+  .tour-screen { position: relative; line-height: 0; }
+  .tour-screen video { display: block; width: 100%; height: auto; background: #0A1222; cursor: pointer; }
+  .tour-spot { position: absolute; border: 3px solid #0A4FA8; border-radius: 12px; background: rgba(10, 79, 168, 0.12); cursor: pointer; padding: 0; animation: tour-pulse 1.3s ease-out infinite; }
+  .tour-spot:focus-visible { outline: 3px solid #F2B705; outline-offset: 2px; }
+  @keyframes tour-pulse { 0% { box-shadow: 0 0 0 0 rgba(10, 79, 168, 0.55); } 100% { box-shadow: 0 0 0 14px rgba(10, 79, 168, 0); } }
+  @media (prefers-reduced-motion: reduce) { .tour-spot { animation: none; } }
+  .tour-screen.shake { animation: tour-shake 0.3s; }
+  @keyframes tour-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .tour-text { min-height: 78px; margin: 14px 0 0; font-size: 16px; line-height: 1.45; color: var(--text); background: var(--soft); border-radius: 14px; padding: 12px 14px; }
+  .tour-text small { display: block; color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .tour-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .tour-nav button { border: 1px solid var(--line); background: var(--card); color: var(--accent); font: 600 14px/1 inherit; font-family: inherit; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+  .tour-nav button:disabled { opacity: 0.4; cursor: default; }
 </style>
 </head>
 <body>
@@ -295,8 +314,9 @@
       <p class="eyebrow">Capítulo 6</p>
       <h2>Cargar una propiedad</h2>
       <p class="lead">Es lo primero que se carga. Después se le agrega el contrato con el inquilino.</p>
+      <p class="tip"><b>Videos y prueba:</b> en este capítulo y en los de contrato, importes y cobro, el celular muestra un video del trámite. Tocá <b>Probalo vos</b> para hacerlo paso a paso: tocá donde late el recuadro y los campos se completan solos.</p>
       <div class="figure">
-        <div><div class="phone"><img src="/manual/13-propiedad-nueva.jpg" alt="Formulario de nueva propiedad" loading="lazy"></div></div>
+        <div><div class="tour" data-tour="propiedad"><div class="tour-modes"><button type="button" data-mode="video" aria-pressed="true">▶ Ver video</button><button type="button" data-mode="try" aria-pressed="false">👆 Probalo vos</button></div><div class="phone"><div class="tour-screen"><video muted playsinline preload="metadata" poster="/manual/recorridos/propiedad.jpg" aria-label="Recorrido: cargar una propiedad"><source src="/manual/recorridos/propiedad.mp4" type="video/mp4"></video><button type="button" class="tour-spot" hidden></button></div></div><p class="tour-text" aria-live="polite"></p><div class="tour-nav" hidden><button type="button" data-act="back">‹ Paso anterior</button><button type="button" data-act="restart">Empezar de nuevo</button></div></div></div>
         <div>
           <ol class="steps">
             <li>En Alquileres, tocá <b>+</b>.</li>
@@ -338,7 +358,7 @@
       <h2>Cargar un contrato</h2>
       <p class="lead">El contrato es el que pone en marcha todo: desde que lo guardás, la app crea sola los cargos de cada mes.</p>
       <div class="figure">
-        <div><div class="phone"><img src="/manual/12-contrato-nuevo.jpg" alt="Formulario de nuevo contrato" loading="lazy"></div></div>
+        <div><div class="tour" data-tour="contrato"><div class="tour-modes"><button type="button" data-mode="video" aria-pressed="true">▶ Ver video</button><button type="button" data-mode="try" aria-pressed="false">👆 Probalo vos</button></div><div class="phone"><div class="tour-screen"><video muted playsinline preload="metadata" poster="/manual/recorridos/contrato.jpg" aria-label="Recorrido: cargar un contrato"><source src="/manual/recorridos/contrato.mp4" type="video/mp4"></video><button type="button" class="tour-spot" hidden></button></div></div><p class="tour-text" aria-live="polite"></p><div class="tour-nav" hidden><button type="button" data-act="back">‹ Paso anterior</button><button type="button" data-act="restart">Empezar de nuevo</button></div></div></div>
         <div>
           <ol class="steps">
             <li>Tocá <b>Nuevo contrato</b> en Inicio (o en la ficha de la propiedad) y elegí la <b>Propiedad</b>.</li>
@@ -376,7 +396,7 @@
       <h2>Los cargos de cada mes</h2>
       <p class="lead">No hace falta cargar nada a mano: al empezar cada mes, la app crea el alquiler de cada contrato vigente y, si la propiedad los tiene, las expensas y los servicios.</p>
       <div class="figure">
-        <div><div class="phone"><img src="/manual/11-importes.jpg" alt="Pantalla Actualizar importes con las expensas del mes" loading="lazy"></div></div>
+        <div><div class="tour" data-tour="importes"><div class="tour-modes"><button type="button" data-mode="video" aria-pressed="true">▶ Ver video</button><button type="button" data-mode="try" aria-pressed="false">👆 Probalo vos</button></div><div class="phone"><div class="tour-screen"><video muted playsinline preload="metadata" poster="/manual/recorridos/importes.jpg" aria-label="Recorrido: cargar los importes del mes"><source src="/manual/recorridos/importes.mp4" type="video/mp4"></video><button type="button" class="tour-spot" hidden></button></div></div><p class="tour-text" aria-live="polite"></p><div class="tour-nav" hidden><button type="button" data-act="back">‹ Paso anterior</button><button type="button" data-act="restart">Empezar de nuevo</button></div></div></div>
         <div>
           <h3>Actualizar importes</h3>
           <ol class="steps">
@@ -397,7 +417,7 @@
       <h2>Registrar un cobro</h2>
       <p class="lead">Como una transferencia en el banco: elegís cuánto, confirmás y listo. Tres pasos.</p>
       <div class="figure">
-        <div><div class="phone"><img src="/manual/06-cobro-importe.jpg" alt="Registrar cobro, paso 1: el importe" loading="lazy"></div><p class="caption">Paso 1 · El importe</p></div>
+        <div><div class="tour" data-tour="cobro"><div class="tour-modes"><button type="button" data-mode="video" aria-pressed="true">▶ Ver video</button><button type="button" data-mode="try" aria-pressed="false">👆 Probalo vos</button></div><div class="phone"><div class="tour-screen"><video muted playsinline preload="metadata" poster="/manual/recorridos/cobro.jpg" aria-label="Recorrido: registrar un cobro"><source src="/manual/recorridos/cobro.mp4" type="video/mp4"></video><button type="button" class="tour-spot" hidden></button></div></div><p class="tour-text" aria-live="polite"></p><div class="tour-nav" hidden><button type="button" data-act="back">‹ Paso anterior</button><button type="button" data-act="restart">Empezar de nuevo</button></div></div></div>
         <div>
           <ol class="steps">
             <li>Tocá <b>Registrar cobro</b> (en Inicio, en la ficha de la propiedad o en el contrato). Si entrás desde Inicio, elegí el contrato.</li>
@@ -524,5 +544,103 @@
   <div class="wrap">Locatia · Gestión de alquileres · <a href="/">Abrir la app</a> · <a href="/privacidad.html">Privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></div>
 </footer>
 
+
+<script>
+// Recorridos del manual: cada uno es un video grabado de la app en modo de ejemplo y una lista de
+// pasos (cuándo pausar y qué zona tocar). «Ver video» lo pasa en bucle con el texto de cada paso;
+// «Probalo vos» frena en cada paso y avanza cuando se toca la zona marcada.
+(function () {
+  var tours = document.querySelectorAll('.tour');
+  if (!tours.length) return;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  fetch('/manual/recorridos/recorridos.json').then(function (r) { return r.json(); }).then(function (data) {
+    tours.forEach(function (el) { var d = data[el.dataset.tour]; if (d) setup(el, d); });
+  }).catch(function () {});
+
+  function setup(el, data) {
+    var video = el.querySelector('video');
+    var screen = el.querySelector('.tour-screen');
+    var spot = el.querySelector('.tour-spot');
+    var text = el.querySelector('.tour-text');
+    var nav = el.querySelector('.tour-nav');
+    var back = nav.querySelector('[data-act="back"]');
+    var steps = data.steps;
+    var mode = 'video';
+    var index = 0;
+    var target = null;
+    var visible = false;
+
+    function say(i, prefix) {
+      var step = steps[i];
+      var label = step.kind === 'done' ? 'Listo' : 'Paso ' + (i + 1) + ' de ' + (steps.length - 1);
+      text.innerHTML = '<small>' + (prefix || label) + '</small>' + step.text;
+    }
+    function stepAt(t) {
+      var i = 0;
+      for (var k = 0; k < steps.length; k++) if (steps[k].t <= t + 0.05) i = k;
+      return i;
+    }
+    function ready(fn) {
+      if (video.readyState >= 1) fn(); else video.addEventListener('loadedmetadata', fn, { once: true });
+    }
+
+    // — Ver video —
+    video.addEventListener('timeupdate', function () { if (mode === 'video') say(stepAt(video.currentTime)); });
+    video.addEventListener('ended', function () { if (mode === 'video') { video.currentTime = 0; if (visible) video.play().catch(function () {}); } });
+    video.addEventListener('click', function () {
+      if (mode === 'video') { if (video.paused) video.play().catch(function () {}); else video.pause(); return; }
+      if (target === null && steps[index].box) { screen.classList.remove('shake'); void screen.offsetWidth; screen.classList.add('shake'); }
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        visible = entries[0].isIntersecting;
+        if (mode !== 'video') return;
+        if (visible && !reduced) video.play().catch(function () {}); else video.pause();
+      }, { threshold: 0.4 }).observe(video);
+    }
+
+    // — Probalo vos —
+    function showStep(i) {
+      index = i;
+      var step = steps[i];
+      video.pause();
+      video.currentTime = step.t;
+      say(i);
+      back.disabled = i === 0;
+      if (step.box) {
+        spot.hidden = false;
+        spot.style.left = step.box.x + '%'; spot.style.top = step.box.y + '%';
+        spot.style.width = step.box.w + '%'; spot.style.height = step.box.h + '%';
+        spot.setAttribute('aria-label', step.text);
+      } else {
+        spot.hidden = true;
+      }
+    }
+    function playTo(i) {
+      spot.hidden = true;
+      target = steps[i].t;
+      video.play().catch(function () {});
+      (function tick() {
+        if (target === null) return;
+        if (video.currentTime >= target - 0.03 || video.ended) { target = null; showStep(i); return; }
+        requestAnimationFrame(tick);
+      })();
+    }
+    spot.addEventListener('click', function () { if (index < steps.length - 1) playTo(index + 1); });
+    back.addEventListener('click', function () { target = null; if (index > 0) showStep(index - 1); });
+    nav.querySelector('[data-act="restart"]').addEventListener('click', function () { target = null; showStep(0); });
+
+    function setMode(m) {
+      mode = m; target = null;
+      el.querySelectorAll('.tour-modes button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === m)); });
+      nav.hidden = m !== 'try';
+      if (m === 'try') { video.preload = 'auto'; ready(function () { showStep(0); }); }
+      else { spot.hidden = true; video.currentTime = 0; say(0); if (visible && !reduced) video.play().catch(function () {}); }
+    }
+    el.querySelectorAll('.tour-modes button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.mode); }); });
+    say(0);
+  }
+})();
+</script>
 </body>
 </html>

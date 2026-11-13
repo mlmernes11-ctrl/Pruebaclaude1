@@ -1,0 +1,431 @@
+{
+ "propiedad": {
+  "duration": 23.555,
+  "steps": [
+   {
+    "t": 1.02,
+    "box": {
+     "x": 85.64,
+     "y": 5.21,
+     "w": 11.28,
+     "h": 5.21
+    },
+    "text": "En Alquileres, tocá el + de arriba para cargar una propiedad.",
+    "kind": "tap"
+   },
+   {
+    "t": 3.54,
+    "box": {
+     "x": 4.1,
+     "y": 12.09,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Nombre: cómo la llamás. Tocá el campo y se completa solo.",
+    "kind": "type"
+   },
+   {
+    "t": 6.02,
+    "box": {
+     "x": 4.1,
+     "y": 22.27,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Dirección: calle, número y piso.",
+    "kind": "type"
+   },
+   {
+    "t": 8.8,
+    "box": {
+     "x": 4.1,
+     "y": 32.46,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Barrio: ayuda a buscar y ordenar.",
+    "kind": "type"
+   },
+   {
+    "t": 11.13,
+    "box": {
+     "x": 7.69,
+     "y": 43.66,
+     "w": 26.63,
+     "h": 2.25
+    },
+    "text": "Tipo de propiedad: elegí el que corresponda.",
+    "kind": "tap"
+   },
+   {
+    "t": 13.48,
+    "box": {
+     "x": 4.1,
+     "y": 56.64,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Expensas por mes (opcional): si tiene, la app las cobra cada mes junto con el alquiler.",
+    "kind": "type"
+   },
+   {
+    "t": 15.735,
+    "box": {
+     "x": 32.9,
+     "y": 80.69,
+     "w": 34.19,
+     "h": 2.37
+    },
+    "text": "Tocá Crear propiedad.",
+    "kind": "tap"
+   },
+   {
+    "t": 18.255,
+    "box": {
+     "x": 20.95,
+     "y": 54.38,
+     "w": 18.87,
+     "h": 2.37
+    },
+    "text": "La app ofrece cargar el contrato ahora. Para este ejemplo, tocá Cancelar: se puede cargar después.",
+    "kind": "tap"
+   },
+   {
+    "t": 21.075,
+    "box": null,
+    "text": "¡Listo! Carpeta 150 ya está en Alquileres, como disponible.",
+    "kind": "done"
+   }
+  ]
+ },
+ "importes": {
+  "duration": 25.31,
+  "steps": [
+   {
+    "t": 1.02,
+    "box": {
+     "x": 50,
+     "y": 14.22,
+     "w": 22.44,
+     "h": 10.19
+    },
+    "text": "En Inicio, tocá Cargar importes.",
+    "kind": "tap"
+   },
+   {
+    "t": 3.54,
+    "box": {
+     "x": 7.18,
+     "y": 23.93,
+     "w": 85.64,
+     "h": 7.11
+    },
+    "text": "Están las expensas del mes. Tocá una fila para cargar el importe nuevo.",
+    "kind": "tap"
+   },
+   {
+    "t": 5.89,
+    "box": {
+     "x": 10.77,
+     "y": 32.58,
+     "w": 78.46,
+     "h": 5.33
+    },
+    "text": "Escribí el importe nuevo.",
+    "kind": "type"
+   },
+   {
+    "t": 8.265,
+    "box": {
+     "x": 55.38,
+     "y": 43.25,
+     "w": 29.49,
+     "h": 4.74
+    },
+    "text": "Tocá Listo · siguiente: pasa a la próxima fila.",
+    "kind": "tap"
+   },
+   {
+    "t": 10.615,
+    "box": {
+     "x": 10.77,
+     "y": 39.81,
+     "w": 78.46,
+     "h": 5.33
+    },
+    "text": "Otra que cambió.",
+    "kind": "type"
+   },
+   {
+    "t": 12.99,
+    "box": {
+     "x": 55.38,
+     "y": 50.47,
+     "w": 29.49,
+     "h": 4.74
+    },
+    "text": "Listo · siguiente.",
+    "kind": "tap"
+   },
+   {
+    "t": 15.34,
+    "box": {
+     "x": 8.46,
+     "y": 81.99,
+     "w": 83.08,
+     "h": 4.74
+    },
+    "text": "Las que no cambiaron se confirman todas juntas.",
+    "kind": "tap"
+   },
+   {
+    "t": 17.69,
+    "box": {
+     "x": 29.58,
+     "y": 61.14,
+     "w": 40.85,
+     "h": 2.37
+    },
+    "text": "Tocá Guardar.",
+    "kind": "tap"
+   },
+   {
+    "t": 20.11,
+    "box": {
+     "x": 51.54,
+     "y": 61.26,
+     "w": 36.15,
+     "h": 5.92
+    },
+    "text": "Confirmá. Los importes nuevos quedan para los meses siguientes.",
+    "kind": "tap"
+   },
+   {
+    "t": 22.83,
+    "box": null,
+    "text": "¡Listo! Las expensas del mes quedaron cargadas.",
+    "kind": "done"
+   }
+  ]
+ },
+ "contrato": {
+  "duration": 33.915,
+  "steps": [
+   {
+    "t": 1.02,
+    "box": {
+     "x": 72.44,
+     "y": 14.22,
+     "w": 22.44,
+     "h": 10.19
+    },
+    "text": "En Inicio, tocá Nuevo contrato.",
+    "kind": "tap"
+   },
+   {
+    "t": 3.54,
+    "box": {
+     "x": 8.21,
+     "y": 13.74,
+     "w": 40.91,
+     "h": 2.37
+    },
+    "text": "Elegí la propiedad que se alquila.",
+    "kind": "tap"
+   },
+   {
+    "t": 5.96,
+    "box": {
+     "x": 4.1,
+     "y": 40.76,
+     "w": 91.79,
+     "h": 2.25
+    },
+    "text": "Tocá Carpeta 9: está disponible.",
+    "kind": "tap"
+   },
+   {
+    "t": 8.48,
+    "box": {
+     "x": 4.1,
+     "y": 26.54,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Inquilino: nombre y apellido.",
+    "kind": "type"
+   },
+   {
+    "t": 10.885,
+    "box": {
+     "x": 4.1,
+     "y": 36.73,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "DNI o CUIT.",
+    "kind": "type"
+   },
+   {
+    "t": 13.215,
+    "box": {
+     "x": 4.1,
+     "y": 46.92,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Teléfono: con esto andan los botones de WhatsApp y llamar.",
+    "kind": "type"
+   },
+   {
+    "t": 15.62,
+    "box": {
+     "x": 4.1,
+     "y": 81.75,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Fecha de fin: tocala para abrir el calendario. La de inicio ya viene con la de hoy.",
+    "kind": "tap"
+   },
+   {
+    "t": 20.22,
+    "box": {
+     "x": 67.91,
+     "y": 44.72,
+     "w": 11.94,
+     "h": 5.52
+    },
+    "text": "Con las flechas se pasa de mes. Tocá el día en que termina.",
+    "kind": "tap"
+   },
+   {
+    "t": 24.04,
+    "box": {
+     "x": 35.03,
+     "y": 52.67,
+     "w": 6.34,
+     "h": 2.25
+    },
+    "text": "El alquiler vino del precio publicado. Elegí cómo se ajusta: por IPC, cada 3 meses.",
+    "kind": "tap"
+   },
+   {
+    "t": 26.39,
+    "box": {
+     "x": 4.1,
+     "y": 86.73,
+     "w": 91.79,
+     "h": 5.69
+    },
+    "text": "Día de vencimiento: hasta qué día de cada mes tiene para pagar.",
+    "kind": "type"
+   },
+   {
+    "t": 28.615,
+    "box": {
+     "x": 34.73,
+     "y": 80.69,
+     "w": 30.54,
+     "h": 2.37
+    },
+    "text": "Tocá Crear contrato.",
+    "kind": "tap"
+   },
+   {
+    "t": 31.435,
+    "box": null,
+    "text": "¡Listo! Carpeta 9 ya figura alquilada a Ana Gómez, y la app creó sola el cargo del mes.",
+    "kind": "done"
+   }
+  ]
+ },
+ "cobro": {
+  "duration": 22.8,
+  "steps": [
+   {
+    "t": 1.02,
+    "box": {
+     "x": 5.13,
+     "y": 14.22,
+     "w": 22.44,
+     "h": 10.19
+    },
+    "text": "En Inicio, tocá Registrar cobro.",
+    "kind": "tap"
+   },
+   {
+    "t": 3.54,
+    "box": {
+     "x": 8.21,
+     "y": 13.74,
+     "w": 34.74,
+     "h": 2.37
+    },
+    "text": "Elegí de quién es el cobro.",
+    "kind": "tap"
+   },
+   {
+    "t": 5.96,
+    "box": {
+     "x": 4.1,
+     "y": 62.8,
+     "w": 91.79,
+     "h": 2.25
+    },
+    "text": "Tocá Carpeta 64 (Diego Herrera).",
+    "kind": "tap"
+   },
+   {
+    "t": 9.38,
+    "box": {
+     "x": 17.18,
+     "y": 37.09,
+     "w": 30.88,
+     "h": 2.25
+    },
+    "text": "Arriba ves cuánto debe. Elegí qué te pagó: el saldo total, solo lo vencido u otro importe.",
+    "kind": "tap"
+   },
+   {
+    "t": 11.73,
+    "box": {
+     "x": 7.69,
+     "y": 67.83,
+     "w": 14.9,
+     "h": 2.25
+    },
+    "text": "Elegí el medio de pago.",
+    "kind": "tap"
+   },
+   {
+    "t": 14.08,
+    "box": {
+     "x": 39.61,
+     "y": 90.05,
+     "w": 20.79,
+     "h": 2.37
+    },
+    "text": "Tocá Continuar.",
+    "kind": "tap"
+   },
+   {
+    "t": 17.8,
+    "box": {
+     "x": 32.68,
+     "y": 76.9,
+     "w": 34.63,
+     "h": 2.37
+    },
+    "text": "Revisá a qué cargos se aplica y tocá Confirmar cobro.",
+    "kind": "tap"
+   },
+   {
+    "t": 20.32,
+    "box": null,
+    "text": "¡Listo! Desde acá podés mandarle el recibo por WhatsApp.",
+    "kind": "done"
+   }
+  ]
+ }
+}
