@@ -21,7 +21,7 @@ import { Animated, Dimensions, Easing, PanResponder, Platform, View } from 'reac
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
 // Orden de las pestañas, de izquierda a derecha.
-export const TAB_ORDER = ['DashboardTab', 'RentalsTab', 'PaymentsTab', 'MenuTab'];
+const TAB_ORDER = ['DashboardTab', 'RentalsTab', 'PaymentsTab', 'MenuTab'];
 
 // Para cambiar de pestaña: correr el dedo una cuarta parte del ancho, o soltarlo con envión.
 const SWITCH_SHARE = 0.25;
@@ -65,6 +65,7 @@ export function tabSlide(tab: string, tabs: any) {
     },
   };
 }
+
 // Después de soltar, el corrimiento vuelve a cero a la par de la animación de la pestaña nueva.
 let finishPending = false;
 const finishDrag = () => {

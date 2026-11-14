@@ -36,14 +36,14 @@ export const SHORTCUT_CATALOG: ShortcutInfo[] = [
   { id: 'historial', label: 'Historial por mes', detail: 'Cuánto se cobró cada mes', icon: 'time-outline' },
 ];
 
-export const DEFAULT_ORDER: ShortcutId[] = SHORTCUT_CATALOG.map((s) => s.id);
+const DEFAULT_ORDER: ShortcutId[] = SHORTCUT_CATALOG.map((s) => s.id);
 
 const STORAGE_KEY = 'locatia_accesos_directos';
 const KNOWN = new Set<string>(DEFAULT_ORDER);
 
 // Un orden completo: lo guardado (sin repetidos ni desconocidos) y después lo que falte, en el
 // orden de entrada. Así una función nueva aparece sola al final.
-export function completeOrder(saved: readonly string[]): ShortcutId[] {
+function completeOrder(saved: readonly string[]): ShortcutId[] {
   const kept = [...new Set(saved)].filter((id): id is ShortcutId => KNOWN.has(id));
   return [...kept, ...DEFAULT_ORDER.filter((id) => !kept.includes(id))];
 }

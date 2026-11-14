@@ -67,7 +67,6 @@ export default function DashboardScreen() {
   const isEmpty = properties.length === 0 && tenants.length === 0 && contracts.length === 0 && payments.length === 0;
 
   const period = today.slice(0, 7);
-  const monthName = formatPeriod(period).split(' ')[0];
   const summaries = properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
   const openProperty = (propertyId: string) => openInTab(navigation, 'RentalsTab', 'PropertyDetail', { propertyId });
 

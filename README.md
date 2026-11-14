@@ -47,11 +47,14 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 ## Desarrollo
 
 ```bash
-npm install
-npm run web       # versión web
-npm run android   # emulador o celular Android
-npx tsc --noEmit  # chequeo de tipos
+npm install        # también aplica los parches de patches/ (patch-package)
+npm run web        # versión web
+npm run android    # emulador o celular Android
+npm run typecheck  # chequeo de tipos
+npm test           # pruebas de las cuentas (reparto de cobros, saldos, ajustes)
 ```
+
+- **Parches**: `patches/@react-navigation+bottom-tabs…` hace que en Android las pestañas vecinas queden dibujadas a los costados (si no, al deslizar se ve gris). Se aplica solo en `npm install`; al actualizar `@react-navigation/bottom-tabs`, revisar que siga aplicando.
 
 ## Estructura
 
