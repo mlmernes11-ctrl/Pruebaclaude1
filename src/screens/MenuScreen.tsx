@@ -22,6 +22,8 @@ import { makeStyles, THEME_PREFERENCE_LABEL, ThemePreference, useTheme } from '.
 import { fontSize, radius, spacing } from '../theme';
 import { openWhatsapp } from '../utils/whatsapp';
 import { pendingImportsCount } from './imports/importsLogic';
+import { trackAction } from '../lib/usage';
+import { useAdmin } from '../context/AdminContext';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -44,6 +46,7 @@ export default function MenuScreen() {
   const { mode, properties, tenants, contracts, payments, loadSampleData, clearAllData, chargeViews } = useData();
   const pendingImports = pendingImportsCount(chargeViews);
   const { email, signOut, deleteAccount } = useAuth();
+  const { isAdmin, setAdminView } = useAdmin();
   const { rate, source } = useExchangeRate();
   const [deleting, setDeleting] = useState(false);
   const isEmpty =
@@ -153,13 +156,19 @@ export default function MenuScreen() {
               title="Ayuda"
               subtitle="Manual de uso, paso a paso"
               icon="help-circle-outline"
-              onPress={() => Linking.openURL(MANUAL_URL).catch(() => undefined)}
+              onPress={() => {
+                trackAction('abrir_manual');
+                Linking.openURL(MANUAL_URL).catch(() => undefined);
+              }}
             />
             <ListRow
               title="Enviar comentarios"
               subtitle="Ideas, dudas o un problema, por WhatsApp"
               icon="chatbubbles-outline"
-              onPress={() => openWhatsapp(SUPPORT_WHATSAPP, SUPPORT_TEXT)}
+              onPress={() => {
+                trackAction('enviar_comentarios');
+                openWhatsapp(SUPPORT_WHATSAPP, SUPPORT_TEXT);
+              }}
             />
             <ListRow
               title="Política de privacidad"
@@ -167,6 +176,12 @@ export default function MenuScreen() {
               onPress={() => Linking.openURL(PRIVACY_URL).catch(() => undefined)}
             />
           </ListSection>
+
+          {isAdmin ? (
+            <ListSection footer="Solo vos ves esta opción.">
+              <ListRow title="Volver al modo admin" icon="stats-chart-outline" onPress={() => setAdminView(true)} />
+            </ListSection>
+          ) : null}
 
           {mode === 'remote' ? (
             <ListSection>

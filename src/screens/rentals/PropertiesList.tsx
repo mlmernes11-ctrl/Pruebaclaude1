@@ -23,6 +23,7 @@ import { contractEndBadge, PropertySummary } from '../../utils/propertySummary';
 import { collectionBadge } from '../../utils/status';
 import { compareTitles, initials } from '../../utils/text';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
+import { trackAction } from '../../lib/usage';
 
 // ── Filtros y orden ───────────────────────────────────────────────────
 
@@ -230,7 +231,10 @@ export default function PropertiesList({
                     </Text>
                     <TouchableOpacity
                       style={[styles.contact, { backgroundColor: colors.successMuted }]}
-                      onPress={() => openWhatsapp(phone, whatsappText(s))}
+                      onPress={() => {
+                        trackAction('recordar_deuda');
+                        openWhatsapp(phone, whatsappText(s));
+                      }}
                       accessibilityRole="button"
                       accessibilityLabel={
                         s.collection === 'deuda' ? `Recordarle la deuda a ${tenant.name} por WhatsApp` : `Escribirle a ${tenant.name} por WhatsApp`

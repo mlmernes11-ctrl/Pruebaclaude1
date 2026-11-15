@@ -50,6 +50,10 @@ export const lightColors = {
   onHeader: '#FFFFFF',
   onHeaderMuted: '#DCE8FA',
   headerChip: 'rgba(255, 255, 255, 0.16)',
+  // Modo admin: franja azul noche y la etiqueta ADMIN en ladrillo claro.
+  adminHeader: '#10213F',
+  adminBadge: '#F2B48A',
+  onAdminBadge: '#10213F',
   // Texto sobre botones rellenos.
   white: '#FFFFFF',
   // Texto sobre un color fuerte usado de fondo.
@@ -99,6 +103,9 @@ export const darkColors: Palette = {
   onHeader: '#FFFFFF',
   onHeaderMuted: '#A9C1E3',
   headerChip: 'rgba(255, 255, 255, 0.12)',
+  adminHeader: '#0A1426',
+  adminBadge: '#E8A272',
+  onAdminBadge: '#10213F',
   white: '#FFFFFF',
   onAccent: '#000000',
   backdrop: 'rgba(0, 0, 0, 0.6)',

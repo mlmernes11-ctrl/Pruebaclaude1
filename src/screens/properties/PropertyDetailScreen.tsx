@@ -25,6 +25,7 @@ import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from 
 import { isOutstanding } from '../../utils/ledger';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
 import { plural } from '../../utils/text';
+import { trackAction } from '../../lib/usage';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -198,7 +199,10 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
             <Button
               label="Recordar deuda por WhatsApp"
               variant="secondary"
-              onPress={() => openWhatsapp(tenant?.phone, debtReminderText(tenant, property, owed))}
+              onPress={() => {
+                trackAction('recordar_deuda');
+                openWhatsapp(tenant?.phone, debtReminderText(tenant, property, owed));
+              }}
               style={styles.secondaryAction}
             />
           ) : null}

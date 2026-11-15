@@ -12,11 +12,15 @@ import DialogHost from './src/components/DialogHost';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import SyncBanner from './src/components/SyncBanner';
 import UpdatePrompt from './src/components/UpdatePrompt';
+import { useEffect } from 'react';
+import { AdminProvider, useAdmin } from './src/context/AdminContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
 import { ExchangeRateProvider } from './src/context/ExchangeRateContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { installErrorReporting } from './src/lib/errorReporting';
+import { setUsageContext } from './src/lib/usage';
+import AdminNavigator from './src/navigation/AdminNavigator';
 import RootNavigator from './src/navigation/RootNavigator';
 import AccessScreen from './src/screens/auth/AccessScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -31,12 +35,14 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <ErrorBoundary>
-              <Gate />
-            </ErrorBoundary>
-            <DialogHost />
-            <UpdatePrompt />
-            <ThemedStatusBar />
+            <AdminProvider>
+              <ErrorBoundary>
+                <Gate />
+              </ErrorBoundary>
+              <DialogHost />
+              <UpdatePrompt />
+              <ThemedStatusBar />
+            </AdminProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
@@ -45,8 +51,18 @@ export default function App() {
 }
 
 // Con sesión → los datos de esa cuenta en Supabase; modo demo → datos de ejemplo del celular; si no, pantalla de ingreso.
+// La cuenta admin ve primero el modo admin (y la app de siempre queda detrás, con sus datos).
 function Gate() {
   const { status, userId, recovering } = useAuth();
+  const { isAdmin, adminView } = useAdmin();
+
+  // Uso de la app (para el modo admin): modo de ejemplo o cuenta; la cuenta admin no se anota.
+  useEffect(() => {
+    if (status === 'demo') setUsageContext({ mode: 'demo' });
+    else if (status === 'signedIn' && !isAdmin) setUsageContext({ mode: 'cuenta', userId });
+    else setUsageContext(undefined);
+  }, [status, userId, isAdmin]);
+
   if (status === 'signedOut') return <LoginScreen />;
   if (recovering) return <NewPasswordScreen />;
   if (status === 'demo' || status === 'signedIn') {
@@ -55,8 +71,8 @@ function Gate() {
     return (
       <DataProvider key={mode === 'demo' ? 'demo' : userId} mode={mode} userId={userId}>
         <ExchangeRateProvider key={mode === 'demo' ? 'demo' : userId} mode={mode} userId={userId}>
-          <RootNavigator />
-          <SyncBanner />
+          {adminView ? <AdminNavigator /> : <RootNavigator />}
+          {adminView ? null : <SyncBanner />}
         </ExchangeRateProvider>
       </DataProvider>
     );

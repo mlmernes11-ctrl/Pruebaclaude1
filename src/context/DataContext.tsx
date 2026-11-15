@@ -29,6 +29,7 @@ import { todayISO } from '../utils/format';
 import { generateId } from '../utils/id';
 import { applyCredits, buildLedger, ChargeView, viewCharge } from '../utils/ledger';
 import { buildSampleData } from '../utils/sampleData';
+import { trackAction } from '../lib/usage';
 
 // ── Tipos y constantes ───────────────────────────────────────────────
 
@@ -380,6 +381,7 @@ export function DataProvider({
 
   const addProperty = useCallback<DataContextValue['addProperty']>((values) => {
     const property: Property = { ...values, ...newRecordFields() };
+    trackAction('nueva_propiedad');
     setData((prev) => ({ ...prev, properties: [property, ...prev.properties] }));
     return property;
   }, []);
@@ -413,6 +415,7 @@ export function DataProvider({
 
   const addTenant = useCallback<DataContextValue['addTenant']>((values) => {
     const tenant: Tenant = { ...values, ...newRecordFields() };
+    trackAction('nuevo_inquilino');
     setData((prev) => ({ ...prev, tenants: [tenant, ...prev.tenants] }));
     return tenant;
   }, []);
@@ -436,6 +439,7 @@ export function DataProvider({
 
   const addContract = useCallback<DataContextValue['addContract']>((values) => {
     const contract: Contract = { ...values, ...newRecordFields() };
+    trackAction('nuevo_contrato');
     setData((prev) => {
       const contracts = [contract, ...prev.contracts];
       return { ...prev, contracts, properties: syncPropertyOccupancy(prev.properties, contracts, [contract.propertyId]) };
@@ -477,6 +481,7 @@ export function DataProvider({
 
   const addCharge = useCallback<DataContextValue['addCharge']>((values) => {
     const charge: Charge = { ...values, ...newRecordFields() };
+    trackAction('agregar_cargo');
     setData((prev) => ({ ...prev, charges: [...prev.charges, charge] }));
     return charge;
   }, []);
@@ -504,6 +509,7 @@ export function DataProvider({
 
   const addPayment = useCallback<DataContextValue['addPayment']>((values) => {
     const payment: Payment = { ...values, ...newRecordFields() };
+    trackAction('registrar_cobro');
     setData((prev) => ({ ...prev, payments: [payment, ...prev.payments] }));
     return payment;
   }, []);
@@ -516,7 +522,9 @@ export function DataProvider({
 
   // Solo existen en modo demo: una cuenta real nunca se reemplaza ni se borra entera.
   const loadSampleData = useCallback(() => {
-    if (mode === 'demo') setData(buildSampleData());
+    if (mode !== 'demo') return;
+    setData(buildSampleData());
+    trackAction('cargar_ejemplo');
   }, [mode]);
   const clearAllData = useCallback(() => {
     if (mode === 'demo') setData(EMPTY_DATA);

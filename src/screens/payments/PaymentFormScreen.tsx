@@ -38,6 +38,7 @@ import { openWhatsapp, receiptText } from '../../utils/whatsapp';
 import { AmountOption, debtOf, planCollection, toInput } from './collect/collectMath';
 import PesosConverter, { AmountRow } from './collect/PesosConverter';
 import { useFormGuard } from '../../navigation/formScreen';
+import { trackAction } from '../../lib/usage';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -294,12 +295,13 @@ export default function PaymentFormScreen() {
           </View>
           <Button
             label="Enviar recibo por WhatsApp"
-            onPress={() =>
+            onPress={() => {
+              trackAction('mandar_comprobante');
               openWhatsapp(
                 tenant?.phone,
                 receiptText(created, tenant, property, (id) => charges.find((c) => c.id === id)?.period, stillOwed),
-              )
-            }
+              );
+            }}
           />
           <Button label="Listo" variant="secondary" onPress={() => navigation.goBack()} style={styles.secondButton} />
         </ScrollView>

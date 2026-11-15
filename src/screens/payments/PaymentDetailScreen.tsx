@@ -20,6 +20,7 @@ import { formatDate, formatMoney, formatPeriodShort } from '../../utils/format';
 import { isOutstanding, unallocatedAmount } from '../../utils/ledger';
 import { smartGoBack } from '../../utils/navigation';
 import { openWhatsapp, receiptText } from '../../utils/whatsapp';
+import { trackAction } from '../../lib/usage';
 
 // ── Pantalla ──────────────────────────────────────────────────────────
 
@@ -124,7 +125,8 @@ export default function PaymentDetailScreen() {
           <ListRow
             title="Enviar recibo por WhatsApp"
             icon="logo-whatsapp"
-            onPress={() =>
+            onPress={() => {
+              trackAction('mandar_comprobante');
               openWhatsapp(
                 tenant?.phone,
                 receiptText(
@@ -134,8 +136,8 @@ export default function PaymentDetailScreen() {
                   (chargeId) => charges.find((c) => c.id === chargeId)?.period,
                   contract ? chargeViewsForContract(contract.id).filter(isOutstanding) : [],
                 ),
-              )
-            }
+              );
+            }}
           />
         </ListSection>
 

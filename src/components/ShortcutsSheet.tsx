@@ -29,6 +29,7 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { fontSize, radius, spacing } from '../theme';
 import { SHORTCUT_CATALOG, ShortcutId, ShortcutInfo, SHORTCUTS_ON_HOME } from '../utils/shortcuts';
+import { trackAction } from '../lib/usage';
 
 const INFO = new Map<ShortcutId, ShortcutInfo>(SHORTCUT_CATALOG.map((s) => [s.id, s]));
 
@@ -124,6 +125,7 @@ export default function ShortcutsSheet({
   const save = (next: ShortcutId[]) => {
     setDraft(next);
     latest.current.onSave(next);
+    trackAction('ordenar_accesos');
   };
 
   const open = (id: ShortcutId) => {

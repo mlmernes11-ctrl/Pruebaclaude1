@@ -7,6 +7,7 @@
 
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { useAdmin } from '../context/AdminContext';
 import { useAuth } from '../context/AuthContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
@@ -23,12 +24,14 @@ export default function Sidebar({ state, descriptors, navigation }: BottomTabBar
   const { colors } = useTheme();
   const { rate, source } = useExchangeRate();
   const { email, status } = useAuth();
+  const { adminView } = useAdmin();
 
   return (
     <View style={styles.sidebar} accessibilityRole="tablist">
       <View style={styles.brand}>
         <Image source={BRAND_TILE} style={styles.logo} accessibilityIgnoresInvertColors />
         <Text style={styles.brandText} accessibilityLabel="Locatia">locatia</Text>
+        {adminView ? <Text style={styles.adminBadge}>ADMIN</Text> : null}
       </View>
 
       {state.routes.map((route, index) => {
@@ -87,6 +90,17 @@ const useStyles = makeStyles((colors) => ({
   logo: {
     width: 32,
     height: 32,
+  },
+  adminBadge: {
+    fontSize: fontSize.xs,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.onAdminBadge,
+    backgroundColor: colors.adminBadge,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
   brandText: {
     fontSize: 22,

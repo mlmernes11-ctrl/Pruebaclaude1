@@ -10,6 +10,8 @@ App (Expo + React Native + TypeScript + Supabase) para administrar una cartera d
 - **Menú**: cuenta, «Actualización masiva», cotización del dólar, apariencia (Sistema / Claro / Oscuro), privacidad, cerrar sesión y eliminar cuenta.
 - **Actualización masiva** (Menú; aviso en Inicio cuando falta revisar): los importes del mes de expensas, servicios y alquiler, propiedad por propiedad, con «Igual que el mes anterior» o «Mantener el importe anterior en las pendientes».
 
+- **Modo admin** (solo para la cuenta cargada en la tabla `service_admins` de Supabase): con esa cuenta la app abre en un inicio aparte para mirar el uso de todas las cuentas: Resumen (cuentas activas, modo de ejemplo, cobros, minutos de uso), Cuentas (con la ficha de cada una: correo, cómo ingresa, alta, último ingreso, cuánto cargó y qué hace), Uso (de la prueba al primer cobro, acciones, plataformas, horarios y pantallas) y Menú (pasar a «Ver Locatia como usuario» y volver desde el Menú de siempre). La app anota el uso en `usage_events` (`src/lib/usage.ts`), sin nombres ni montos; solo el admin lo lee, con las funciones `admin_*`.
+
 ## Vocabulario
 
 Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) · Recibo · Cuenta corriente · Saldo · Saldo a favor · Vencido / A vencer / Pagado / Pago parcial · Contrato Vigente / Finalizado / Rescindido. «Liquidación» queda reservada para la futura rendición a propietarios.

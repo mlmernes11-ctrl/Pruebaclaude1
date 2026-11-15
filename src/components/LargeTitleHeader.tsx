@@ -23,6 +23,7 @@ export default function LargeTitleHeader({
   addLabel = 'Agregar',
   middle,
   overlap = 0,
+  admin,
 }: {
   title: string;
   // Texto chico arriba a la izquierda (por ejemplo, la fecha del día).
@@ -37,12 +38,14 @@ export default function LargeTitleHeader({
   middle?: React.ReactNode;
   // Alto extra abajo para que lo que sigue se monte sobre la franja (los accesos del Inicio).
   overlap?: number;
+  // Modo admin: franja azul noche con la etiqueta ADMIN al lado del título.
+  admin?: boolean;
 }) {
   const styles = useStyles();
   // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar cobro").
   const desktop = useIsDesktop();
   return (
-    <View style={[styles.band, desktop && styles.bandDesktop, overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null]}>
+    <View style={[styles.band, admin && styles.bandAdmin, desktop && styles.bandDesktop, overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null]}>
       {eyebrow || right ? (
         <View style={styles.topRow}>
           <Text style={styles.eyebrow} numberOfLines={1}>
@@ -55,6 +58,8 @@ export default function LargeTitleHeader({
         <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
           {title}
         </Text>
+        {admin ? <Text style={styles.adminBadge}>ADMIN</Text> : null}
+        {admin ? <View style={styles.spacer} /> : null}
         {middle}
         {caption ? (
           <TouchableOpacity onPress={onCaptionPress} disabled={!onCaptionPress} hitSlop={8}>
@@ -109,6 +114,23 @@ const useStyles = makeStyles((colors) => ({
     paddingBottom: spacing.lg,
     marginBottom: spacing.lg,
     gap: spacing.xs,
+  },
+  bandAdmin: {
+    backgroundColor: colors.adminHeader,
+  },
+  adminBadge: {
+    fontSize: fontSize.sm,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.onAdminBadge,
+    backgroundColor: colors.adminBadge,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+  },
+  spacer: {
+    flex: 1,
   },
   // En pantalla grande la franja va dentro de la columna, con las puntas redondeadas.
   bandDesktop: {

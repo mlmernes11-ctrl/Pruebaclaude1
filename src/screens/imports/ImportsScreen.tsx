@@ -28,6 +28,7 @@ import { roundMoney } from '../../utils/ledger';
 import { plural } from '../../utils/text';
 import { ImportRow, importRows, isPendingImport, percentChange, planImportChange } from './importsLogic';
 import { useFormGuard } from '../../navigation/formScreen';
+import { trackAction } from '../../lib/usage';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -155,6 +156,7 @@ export default function ImportsScreen() {
   const save = () => {
     const decided = rows.filter((r) => drafts[r.view.charge.id]);
     if (!decided.length) return;
+    trackAction('actualizacion_masiva');
     const changed = decided.filter((r) => drafts[r.view.charge.id].kind === 'nuevo');
     const kept = decided.length - changed.length;
     const withPayments = changed.filter((r) => {

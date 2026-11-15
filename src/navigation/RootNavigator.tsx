@@ -19,6 +19,7 @@ import { armBrowserHistory, markBrowserHistoryPopped, runBackHandler } from './b
 import { confirmLeaveForm, formScreen, formScreenOptions, hasUnsavedForm } from './formScreen';
 import { resetOnTabLeave } from './resetOnTabLeave';
 import { tabSlide } from './swipeTabs';
+import { trackScreen } from '../lib/usage';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRateScreen from '../screens/ExchangeRateScreen';
@@ -216,6 +217,14 @@ function armBrowserBack() {
   if (navigationRef.canGoBack()) armBrowserHistory();
 }
 
+const currentRouteName = () => (navigationRef.getCurrentRoute() as { name?: string } | undefined)?.name;
+
+// Cada cambio de pantalla: el botón atrás del navegador y la anotación de uso (ver usage).
+function onNavigationChange() {
+  armBrowserBack();
+  trackScreen(currentRouteName());
+}
+
 function useBrowserBackButton() {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -270,7 +279,12 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} onStateChange={armBrowserBack} theme={navigationTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => trackScreen(currentRouteName())}
+      onStateChange={onNavigationChange}
+      theme={navigationTheme}
+    >
       <Tab.Navigator
         backBehavior="history"
         // En el celular las pestañas de al lado quedan armadas, así asoman al deslizar.
