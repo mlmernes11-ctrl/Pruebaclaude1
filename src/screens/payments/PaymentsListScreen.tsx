@@ -2,7 +2,8 @@
 // Pantalla: Cobros
 // ---------------------------------------------------------------------
 // Lo importante primero, en una sola lista: lo vencido, lo que está por vencer y lo cobrado
-// este mes, cada bloque con su total. Arriba solo el buscador (busca propiedad, inquilino,
+// este mes, cada bloque con su total. En el celular, lo vencido y lo que está por vencer van
+// agrupados por propiedad, en una fila que se despliega (ver ChargeGroupRow). Arriba solo el buscador (busca propiedad, inquilino,
 // importe, mes…) y "Filtrar", que abre lo demás: ver todos los cargos o todos los cobros,
 // por estado o por mes, y el orden. Abajo, el historial por mes.
 // Otras pantallas la abren ya filtrada por propiedad (se ve como una etiqueta que se puede quitar).
@@ -47,6 +48,9 @@ import { matchRow, SearchField, searchWords } from '../../utils/search';
 import { CHARGE_STATUS_DOT, CHARGE_STATUS_LABEL, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { capitalize, compareTitles, plural } from '../../utils/text';
 import { keepSwipeInside } from '../../navigation/swipeTabs';
+import { trackAction } from '../../lib/usage';
+import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
+import ChargeGroupRow, { ChargeGroup, groupByContract } from './ChargeGroupRow';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -128,6 +132,8 @@ export default function PaymentsListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [propertyId, setPropertyId] = useState<string>();
   const [query, setQuery] = useState('');
+  // La fila agrupada que está abierta (una sola por vez).
+  const [openGroup, setOpenGroup] = useState<string>();
   const words = useMemo(() => searchWords(query), [query]);
 
   // Otras pantallas la abren ya filtrada (por ejemplo, los cobros de una propiedad desde su ficha).
@@ -271,11 +277,49 @@ export default function PaymentsListScreen() {
   };
   const openCharge = (id: string) => navigation.navigate('ChargeForm', { chargeId: id });
   const openPayment = (id: string) => navigation.navigate('PaymentDetail', { paymentId: id });
+  const collect = (contractId: string) => navigation.navigate('PaymentForm', { contractId });
+  const remind = (group: ChargeGroup) => {
+    const contract = getContractById(group.contractId);
+    const tenant = getTenantById(contract?.tenantId);
+    trackAction('recordar_deuda');
+    openWhatsapp(tenant?.phone?.trim(), debtReminderText(tenant, getPropertyById(contract?.propertyId), group.items));
+  };
   const activeFilters = Number(mode !== 'resumen') + Number(sort !== 'reciente');
 
   // — Partes de la lista —
-  const chargeList = (list: typeof searchedCharges) =>
-    desktop ? (
+  // En el celular, sin buscar: una fila por propiedad que se despliega.
+  const groupedList = (list: typeof searchedCharges, block: string, tone: 'danger' | 'warning') => {
+    const groups = groupByContract(
+      list.map(({ item }) => item),
+      block,
+      (contractId) => describeContract(contractId).property,
+    );
+    return (
+      <View style={styles.groups}>
+        {groups.map((group, index) => (
+          <ChargeGroupRow
+            key={group.key}
+            group={group}
+            tone={tone}
+            open={openGroup === group.key}
+            isFirst={index === 0}
+            isLast={index === groups.length - 1}
+            prevOpen={openGroup === groups[index - 1]?.key}
+            nextOpen={openGroup === groups[index + 1]?.key}
+            onToggle={() => setOpenGroup((current) => (current === group.key ? undefined : group.key))}
+            onOpenCharge={openCharge}
+            onCollect={() => collect(group.contractId)}
+            onRemind={() => remind(group)}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const chargeList = (list: typeof searchedCharges, block?: { name: string; tone: 'danger' | 'warning' }) =>
+    !desktop && block && !words.length ? (
+      groupedList(list, block.name, block.tone)
+    ) : desktop ? (
       <DataTable
         highlight={words}
         columns={CHARGE_COLUMNS}
@@ -393,13 +437,13 @@ export default function PaymentsListScreen() {
         {overdue.length ? (
           <>
             {blockHeader('Vencido', overdue.length, totalsOf(overdue), true)}
-            {chargeList(overdue)}
+            {chargeList(overdue, { name: 'vencido', tone: 'danger' })}
           </>
         ) : null}
         {upcoming.length ? (
           <>
             {blockHeader('A vencer', upcoming.length, totalsOf(upcoming))}
-            {chargeList(upcoming)}
+            {chargeList(upcoming, { name: 'a-vencer', tone: 'warning' })}
           </>
         ) : null}
         {collectedThisMonth.length ? (
@@ -647,6 +691,10 @@ const useStyles = makeStyles((colors) => ({
     fontVariant: ['tabular-nums'],
   },
   total: {
+    marginBottom: spacing.xl,
+  },
+  // Las filas agrupadas por propiedad (cada una es su propia tarjeta, ver ChargeGroupRow).
+  groups: {
     marginBottom: spacing.xl,
   },
 }));
