@@ -213,47 +213,68 @@ export default function ChargeGroupRow({
     [lines, moves],
   );
 
+  // Abre o cierra. Las dos animaciones van por separado (si algo corta la del alto, la de los
+  // íconos sigue), y si igual las corta algo que no es otro abrir/cerrar, terminan en su lugar:
+  // nunca queda a mitad de camino (pasaba en Android).
+  const runId = useRef(0);
   const run = useCallback(
-    (to: 0 | 1) =>
-      Animated.parallel([
-        Animated.timing(t, { toValue: to, duration: DURATION, easing: EASING, useNativeDriver: useNative }),
-        Animated.timing(height, { toValue: to ? contentHeight.current : 0, duration: DURATION, easing: EASING, useNativeDriver: false }),
-      ]).start(),
+    (to: 0 | 1) => {
+      const id = ++runId.current;
+      const settle = (value: Animated.Value, end: () => number) => ({ finished }: { finished: boolean }) => {
+        if (!finished && id === runId.current) value.setValue(end());
+      };
+      Animated.timing(t, { toValue: to, duration: DURATION, easing: EASING, useNativeDriver: useNative }).start(settle(t, () => to));
+      Animated.timing(height, { toValue: to ? contentHeight.current : 0, duration: DURATION, easing: EASING, useNativeDriver: false }).start(
+        settle(height, () => (to ? contentHeight.current : 0)),
+      );
+    },
     [t, height],
   );
 
+  // Solo cuando se abre o se cierra (no en cada dibujo de la lista, que reiniciaba la animación).
+  const latest = useRef({ measure, run });
+  latest.current = { measure, run };
   useEffect(() => {
     if (single) return;
-    if (open) measure(false).then(() => run(1));
+    if (open) latest.current.measure(false).then(() => latest.current.run(1));
     else {
-      run(0);
+      latest.current.run(0);
       setExpanded(undefined);
     }
-  }, [open, single, measure, run]);
+  }, [open, single]);
 
-  // El recibo cambió de alto (se abrió el detalle de un concepto): acompaña sin saltos.
+  // El recibo cambió de alto (se abrió el detalle de un concepto): acompaña sin saltos. Android
+  // avisa a veces sin que haya cambiado nada: entonces no se toca.
   const onContentLayout = (e: LayoutChangeEvent) => {
-    contentHeight.current = e.nativeEvent.layout.height;
+    const next = e.nativeEvent.layout.height;
+    if (Math.abs(next - contentHeight.current) < 1) return;
+    contentHeight.current = next;
     if (!open) return;
-    Animated.timing(height, { toValue: contentHeight.current, duration: 240, easing: EASING, useNativeDriver: false }).start();
+    Animated.timing(height, { toValue: next, duration: 240, easing: EASING, useNativeDriver: false }).start();
     measure(true);
   };
 
-  // — Partes —
-  const fadeOut = t.interpolate({ inputRange: [0, 0.35], outputRange: [1, 0], extrapolate: 'clamp' });
-  const fadeIn = t.interpolate({ inputRange: [0.35, 1], outputRange: [0, 1], extrapolate: 'clamp' });
-  const titleShift = t.interpolate({ inputRange: [0, 1], outputRange: [0, -(stackWidth + GAP)] });
-  const titleScale = t.interpolate({ inputRange: [0, 1], outputRange: [1, TITLE_GROW] });
-  const chevronTurn = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  // — Partes — (armadas una sola vez: rearmarlas en cada dibujo frena la animación en Android)
+  const { fadeOut, fadeIn, titleShift, titleScale, chevronTurn, iconSteps } = useMemo(
+    () => ({
+      fadeOut: t.interpolate({ inputRange: [0, 0.35], outputRange: [1, 0], extrapolate: 'clamp' }),
+      fadeIn: t.interpolate({ inputRange: [0.35, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+      titleShift: t.interpolate({ inputRange: [0, 1], outputRange: [0, -(stackWidth + GAP)] }),
+      titleScale: t.interpolate({ inputRange: [0, 1], outputRange: [1, TITLE_GROW] }),
+      chevronTurn: t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }),
+      // Escalonados: cada ícono sale un poquito después del anterior.
+      iconSteps: CONCEPT_ORDER.map((_, i) => {
+        const mine = t.interpolate({ inputRange: [i * 0.1, 0.8 + i * 0.1], outputRange: [0, 1], extrapolate: 'clamp' });
+        return [{ translateX: Animated.multiply(mine, moves[i].x) }, { translateY: Animated.multiply(mine, moves[i].y) }];
+      }),
+    }),
+    [t, moves, stackWidth],
+  );
 
   const stack = (
     <View ref={stackRef} style={[styles.stack, { width: stackWidth }]} collapsable={false}>
       {lines.map((line, i) => {
-        // Escalonados: cada ícono sale un poquito después del anterior.
-        const mine = t.interpolate({ inputRange: [i * 0.1, 0.8 + i * 0.1], outputRange: [0, 1], extrapolate: 'clamp' });
-        const transform = single
-          ? []
-          : [{ translateX: Animated.multiply(mine, moves[i].x) }, { translateY: Animated.multiply(mine, moves[i].y) }];
+        const transform = single ? [] : iconSteps[i];
         return (
           <Animated.View
             key={line.concept}
