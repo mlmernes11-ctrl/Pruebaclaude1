@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------
 // Lo vencido (o lo que está por vencer) de una misma propiedad va en una sola fila: a la
 // izquierda, un ícono por concepto (casa = alquiler, edificio = expensas, rayo = servicios),
-// semi apilados (cada uno tapa un cuarto del anterior); a la derecha, el total por moneda.
+// en círculos encimados (cada uno tapa un 55 % del anterior); a la derecha, el total por moneda.
 //
 // Al tocarla, cada ícono baja a su línea del detalle, el nombre de la propiedad crece un poco y
 // se corre a la izquierda (al lugar que dejan los íconos) y se despliega el recibo: una línea
@@ -37,8 +37,8 @@ const CONCEPT_COUNT = CONCEPT_ORDER.length;
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 const TILE = 30;
-// Cada ícono tapa un 20 % del anterior.
-const STEP = TILE * 0.8;
+// Círculos encimados: cada uno tapa un 55 % del anterior.
+const STEP = TILE * 0.45;
 // La pila ocupa siempre el lugar de tres íconos (los conceptos que hay como mucho), así el nombre
 // de la propiedad empieza en el mismo lugar haya uno, dos o tres.
 const STACK_WIDTH = TILE + (CONCEPT_COUNT - 1) * STEP;
@@ -472,17 +472,19 @@ const useStyles = makeStyles((colors) => ({
   stack: {
     height: TILE,
   },
+  // Cada concepto es un círculo, en la fila y en su línea del recibo (la forma no cambia al bajar).
   tile: {
     width: TILE,
     height: TILE,
-    borderRadius: 9,
+    borderRadius: TILE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // El borde del color de la tarjeta separa cada círculo del de abajo.
   stacked: {
     position: 'absolute',
     top: 0,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   main: {
     flex: 1,
