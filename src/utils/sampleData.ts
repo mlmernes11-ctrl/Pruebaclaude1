@@ -305,7 +305,8 @@ export function buildSampleData(): AppData {
   };
 
   // Cada contrato activo muestra un estado distinto, sea el día del mes que sea.
-  // Al día: 83 y 15. Solo el mes que viene pendiente: 102 y 120. Con deuda: 37 y 64.
+  // Al día: 83. Al día y con el mes que viene por vencer: 102, 120 y 15 (cada uno con varios
+  // conceptos, así «A vencer» en Cobros también se despliega). Con deuda: 37 y 64.
   for (const offset of [-2, -1, 0]) {
     addCharge(contract102, 'alquiler', c102.rentAmount, offset, 'full');
     addCharge(contract102, 'expensas', c102.expensasAmount!, offset, 'full');
@@ -317,8 +318,15 @@ export function buildSampleData(): AppData {
     addCharge(contract120, 'alquiler', c120.rentAmount, offset, 'full');
     addCharge(contract120, 'expensas', c120.expensasAmount!, offset, 'full');
   }
+  // El mes que viene, por vencer: los tres conceptos en 102, alquiler y expensas en 120, y
+  // alquiler y servicios en 15.
   addCharge(contract102, 'alquiler', c102.rentAmount, 1);
+  addCharge(contract102, 'expensas', c102.expensasAmount!, 1);
+  addCharge(contract102, 'servicios', c102.serviciosAmount!, 1);
   addCharge(contract120, 'alquiler', c120.rentAmount, 1);
+  addCharge(contract120, 'expensas', c120.expensasAmount!, 1);
+  addCharge(contract15, 'alquiler', c15.rentAmount, 1);
+  addCharge(contract15, 'servicios', c15.serviciosAmount!, 1);
 
   addCharge(contract37, 'alquiler', c37.rentAmount, -2, 'full', 'Efectivo');
   addCharge(contract37, 'servicios', c37.serviciosAmount!, -2, 'full');
