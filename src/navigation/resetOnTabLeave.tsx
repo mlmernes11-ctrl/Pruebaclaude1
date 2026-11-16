@@ -3,7 +3,8 @@
 // ---------------------------------------------------------------------
 // Al salir de una pestaña, su primera pantalla vuelve a como recién abierta: arriba de todo, sin
 // filtros, búsquedas ni nada elegido. Lo mismo al tocar otra vez la pestaña en la que ya estás.
-// Las pantallas que se abrieron encima se cierran solas (popToTopOnBlur, en RootNavigator).
+// Las pantallas que se abrieron encima también se cierran, con la pestaña ya fuera de la vista
+// (en el celular; en la computadora lo hace popToTopOnBlur, en RootNavigator).
 // Lo que llega de otra pantalla (por ejemplo, Inicio abre Alquileres con las vencidas) se usa
 // esa vez y se borra al salir, para que la próxima vez la pestaña abra sin filtro.
 // =====================================================================
@@ -33,6 +34,8 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
       const tabs = navigation.getParent();
       if (!tabs) return undefined;
       const reset = () => {
+        // Cierra las pantallas abiertas encima (una ficha, un formulario ya guardado…).
+        if ((navigation.getState?.()?.index ?? 0) > 0) navigation.popToTop();
         if (paramKeys.length) navigation.setParams(Object.fromEntries(paramKeys.map((key) => [key, undefined])));
         setGeneration((g) => g + 1);
       };

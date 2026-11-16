@@ -305,8 +305,10 @@ export default function RootNavigator() {
         })}
         screenOptions={({ route }) => ({
           headerShown: false,
-          // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
-          popToTopOnBlur: true,
+          // Al salir de una pestaña se cierran las pantallas que se abrieron en ella. En la
+          // computadora, enseguida; en el celular, cuando la pestaña ya terminó de irse (ver
+          // resetOnTabLeave): cerrarlas en plena animación hacía que la app se cerrara en Android.
+          popToTopOnBlur: desktop,
           // En el celular, las pestañas están una al lado de la otra y la nueva entra de costado
           // (acompaña el deslizar entre pestañas, ver swipeTabs).
           ...(desktop ? { animation: 'none' as const } : { animation: 'shift' as const, ...tabSlide(route.name) }),
