@@ -84,9 +84,10 @@ interface DataContextValue extends AppData {
   addPayment: (data: Omit<Payment, 'id' | 'createdAt'>) => Payment;
   deletePayment: (id: string) => void;
 
-  // Solo en modo demo: cargar los datos de ejemplo o borrar todo.
-  loadSampleData: () => void;
-  clearAllData: () => void;
+  // En modo demo: cargar los datos de ejemplo o borrar todo. Con { account: true } también en
+  // una cuenta real (solo lo ofrece el Menú al admin, para mostrar la app o probarla).
+  loadSampleData: (options?: { account?: boolean }) => void;
+  clearAllData: (options?: { account?: boolean }) => void;
 
   // Búsquedas frecuentes.
   getPropertyById: (id?: string) => Property | undefined;
@@ -520,15 +521,22 @@ export function DataProvider({
 
   // ── Modo demo ──────────────────────────────────────────────────────
 
-  // Solo existen en modo demo: una cuenta real nunca se reemplaza ni se borra entera.
-  const loadSampleData = useCallback(() => {
-    if (mode !== 'demo') return;
-    setData(buildSampleData());
-    trackAction('cargar_ejemplo');
-  }, [mode]);
-  const clearAllData = useCallback(() => {
-    if (mode === 'demo') setData(EMPTY_DATA);
-  }, [mode]);
+  // En modo demo, siempre. Una cuenta real solo se reemplaza o se borra entera si se pide a
+  // propósito (el admin, desde el Menú): los cambios viajan al servidor como cualquier otro.
+  const loadSampleData = useCallback<DataContextValue['loadSampleData']>(
+    (options) => {
+      if (mode !== 'demo' && !options?.account) return;
+      setData(buildSampleData());
+      trackAction('cargar_ejemplo');
+    },
+    [mode],
+  );
+  const clearAllData = useCallback<DataContextValue['clearAllData']>(
+    (options) => {
+      if (mode === 'demo' || options?.account) setData(EMPTY_DATA);
+    },
+    [mode],
+  );
 
   // ── Búsquedas ──────────────────────────────────────────────────────
 

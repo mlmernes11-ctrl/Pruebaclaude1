@@ -77,6 +77,35 @@ export default function MenuScreen() {
     });
   };
 
+  // Admin con su cuenta real: datos de ejemplo para mostrar la app, o dejarla vacía.
+  const handleAccountSamples = () => {
+    if (isEmpty) {
+      loadSampleData({ account: true });
+      return;
+    }
+    showConfirm({
+      title: '¿Cargar datos de ejemplo en tu cuenta?',
+      message:
+        'Reemplaza todo lo que tiene esta cuenta (propiedades, inquilinos, contratos, cargos y cobros) por los datos de ejemplo. ' +
+        'Es una acción permanente e irreversible.',
+      confirmLabel: 'Reemplazar',
+      destructive: true,
+      onConfirm: () => loadSampleData({ account: true }),
+    });
+  };
+
+  const handleAccountClear = () => {
+    showConfirm({
+      title: '¿Borrar todos los datos de tu cuenta?',
+      message:
+        'Se borran todas las propiedades, inquilinos, contratos, cargos y cobros de esta cuenta. La cuenta sigue abierta. ' +
+        'Es una acción permanente e irreversible.',
+      confirmLabel: 'Borrar todo',
+      destructive: true,
+      onConfirm: () => clearAllData({ account: true }),
+    });
+  };
+
   const handleSignOut = () => {
     showConfirm({
       title: '¿Cerrar sesión?',
@@ -183,6 +212,14 @@ export default function MenuScreen() {
             </ListSection>
           ) : null}
 
+          {mode === 'remote' && isAdmin ? (
+            <ListSection header="Datos de ejemplo" footer="Solo lo ves vos, como admin. Cambia los datos de esta cuenta.">
+              <ListRow title="Cargar datos de ejemplo" icon="sparkles-outline" onPress={handleAccountSamples} chevron={false} />
+              {isEmpty ? null : (
+                <ListRow title="Borrar todos los datos" icon="trash-outline" destructive onPress={handleAccountClear} />
+              )}
+            </ListSection>
+          ) : null}
           {mode === 'remote' ? (
             <ListSection>
               <ListRow title="Cerrar sesión" icon="log-out-outline" onPress={handleSignOut} chevron={false} />
