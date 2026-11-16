@@ -33,11 +33,15 @@ export const CONCEPT_ICON: Record<ChargeConcept, keyof typeof Ionicons.glyphMap>
 };
 // Siempre en este orden, así se aprenden rápido.
 const CONCEPT_ORDER: ChargeConcept[] = ['alquiler', 'expensas', 'servicios'];
+const CONCEPT_COUNT = CONCEPT_ORDER.length;
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 const TILE = 30;
-// Cada ícono tapa un cuarto del anterior.
-const STEP = TILE * 0.75;
+// Cada ícono tapa un 20 % del anterior.
+const STEP = TILE * 0.8;
+// La pila ocupa siempre el lugar de tres íconos (los conceptos que hay como mucho), así el nombre
+// de la propiedad empieza en el mismo lugar haya uno, dos o tres.
+const STACK_WIDTH = TILE + (CONCEPT_COUNT - 1) * STEP;
 const GAP = spacing.md;
 // El nombre crece un poco al abrir.
 const TITLE_GROW = 1.12;
@@ -150,7 +154,7 @@ export default function ChargeGroupRow({
   const lines = useMemo(() => conceptLines(group.items), [group.items]);
   const totals = useMemo(() => formatTotals(totalsOf(group.items)), [group.items]);
   const single = group.items.length === 1 ? group.items[0] : undefined;
-  const stackWidth = TILE + (lines.length - 1) * STEP;
+  const stackWidth = STACK_WIDTH;
 
   // t: 0 cerrada → 1 abierta (íconos, nombre, textos). height: alto del recibo (no puede ir por el
   // motor nativo, por eso va aparte, con la misma duración).
