@@ -143,8 +143,8 @@ export default function ExchangeRateScreen() {
           label="Pesos por dólar"
           value={manualInput}
           onChangeText={setManualInput}
-          placeholder="Ej: 1250"
-          keyboardType="numeric"
+          placeholder="Ej: 1.250"
+          money="ARS"
         />
         <Button label="Usar este valor" onPress={handleSaveManual} />
 

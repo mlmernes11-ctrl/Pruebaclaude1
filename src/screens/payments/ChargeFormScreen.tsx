@@ -274,11 +274,11 @@ export default function ChargeFormScreen() {
           <OptionChips label="Moneda" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         ) : null}
         <FormField
-          label={`Importe del cargo (${CURRENCY_SYMBOL[currency]})`}
+          label="Importe del cargo"
           value={amount}
           onChangeText={setAmount}
           placeholder="0"
-          keyboardType="numeric"
+          money={currency}
           required
         />
         <FormField label="Notas" value={notes} onChangeText={setNotes} placeholder="Información adicional" multiline />

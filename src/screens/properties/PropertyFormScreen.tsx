@@ -133,14 +133,14 @@ export default function PropertyFormScreen() {
           value={expensasAmount}
           onChangeText={setExpensasAmount}
           placeholder="0"
-          keyboardType="numeric"
+          money="ARS"
         />
         <FormField
           label="Servicios mensuales en pesos (opcional)"
           value={serviciosAmount}
           onChangeText={setServiciosAmount}
           placeholder="0"
-          keyboardType="numeric"
+          money="ARS"
         />
 
         <View style={styles.switchRow}>
@@ -174,11 +174,11 @@ export default function PropertyFormScreen() {
           <>
             <OptionChips label="Moneda del precio publicado" options={CURRENCY_OPTIONS} value={rentCurrency} onChange={setRentCurrency} />
             <FormField
-              label={`Precio publicado (${CURRENCY_SYMBOL[rentCurrency]}, opcional)`}
+              label="Precio publicado (opcional)"
               value={rentAmount}
               onChangeText={setRentAmount}
               placeholder="Lo que se pide al publicarla"
-              keyboardType="numeric"
+              money={rentCurrency}
             />
             <FormField label="Ambientes" value={rooms} onChangeText={setRooms} placeholder="Ej: 3" keyboardType="number-pad" />
             <FormField label="Baños" value={bathrooms} onChangeText={setBathrooms} placeholder="Ej: 2" keyboardType="number-pad" />

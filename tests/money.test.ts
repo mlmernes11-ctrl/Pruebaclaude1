@@ -14,7 +14,7 @@ import { ImportRow, planImportChange } from '../src/screens/imports/importsLogic
 import { Charge, Contract, Payment, Property } from '../src/types';
 import { lastPassedAdjustmentPeriod, nextAdjustmentPeriod } from '../src/utils/adjustments';
 import { buildMissingCharges } from '../src/utils/chargeGeneration';
-import { addMonthsToPeriod, currentPeriod } from '../src/utils/format';
+import { addMonthsToPeriod, amountDisplay, currentPeriod, formatAmountInput, parseAmount } from '../src/utils/format';
 import { allocateAmount, applyCredits, buildLedger, roundMoney, unallocatedAmount, viewCharge } from '../src/utils/ledger';
 
 // ── Datos de prueba ───────────────────────────────────────────────────
@@ -279,5 +279,27 @@ describe('generación de cargos', () => {
 
   it('un contrato finalizado no genera cargos', () => {
     assert.equal(buildMissingCharges([contract({ status: 'finalizado' })], [property], []).length, 0);
+  });
+});
+
+describe('montos mientras se escriben', () => {
+  it('pone los puntos de miles y la coma de los centavos', () => {
+    assert.equal(formatAmountInput('250000'), '250.000');
+    assert.equal(formatAmountInput('1500000'), '1.500.000');
+    assert.equal(formatAmountInput('1.500,5'), '1.500,5');
+    assert.equal(formatAmountInput('1500,567'), '1.500,56');
+    assert.equal(formatAmountInput('$ 80000'), '80.000');
+  });
+  it('al borrar un número reacomoda los puntos', () => {
+    assert.equal(formatAmountInput('250.00'), '25.000');
+    assert.equal(formatAmountInput(''), '');
+  });
+  it('un punto escrito al final es la coma decimal', () => {
+    assert.equal(formatAmountInput('1.500.'), '1.500,');
+  });
+  it('muestra bien un monto guardado y se vuelve a leer igual', () => {
+    assert.equal(amountDisplay('1500.5'), '1.500,5');
+    assert.equal(amountDisplay('380'), '380');
+    for (const n of [380, 250000, 1500000.5, 0.75]) assert.equal(parseAmount(amountDisplay(String(n))), n);
   });
 });

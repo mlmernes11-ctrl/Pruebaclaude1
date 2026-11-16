@@ -41,6 +41,27 @@ export function parseAmount(input: string): number | undefined {
   return Number.isFinite(value) ? value : undefined;
 }
 
+// Mientras se escribe un monto: puntos de miles solos y coma para los centavos (hasta 2).
+// "250000" → "250.000"; "1500,5" → "1.500,5". Un punto escrito al final (en teclados sin
+// coma) se toma como la coma decimal.
+export function formatAmountInput(text: string): string {
+  let t = text.replace(/[^\d.,]/g, '');
+  if (t.endsWith('.') && !t.includes(',')) t = `${t.slice(0, -1)},`;
+  const [intRaw, ...rest] = t.split(',');
+  const digits = intRaw.replace(/\./g, '').replace(/^0+(?=\d)/, '');
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  if (!rest.length) return grouped;
+  const decimals = rest.join('').replace(/\D/g, '').slice(0, 2);
+  return `${grouped || '0'},${decimals}`;
+}
+
+// Cómo se muestra en el campo un monto guardado como texto (por ejemplo "1500.5", que sale de
+// un número, pasa a "1.500,5").
+export function amountDisplay(value: string): string {
+  if (!value) return '';
+  return formatAmountInput(/^\d+\.\d{1,2}$/.test(value) ? value.replace('.', ',') : value);
+}
+
 // ── Totales por moneda ────────────────────────────────────────────────
 
 // Totales separados por moneda: { USD, ARS }.

@@ -13,6 +13,8 @@ import {
 import { fontSize, radius, spacing } from '../theme';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useFormGuard } from '../navigation/formScreen';
+import { Currency } from '../types';
+import { amountDisplay, CURRENCY_SYMBOL, formatAmountInput } from '../utils/format';
 
 // ── Componente ────────────────────────────────────────────────────────
 
@@ -26,6 +28,7 @@ export default function FormField({
   required,
   autoCapitalize,
   secureTextEntry,
+  money,
 }: {
   label: string;
   value: string;
@@ -37,6 +40,8 @@ export default function FormField({
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   // Contraseñas: no se ve lo que se escribe.
   secureTextEntry?: boolean;
+  // Campo de plata: muestra el símbolo de la moneda adentro y pone los puntos de miles solo.
+  money?: Currency;
 }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -47,20 +52,38 @@ export default function FormField({
         {label}
         {required ? <Text style={styles.required}> *</Text> : null}
       </Text>
-      <TextInput
-        value={value}
-        onChangeText={(text) => {
-          markDirty();
-          onChangeText(text);
-        }}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        secureTextEntry={secureTextEntry}
-        multiline={multiline}
-        style={[styles.input, multiline && styles.multiline]}
-      />
+      {money ? (
+        <View style={[styles.input, styles.moneyBox]}>
+          <Text style={styles.symbol}>{CURRENCY_SYMBOL[money]}</Text>
+          <TextInput
+            value={amountDisplay(value)}
+            onChangeText={(text) => {
+              markDirty();
+              onChangeText(formatAmountInput(text));
+            }}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            accessibilityLabel={label}
+            style={styles.moneyInput}
+          />
+        </View>
+      ) : (
+        <TextInput
+          value={value}
+          onChangeText={(text) => {
+            markDirty();
+            onChangeText(text);
+          }}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          secureTextEntry={secureTextEntry}
+          multiline={multiline}
+          style={[styles.input, multiline && styles.multiline]}
+        />
+      )}
     </View>
   );
 }
@@ -87,6 +110,23 @@ const useStyles = makeStyles((colors) => ({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     minHeight: 48,
+    fontSize: fontSize.lg,
+    color: colors.text,
+  },
+  moneyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 0,
+  },
+  symbol: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+  },
+  moneyInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: spacing.md,
     fontSize: fontSize.lg,
     color: colors.text,
   },

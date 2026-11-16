@@ -23,7 +23,7 @@ import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept } from '../../types';
 import { describeAdjustment, nextAdjustmentPeriod } from '../../utils/adjustments';
-import { addMonthsToPeriod, currentPeriod, formatMoney, formatPeriod, parseAmount } from '../../utils/format';
+import { addMonthsToPeriod, amountDisplay, currentPeriod, formatAmountInput, formatMoney, formatPeriod, parseAmount } from '../../utils/format';
 import { roundMoney } from '../../utils/ledger';
 import { plural } from '../../utils/text';
 import { ImportRow, importRows, isPendingImport, percentChange, planImportChange } from './importsLogic';
@@ -309,8 +309,8 @@ export default function ImportsScreen() {
                         Importe de {monthName(period)} ({charge.currency === 'USD' ? 'US$' : '$'})
                       </Text>
                       <TextInput
-                        value={editText}
-                        onChangeText={setEditText}
+                        value={amountDisplay(editText)}
+                        onChangeText={(text) => setEditText(formatAmountInput(text))}
                         keyboardType="numeric"
                         autoFocus
                         style={styles.editInput}

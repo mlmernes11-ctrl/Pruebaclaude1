@@ -16,7 +16,7 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 import { fontSize, radius, spacing } from '../theme';
 import { Currency } from '../types';
-import { addMonthsToPeriod, CURRENCY_SYMBOL, currentPeriod, formatPeriod, parseAmount } from '../utils/format';
+import { addMonthsToPeriod, amountDisplay, CURRENCY_SYMBOL, currentPeriod, formatAmountInput, formatPeriod, parseAmount } from '../utils/format';
 import Button from './Button';
 
 // Como mucho se ofrecen los últimos 24 meses (una deuda más vieja se carga con «Agregar cargo»).
@@ -38,7 +38,7 @@ export function pastPeriods(startDate: string): string[] {
   return periods;
 }
 
-const amountText = (n: number) => n.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+const amountText = (n: number) => amountDisplay(String(Math.round(n * 100) / 100));
 
 export default function StartedContractSheet({
   visible,
@@ -155,7 +155,7 @@ export default function StartedContractSheet({
                           <TextInput
                             style={styles.amount}
                             value={owed[period]}
-                            onChangeText={(text) => setOwed((prev) => ({ ...prev, [period]: text }))}
+                            onChangeText={(text) => setOwed((prev) => ({ ...prev, [period]: formatAmountInput(text) }))}
                             keyboardType="numeric"
                             accessibilityLabel={`Monto que debe de ${formatPeriod(period)}`}
                           />
@@ -175,7 +175,7 @@ export default function StartedContractSheet({
                 <TextInput
                   style={styles.amount}
                   value={credit}
-                  onChangeText={setCredit}
+                  onChangeText={(text) => setCredit(formatAmountInput(text))}
                   placeholder="0"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"

@@ -10,7 +10,7 @@ import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RATE_SOURCE_LABEL, RateSource } from '../../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../../theme';
-import { formatDayMonth, formatMoney, parseAmount } from '../../../utils/format';
+import { amountDisplay, formatAmountInput, formatDayMonth, formatMoney, parseAmount } from '../../../utils/format';
 import { useFormGuard } from '../../../navigation/formScreen';
 
 const SOURCES: RateSource[] = ['blue', 'oficial', 'bolsa', 'manual'];
@@ -101,10 +101,10 @@ export function AmountRow({
     <View style={styles.amountRow}>
       <Text style={styles.amountLabel}>{label}</Text>
       <TextInput
-        value={value}
+        value={amountDisplay(value)}
         onChangeText={(text) => {
           markDirty();
-          onChangeText(text);
+          onChangeText(formatAmountInput(text));
         }}
         placeholder="0"
         placeholderTextColor={colors.textMuted}

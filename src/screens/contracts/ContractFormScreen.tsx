@@ -393,11 +393,11 @@ export default function ContractFormScreen() {
         <DateField label="Fecha de fin" value={endDate} onChange={setEndDate} required />
         <OptionChips label="Moneda del contrato" options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} />
         <FormField
-          label={`Monto de alquiler mensual (${CURRENCY_SYMBOL[currency]})`}
+          label="Monto de alquiler mensual"
           value={rentAmount}
           onChangeText={setRentAmount}
           placeholder="0"
-          keyboardType="numeric"
+          money={currency}
           required
         />
         <OptionChips label="Ajuste del alquiler" options={ADJUSTMENT_OPTIONS} value={adjustment} onChange={setAdjustment} />
@@ -429,11 +429,11 @@ export default function ContractFormScreen() {
           </>
         ) : null}
         <FormField
-          label={`Depósito de garantía (${CURRENCY_SYMBOL[currency]})`}
+          label="Depósito de garantía"
           value={depositAmount}
           onChangeText={setDepositAmount}
           placeholder="0"
-          keyboardType="numeric"
+          money={currency}
         />
         <FormField
           label="Día de vencimiento"
