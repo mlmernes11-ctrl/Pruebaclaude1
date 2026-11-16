@@ -41,6 +41,8 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
         clearTimeout(timer);
         timer = setTimeout(reset, RESET_DELAY);
       });
+      // Si se vuelve enseguida (deslizando rápido de ida y vuelta), no se rearma a la vista.
+      const offFocus = tabs.addListener('focus', () => clearTimeout(timer));
       // Tocar la pestaña en la que ya estás también la limpia.
       // Con un formulario empezado, primero se pregunta (ver formScreen); acá no se toca nada.
       const offPress = tabs.addListener('tabPress', () => {
@@ -49,6 +51,7 @@ export function resetOnTabLeave<P extends ScreenProps>(Screen: ComponentType<P>,
       return () => {
         clearTimeout(timer);
         offBlur();
+        offFocus();
         offPress();
       };
     }, [navigation]);

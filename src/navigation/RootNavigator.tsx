@@ -303,13 +303,13 @@ export default function RootNavigator() {
             });
           },
         })}
-        screenOptions={({ route, navigation }) => ({
+        screenOptions={({ route }) => ({
           headerShown: false,
           // Al salir de una pestaña se cierran las pantallas que se abrieron en ella.
           popToTopOnBlur: true,
           // En el celular, las pestañas están una al lado de la otra y la nueva entra de costado
           // (acompaña el deslizar entre pestañas, ver swipeTabs).
-          ...(desktop ? { animation: 'none' as const } : { animation: 'shift' as const, ...tabSlide(route.name, navigation) }),
+          ...(desktop ? { animation: 'none' as const } : { animation: 'shift' as const, ...tabSlide(route.name) }),
           tabBarPosition: desktop ? 'left' : 'bottom',
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,

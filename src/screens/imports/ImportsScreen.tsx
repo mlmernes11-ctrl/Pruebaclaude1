@@ -23,7 +23,7 @@ import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept } from '../../types';
 import { describeAdjustment, nextAdjustmentPeriod } from '../../utils/adjustments';
-import { addMonthsToPeriod, amountDisplay, currentPeriod, formatAmountInput, formatMoney, formatPeriod, parseAmount } from '../../utils/format';
+import { addMonthsToPeriod, amountDisplay, CURRENCY_SYMBOL, currentPeriod, formatAmountInput, formatMoney, formatPeriod, parseAmount } from '../../utils/format';
 import { roundMoney } from '../../utils/ledger';
 import { plural } from '../../utils/text';
 import { ImportRow, importRows, isPendingImport, percentChange, planImportChange } from './importsLogic';
@@ -306,16 +306,19 @@ export default function ImportsScreen() {
                         <Text style={styles.rowSubtitle}>{row.tenant?.name}</Text>
                       </View>
                       <Text style={styles.editLabel}>
-                        Importe de {monthName(period)} ({charge.currency === 'USD' ? 'US$' : '$'})
+                        Importe de {monthName(period)}
                       </Text>
-                      <TextInput
-                        value={amountDisplay(editText)}
-                        onChangeText={(text) => setEditText(formatAmountInput(text))}
-                        keyboardType="numeric"
-                        autoFocus
-                        style={styles.editInput}
-                        accessibilityLabel={`Importe de ${row.property?.title ?? 'la propiedad'}`}
-                      />
+                      <View style={styles.editField}>
+                        <Text style={styles.editSymbol}>{CURRENCY_SYMBOL[charge.currency]}</Text>
+                        <TextInput
+                          value={amountDisplay(editText)}
+                          onChangeText={(text) => setEditText(formatAmountInput(text))}
+                          keyboardType="decimal-pad"
+                          autoFocus
+                          style={styles.editInput}
+                          accessibilityLabel={`Importe de ${row.property?.title ?? 'la propiedad'}`}
+                        />
+                      </View>
                       <View style={styles.editInfo}>
                         <Text style={styles.editHint}>
                           {row.previous !== undefined
@@ -577,13 +580,25 @@ const useStyles = makeStyles((colors) => ({
     fontWeight: '600',
     color: colors.textMuted,
   },
-  editInput: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
+  editField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
+  },
+  editSymbol: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  editInput: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
     paddingVertical: spacing.sm,
   },
   editInfo: {

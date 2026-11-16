@@ -10,7 +10,8 @@ import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RATE_SOURCE_LABEL, RateSource } from '../../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../../theme';
-import { amountDisplay, formatAmountInput, formatDayMonth, formatMoney, parseAmount } from '../../../utils/format';
+import { Currency } from '../../../types';
+import { amountDisplay, CURRENCY_SYMBOL, formatAmountInput, formatDayMonth, formatMoney, parseAmount } from '../../../utils/format';
 import { useFormGuard } from '../../../navigation/formScreen';
 
 const SOURCES: RateSource[] = ['blue', 'oficial', 'bolsa', 'manual'];
@@ -52,7 +53,7 @@ export default function PesosConverter({
 
   return (
     <View style={styles.box}>
-      <AmountRow label="Pesos que entrega ($)" value={pesos} onChangeText={onPesos} />
+      <AmountRow label="Pesos que entrega" currency="ARS" value={pesos} onChangeText={onPesos} />
       <Text style={styles.caption}>Cotización (pesos por dólar)</Text>
       <View style={styles.chips}>
         {SOURCES.map((source) => (
@@ -69,11 +70,11 @@ export default function PesosConverter({
           </TouchableOpacity>
         ))}
       </View>
-      <AmountRow label="Pesos por dólar ($)" value={rate} onChangeText={onRate} />
+      <AmountRow label="Pesos por dólar" currency="ARS" value={rate} onChangeText={onRate} />
       <TouchableOpacity onPress={onLive} accessibilityRole="button" style={styles.live}>
         <Text style={styles.liveText}>Usar el valor en vivo</Text>
       </TouchableOpacity>
-      <AmountRow label="Equivale a (US$)" value={dollars} onChangeText={onDollars} />
+      <AmountRow label="Equivale a" currency="USD" value={dollars} onChangeText={onDollars} />
       {pesosValue > 0 && rateValue > 0 ? (
         <Text style={styles.caption}>
           {formatMoney(pesosValue, 'ARS')} ÷ {formatMoney(rateValue, 'ARS')} ={' '}
@@ -89,10 +90,13 @@ export function AmountRow({
   label,
   value,
   onChangeText,
+  currency,
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  // El símbolo de la moneda va adentro, antes del importe.
+  currency: Currency;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -100,6 +104,7 @@ export function AmountRow({
   return (
     <View style={styles.amountRow}>
       <Text style={styles.amountLabel}>{label}</Text>
+      <Text style={styles.symbol}>{CURRENCY_SYMBOL[currency]}</Text>
       <TextInput
         value={amountDisplay(value)}
         onChangeText={(text) => {
@@ -108,7 +113,7 @@ export function AmountRow({
         }}
         placeholder="0"
         placeholderTextColor={colors.textMuted}
-        keyboardType="numeric"
+        keyboardType="decimal-pad"
         style={styles.amountInput}
         accessibilityLabel={label}
       />
@@ -177,6 +182,10 @@ const useStyles = makeStyles((colors) => ({
   },
   amountLabel: {
     fontSize: fontSize.md,
+    color: colors.textMuted,
+  },
+  symbol: {
+    fontSize: fontSize.lg,
     color: colors.textMuted,
   },
   amountInput: {

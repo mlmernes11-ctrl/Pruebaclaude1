@@ -435,9 +435,9 @@ export default function PaymentFormScreen() {
             {option === 'otro' ? (
               <View style={styles.custom}>
                 {showUsdField && !inPesos ? (
-                  <AmountRow label="Dólares (US$)" value={usdText} onChangeText={setUsdText} />
+                  <AmountRow label="Dólares" currency="USD" value={usdText} onChangeText={setUsdText} />
                 ) : null}
-                <AmountRow label="Pesos ($)" value={arsText} onChangeText={setArsText} />
+                <AmountRow label="Pesos" currency="ARS" value={arsText} onChangeText={setArsText} />
                 {debt.outstanding.length > 1 ? (
                   <TouchableOpacity onPress={() => setChoosing((v) => !v)} accessibilityRole="button">
                     <Text style={styles.link}>{choosing ? 'Ocultar cargos' : 'Elegir a qué cargos se aplica'}</Text>
