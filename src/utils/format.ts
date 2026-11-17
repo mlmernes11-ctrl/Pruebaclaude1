@@ -153,6 +153,18 @@ export function formatPeriod(period: string): string {
   return `${MONTHS[month - 1]} ${year}`;
 }
 
+// "Octubre" (y el año solo si no es el actual: "Diciembre 2025"), para renglones cortos.
+export function monthName(period: string): string {
+  const text = formatPeriod(period);
+  return period.slice(0, 4) === String(new Date().getFullYear()) ? text.split(' ')[0] : text;
+}
+
+// Una línea por cargo de un concepto: el mes y, si hay dos cargos del mismo mes, su nota para
+// distinguirlos.
+export function monthLabel(period: string, notes: string | undefined, repeated: boolean): string {
+  return repeated && notes?.trim() ? `${monthName(period)} · ${notes.trim()}` : monthName(period);
+}
+
 // Hoy, como 'AAAA-MM-DD'.
 export function todayISO(): string {
   return toISODate(new Date());

@@ -7,7 +7,7 @@
 // agrupados por propiedad, en una fila que se despliega (ver ChargeGroupRow). Arriba solo el buscador (busca propiedad, inquilino,
 // importe, mes…) y "Filtrar", que abre lo demás: ver todos los cargos o todos los cobros,
 // por estado o por mes, y el orden. Abajo, el historial por mes.
-// Otras pantallas la abren ya filtrada por propiedad (se ve como una etiqueta que se puede quitar).
+// Desde una ficha se abre ya filtrada por esa propiedad (lo dice el título de arriba).
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +16,6 @@ import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import DataTable, { Column } from '../../components/DataTable';
 import EmptyState from '../../components/EmptyState';
-import LargeTitleHeader from '../../components/LargeTitleHeader';
 import ListRow from '../../components/ListRow';
 import ListSection from '../../components/ListSection';
 import Screen from '../../components/Screen';
@@ -137,15 +136,15 @@ export default function PaymentsListScreen() {
   const [openGroup] = useState(createOpenGroup);
   const words = useMemo(() => searchWords(query), [query]);
 
-  // Abierta desde otra pantalla (Inicio o una ficha): sin el título grande ni el chip de la
-  // propiedad; la barra de arriba dice qué es y «atrás» vuelve a donde estabas.
-  const inFicha = Boolean(route.params?.inFicha || route.params?.pushed);
+  // Siempre se abre desde otra pantalla (Inicio o una ficha): la barra de arriba dice qué es y
+  // «atrás» vuelve a donde estabas.
+  // Desde una ficha, el título dice qué es y de qué propiedad («Cobros · Carpeta 37»); si no, queda
+  // el de la pantalla («Historial de cobros»).
   useLayoutEffect(() => {
-    if (!inFicha) return;
     if (route.params?.title) return navigation.setOptions({ title: route.params.title });
-    const title = getPropertyById(route.params?.propertyId)?.title ?? 'Propiedad';
-    navigation.setOptions({ title: `${route.params?.mode === 'cobros' ? 'Cobros' : 'Cargos'} · ${title}` });
-  }, [inFicha, navigation, route.params, getPropertyById]);
+    const property = getPropertyById(route.params?.propertyId);
+    if (property) navigation.setOptions({ title: `${route.params?.mode === 'cobros' ? 'Cobros' : 'Cargos'} · ${property.title}` });
+  }, [navigation, route.params, getPropertyById]);
 
   // Otras pantallas la abren ya filtrada (por ejemplo, los cobros de una propiedad desde su ficha).
   useEffect(() => {
@@ -282,10 +281,6 @@ export default function PaymentsListScreen() {
   );
 
   // — Acciones —
-  const registerPayment = () => {
-    const active = propertyId ? contracts.find((c) => c.propertyId === propertyId && c.status === 'activo') : undefined;
-    navigation.navigate('PaymentForm', active ? { contractId: active.id } : undefined);
-  };
   const openCharge = (id: string) => navigation.navigate('ChargeForm', { chargeId: id });
   const openPayment = (id: string) => navigation.navigate('PaymentDetail', { paymentId: id });
   const collect = (contractId: string) => navigation.navigate('PaymentForm', { contractId });
@@ -492,7 +487,7 @@ export default function PaymentsListScreen() {
           style={styles.total}
         />
         {allPaymentsList.length ? paymentList(allPaymentsList) : words.length ? noResults : (
-          <EmptyState icon="wallet-outline" title="Sin cobros" message="Tocá + para registrar lo que pagó un inquilino." />
+          <EmptyState icon="wallet-outline" title="Sin cobros" message="Para registrar lo que pagó un inquilino, usá «Cobrar» en Inicio o el + de Alquileres." />
         )}
       </>
     );
@@ -500,14 +495,13 @@ export default function PaymentsListScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen topSafe={!inFicha}>
-      {inFicha ? null : <LargeTitleHeader title="Cobros" onAdd={registerPayment} addLabel="Registrar cobro" />}
+    <Screen>
 
       <View style={styles.searchRow}>
         <SearchBar
           value={query}
           onChangeText={setQuery}
-          placeholder="Buscar propiedad, inquilino, importe, mes…"
+          placeholder="Buscar"
           style={styles.search}
         />
         <TouchableOpacity
@@ -521,12 +515,6 @@ export default function PaymentsListScreen() {
         </TouchableOpacity>
       </View>
 
-      {propertyId && !inFicha ? (
-        <TouchableOpacity style={styles.propertyChip} onPress={() => setPropertyId(undefined)} accessibilityRole="button">
-          <Text style={styles.propertyChipText}>{getPropertyById(propertyId)?.title ?? 'Propiedad'}</Text>
-          <Ionicons name="close-circle" size={16} color={colors.primary} />
-        </TouchableOpacity>
-      ) : null}
 
       {showFilters ? (
         <View style={styles.filters}>
@@ -622,23 +610,6 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.primaryMuted,
   },
   filterButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  propertyChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-    minHeight: 32,
-    borderRadius: radius.round,
-    backgroundColor: colors.primaryMuted,
-  },
-  propertyChipText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
     color: colors.primary,

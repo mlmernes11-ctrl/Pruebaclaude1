@@ -34,28 +34,32 @@ export default function Sidebar({ state, descriptors, navigation }: BottomTabBar
         {adminView ? <Text style={styles.adminBadge}>ADMIN</Text> : null}
       </View>
 
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const focused = state.index === index;
-        const color = focused ? colors.primary : colors.text;
-        // Igual que las pestañas: tocar la sección activa vuelve a su lista principal.
-        const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
-        };
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            style={[styles.item, focused && styles.itemActive]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-          >
-            {options.tabBarIcon?.({ focused, color, size: 20 })}
-            <Text style={[styles.itemText, focused && styles.itemTextActive]}>{options.title ?? route.name}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {/* En la barra de abajo Inicio va en el medio; acá, arriba de todo. */}
+      {state.routes
+        .map((route, index) => ({ route, index }))
+        .sort((a, b) => Number(b.route.name === 'DashboardTab') - Number(a.route.name === 'DashboardTab'))
+        .map(({ route, index }) => {
+          const { options } = descriptors[route.key];
+          const focused = state.index === index;
+          const color = focused ? colors.primary : colors.text;
+          // Igual que las pestañas: tocar la sección activa vuelve a su lista principal.
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+          };
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              style={[styles.item, focused && styles.itemActive]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+            >
+              {options.tabBarIcon?.({ focused, color, size: 20 })}
+              <Text style={[styles.itemText, focused && styles.itemTextActive]}>{options.title ?? route.name}</Text>
+            </TouchableOpacity>
+          );
+        })}
 
       <View style={styles.spacer} />
       <Text style={styles.footer}>

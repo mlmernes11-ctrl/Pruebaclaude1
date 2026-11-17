@@ -306,7 +306,7 @@ export function buildSampleData(): AppData {
 
   // Cada contrato activo muestra un estado distinto, sea el día del mes que sea.
   // Al día: 83. Al día y con el mes que viene por vencer: 102, 120 y 15 (cada uno con varios
-  // conceptos, así «A vencer» en Cobros también se despliega). Con deuda: 37 y 64.
+  // conceptos, así «A vencer» en Inicio también se despliega). Con deuda: 37 y 64.
   for (const offset of [-2, -1, 0]) {
     addCharge(contract102, 'alquiler', c102.rentAmount, offset, 'full');
     addCharge(contract102, 'expensas', c102.expensasAmount!, offset, 'full');

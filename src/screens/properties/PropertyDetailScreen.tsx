@@ -167,9 +167,10 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
     if (Platform.OS !== 'web') animateLayout(240);
     setDebtOpen((current) => !current);
   };
-  // Todos sus cargos o todos sus cobros, dentro de Alquileres (la misma lista que Cobros).
+  // Todos sus cargos o todos sus cobros (la lista del historial, filtrada por esta propiedad). Se
+  // abre en la misma pestaña que la ficha, así «atrás» vuelve a ella.
   const openPayments = (mode: 'cargos' | 'cobros') =>
-    navigation.navigate('PropertyPayments', { mode, propertyId: property.id, inFicha: true });
+    navigation.navigate('PropertyPayments', { mode, propertyId: property.id });
 
   // — Dibujo de la pantalla —
   return (

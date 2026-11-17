@@ -31,6 +31,9 @@ export default function SearchBar({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
+        // Una sola línea: en Android un texto de ayuda largo se partía en dos y quedaba cortado.
+        multiline={false}
+        numberOfLines={1}
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType="search"

@@ -2,7 +2,7 @@
 // Pantalla: Historial por mes
 // ---------------------------------------------------------------------
 // El año mes a mes (lo cargado, lo cobrado y lo que quedó en mora). Con una propiedad, solo la
-// de esa propiedad; sin propiedad (desde la pestaña Cobros), la de todas.
+// de esa propiedad; sin propiedad (desde el acceso directo de Inicio o el historial de cobros), la de todas.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';

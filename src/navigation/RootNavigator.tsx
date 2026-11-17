@@ -1,7 +1,7 @@
 // =====================================================================
 // Navegación
 // ---------------------------------------------------------------------
-// Las 3 pestañas de abajo (Inicio, Alquileres, Menú) y las pantallas que se abren dentro de cada
+// Las 3 pestañas de abajo (Alquileres, Inicio en el medio, Menú) y las pantallas que se abren dentro de cada
 // una. Lo de cobros vive en Inicio («Tus alquileres», «Últimos cobros» y el historial) y en cada
 // ficha. Lo que se abre desde una pestaña se queda en ella, así «atrás» vuelve a donde estabas.
 // Para agregar una pantalla nueva, se registra acá.
@@ -293,6 +293,7 @@ export default function RootNavigator() {
       theme={navigationTheme}
     >
       <Tab.Navigator
+        initialRouteName="DashboardTab"
         backBehavior="history"
         // En el celular las pestañas de al lado quedan armadas, así asoman al deslizar.
         detachInactiveScreens={desktop}
@@ -339,8 +340,9 @@ export default function RootNavigator() {
           ),
         })}
       >
-        <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
+        {/* Inicio va en el medio de la barra de abajo, y la app abre en Inicio. */}
         <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
+        <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
         <Tab.Screen name="MenuTab" component={MenuStackNavigator} options={{ title: 'Menú' }} />
       </Tab.Navigator>
     </NavigationContainer>

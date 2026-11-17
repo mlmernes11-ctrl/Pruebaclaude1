@@ -1,7 +1,8 @@
 // =====================================================================
 // Ayudas de navegación
 // ---------------------------------------------------------------------
-// Volver atrás de forma segura y abrir pantallas de otra pestaña.
+// Volver atrás de forma segura. (Lo que se abre desde una pestaña se queda en esa pestaña: cada
+// pila registra las pantallas que necesita, ver RootNavigator.)
 // =====================================================================
 
 export function smartGoBack(navigation: any, fallbackRouteName: string) {
@@ -11,9 +12,4 @@ export function smartGoBack(navigation: any, fallbackRouteName: string) {
   } else {
     navigation.navigate(fallbackRouteName);
   }
-}
-
-// Abre una pantalla de otra pestaña dejando su lista debajo, así "atrás" vuelve a esa lista.
-export function openInTab(navigation: any, tab: string, screen: string, params?: object) {
-  navigation.navigate(tab, { screen, params, initial: false });
 }

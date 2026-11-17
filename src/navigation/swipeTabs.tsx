@@ -2,9 +2,9 @@
 // Deslizar entre pestañas
 // ---------------------------------------------------------------------
 // En el celular, deslizar el dedo de costado en la primera pantalla de una pestaña pasa a la
-// de al lado: Inicio ↔ Alquileres ↔ Cobros ↔ Menú. Funciona como hojas puestas una al lado de
+// de al lado: Alquileres ↔ Inicio ↔ Menú. Funciona como hojas puestas una al lado de
 // la otra: la pantalla sigue al dedo y la pestaña vecina va asomando; al soltar, termina de
-// entrar (o vuelve, si el gesto fue cortito). Inicio es el borde izquierdo y Menú el derecho:
+// entrar (o vuelve, si el gesto fue cortito). Alquileres es el borde izquierdo y Menú el derecho:
 // más allá la pantalla no se mueve. Solo cuenta un gesto claramente horizontal,
 // así no molesta al bajar por la lista. Solo en el celular: la app de Android y la web usada
 // con el dedo; en la computadora (con mouse, o pantalla ancha con barra lateral) no se usa.
@@ -21,7 +21,7 @@ import { Animated, Dimensions, Easing, PanResponder, Platform, View } from 'reac
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
 // Orden de las pestañas, de izquierda a derecha.
-const TAB_ORDER = ['DashboardTab', 'RentalsTab', 'MenuTab'];
+const TAB_ORDER = ['RentalsTab', 'DashboardTab', 'MenuTab'];
 
 // Para cambiar de pestaña: correr el dedo una cuarta parte del ancho, o soltarlo con envión.
 const SWITCH_SHARE = 0.25;
@@ -37,8 +37,8 @@ const TOUCH =
   Platform.OS !== 'web' ||
   (typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches);
 
-// Qué pestaña se ve, con decimales mientras se arrastra o se anima (1.5 = mitad Alquileres y mitad
-// Cobros). Cada pestaña se dibuja corrida (su lugar − pos) anchos de pantalla, así que todas se
+// Qué pestaña se ve, con decimales mientras se arrastra o se anima (1.5 = mitad Inicio y mitad
+// Menú). Cada pestaña se dibuja corrida (su lugar − pos) anchos de pantalla, así que todas se
 // mueven juntas, siempre pegadas: nunca queda un hueco entre una pantalla y la otra, por rápido que
 // se deslice. Lo mueven el dedo y el cambio de pestaña (deslizando o tocando la barra de abajo).
 const pos = new Animated.Value(0);

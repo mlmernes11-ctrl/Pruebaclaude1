@@ -1,5 +1,5 @@
 // =====================================================================
-// Cobros agrupados por propiedad (celular)
+// Lo que se debe, agrupado por propiedad (las tarjetas de Inicio y del historial)
 // ---------------------------------------------------------------------
 // Lo vencido (o lo que está por vencer) de una misma propiedad va en una sola fila: a la
 // izquierda, un ícono por concepto (casa = alquiler, edificio = expensas, rayo = servicios),
@@ -7,20 +7,20 @@
 //
 // Al tocarla, cada ícono baja a su línea del detalle, el nombre de la propiedad crece un poco y
 // se corre a la izquierda (al lugar que dejan los íconos) y se despliega el recibo: una línea
-// por concepto con sus meses y su monto, el total, y «Cobrar» y «WhatsApp». Al volver a tocarla,
-// todo vuelve a su lugar. Si un concepto tiene varios meses, tocar su línea muestra cada mes.
+// por concepto con su monto (y, si son varios meses, cada mes debajo), el total, «Cobrar»,
+// «WhatsApp» y, en Inicio, «Ver la ficha de…». Al volver a tocarla, todo vuelve a su lugar.
 // Abierta, la propiedad se separa un poco de las de arriba y abajo, como una tarjeta aparte.
 // Con un solo cargo no hay nada que desplegar: la fila abre el cargo directo.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Animated, Easing, LayoutAnimation, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { CONCEPT_LABEL } from '../../constants';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept } from '../../types';
-import { addToTotals, emptyTotals, formatDayMonth, formatMoney, formatPeriod, formatTotals, parseLocalDate } from '../../utils/format';
+import { addToTotals, emptyTotals, formatDayMonth, formatMoney, formatTotals, monthLabel, parseLocalDate } from '../../utils/format';
 import { ChargeView, sortOldestFirst } from '../../utils/ledger';
 import { chargeShownAmount } from '../../utils/status';
 
@@ -94,12 +94,6 @@ const totalsOf = (items: ChargeView[]) => {
 const daysSince = (iso: string) => Math.max(0, Math.round((Date.now() - parseLocalDate(iso).getTime()) / 86400000));
 
 // "Oct y nov", "Oct, nov y dic".
-// "Octubre" (y el año solo si no es el actual: "Diciembre 2025"), para que el renglón entre en una línea.
-function monthName(period: string): string {
-  const text = formatPeriod(period);
-  return period.slice(0, 4) === String(new Date().getFullYear()) ? text.split(' ')[0] : text;
-}
-
 function monthsText(periods: string[]): string {
   const names = periods.map((p) => MONTHS[Number(p.slice(5, 7)) - 1] ?? p);
   const text = names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}` : names[0];
@@ -222,6 +216,8 @@ export default function ChargeGroupRow({
   const stackRef = useRef<View>(null);
   const slotRefs = useRef<(View | null)[]>([]);
   const contentHeight = useRef(0);
+  // En el celular, el alto medido del recibo (el contenido va encima, así que no empuja solo).
+  const [nativeHeight, setNativeHeight] = useState(0);
   // La tarjeta: separación (lift) y esquinas de arriba y de abajo.
   const roundTop = Boolean(isFirst || prevOpen || open);
   const roundBottom = Boolean(isLast || nextOpen || open);
@@ -344,6 +340,7 @@ export default function ChargeGroupRow({
     if (Math.abs(next - contentHeight.current) < 1) return;
     const first = contentHeight.current === 0;
     contentHeight.current = next;
+    if (useNative) setNativeHeight(next);
     // Cerrada: se mide ya adónde va cada ícono, así al tocarla arranca sin esperar (la primera vez
     // de una; después, acompañando, por si los íconos todavía vuelven a la pila).
     if (!target.current) {
@@ -489,8 +486,9 @@ export default function ChargeGroupRow({
       </Pressable>
 
       {/* El recibo: siempre armado (para saber adónde va cada ícono), alto 0 mientras está cerrada.
-          En el celular, abierta va con alto 'auto' (con "sin alto" Android dejaba el 0 y no se abría). */}
-      <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? 'auto' : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
+          En el celular, abierta toma el alto medido del recibo: el recibo va encima (posición
+          absoluta), así que un alto 'auto' quedaba en 0 y en Android no se veía nada. */}
+      <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? nativeHeight : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
         <View style={styles.receiptContent} onLayout={onContentLayout}>
           <View style={[styles.receipt, { borderColor: colors.border }]}>
             {/* Todo lo que debe, de una: cada concepto y, si son varios meses, cada mes debajo. */}
@@ -502,7 +500,7 @@ export default function ChargeGroupRow({
                     style={styles.line}
                     disabled={many}
                     onPress={() => onOpenCharge(line.items[0].charge.id)}
-                    accessibilityRole={many ? undefined : 'button'}
+                    accessibilityRole={many ? 'text' : 'button'}
                     accessibilityLabel={`${CONCEPT_LABEL[line.concept]}, ${line.months}, ${line.amount}`}
                   >
                     {/* Lugar al que baja el ícono de la pila. */}
@@ -531,7 +529,8 @@ export default function ChargeGroupRow({
                           accessibilityRole="button"
                         >
                           <Animated.Text style={[styles.monthText, { opacity: fadeIn }]}>
-                            {monthName(item.charge.period)} · {item.status === 'vencido' ? 'venció' : 'vence'} el{' '}
+                            {monthLabel(item.charge.period, item.charge.notes, line.items.filter((x) => x.charge.period === item.charge.period).length > 1)} ·{' '}
+                            {item.status === 'vencido' ? 'venció' : 'vence'} el{' '}
                             {formatDayMonth(item.charge.dueDate)}
                           </Animated.Text>
                           <Animated.Text style={[styles.monthAmount, { color, opacity: fadeIn }]}>

@@ -4,7 +4,7 @@
 // «Tus alquileres»: una sola lista con lo que se debe (primero) y lo que vence pronto. Cada
 // tarjeta dice el estado en su color («2 meses vencidos», «Vence el 05/12») y el inquilino; al
 // tocarla se abre con todo lo adeudado mes por mes, «Cobrar», «WhatsApp» y el enlace a la ficha.
-// Se ven las primeras cuatro y «Ver las otras» despliega el resto ahí mismo.
+// Se ven las primeras cuatro y «Ver más» despliega el resto ahí mismo.
 // «Últimos cobros»: los tres más recientes y «Ver todo el historial», que abre la lista completa
 // de cobros y cargos (con buscador y filtros) a pantalla completa.
 // =====================================================================
@@ -22,7 +22,7 @@ import { formatDayMonth, formatMoney } from '../utils/format';
 import { debtReminderText, openWhatsapp } from '../utils/whatsapp';
 import ChargeGroupRow, { ChargeGroup, createOpenGroup, groupByContract } from './payments/ChargeGroupRow';
 
-// Cuántas tarjetas se ven antes de «Ver las otras».
+// Cuántas tarjetas se ven antes de «Ver más».
 const FIRST = 4;
 // Cuántos cobros muestra «Últimos cobros».
 const RECENT = 3;
@@ -92,7 +92,7 @@ export default function HomeCollections() {
       )}
       {rest > 0 ? (
         <TouchableOpacity style={styles.more} onPress={toggleAll} accessibilityRole="button">
-          <Text style={styles.moreText}>{showAll ? 'Ver menos' : `Ver ${rest === 1 ? 'la otra' : `las otras ${rest}`}`}</Text>
+          <Text style={styles.moreText}>{showAll ? 'Ver menos' : 'Ver más'}</Text>
           <Ionicons name={showAll ? 'chevron-up' : 'chevron-down'} size={16} color={colors.primary} />
         </TouchableOpacity>
       ) : null}
@@ -109,7 +109,7 @@ export function RecentPayments() {
   const { payments, getContractById, getPropertyById, getTenantById } = useData();
   const recent = [...payments].sort((a, b) => b.date.localeCompare(a.date)).slice(0, RECENT);
   const openHistory = () =>
-    navigation.navigate('TodosCobros', { pushed: true, title: 'Historial de cobros', mode: 'cobros', month: 'todos' });
+    navigation.navigate('TodosCobros', { mode: 'cobros' });
 
   return (
     <>
