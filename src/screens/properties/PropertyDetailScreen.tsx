@@ -87,8 +87,9 @@ export default function PropertyDetailScreen() {
   );
 }
 
-// Contenido de la ficha.
-export function PropertyDetail({ propertyId }: { propertyId: string }) {
+// Contenido de la ficha. En pantalla grande también se muestra como panel al costado de la
+// lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
+export function PropertyDetail({ propertyId, embedded }: { propertyId: string; embedded?: boolean }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -164,6 +165,11 @@ export function PropertyDetail({ propertyId }: { propertyId: string }) {
   // — Dibujo de la pantalla —
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      {embedded ? (
+        <View style={styles.embeddedBar}>
+          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('PropertyForm', { propertyId })} />
+        </View>
+      ) : null}
       <View style={styles.titleBlock}>
         <Text style={styles.title} accessibilityRole="header">
           {property.title}
@@ -402,6 +408,10 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  embeddedBar: {
+    alignItems: 'flex-end',
+    marginBottom: -spacing.sm,
   },
   notFound: {
     padding: spacing.lg,

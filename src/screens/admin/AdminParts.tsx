@@ -11,6 +11,7 @@ import LargeTitleHeader from '../../components/LargeTitleHeader';
 import Screen from '../../components/Screen';
 import SegmentedControl from '../../components/SegmentedControl';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useIsDesktop } from '../../hooks/useIsDesktop';
 import { fontSize, radius, spacing } from '../../theme';
 import { Period, PERIOD_OPTIONS, usePeriod } from './adminApi';
 
@@ -67,10 +68,11 @@ export function AdminScreen({
 
 export function StatGrid({ items }: { items: { value: string; label: string; note?: string }[] }) {
   const styles = useStyles();
+  const desktop = useIsDesktop();
   return (
     <View style={styles.grid}>
       {items.map((item) => (
-        <View key={item.label} style={styles.stat} accessible accessibilityLabel={`${item.label}: ${item.value}${item.note ? `, ${item.note}` : ''}`}>
+        <View key={item.label} style={[styles.stat, desktop && styles.statDesktop]} accessible accessibilityLabel={`${item.label}: ${item.value}${item.note ? `, ${item.note}` : ''}`}>
           <Text style={styles.statValue}>{item.value}</Text>
           <Text style={styles.statLabel}>{item.label}</Text>
           {item.note ? <Text style={styles.statNote}>{item.note}</Text> : null}
@@ -159,6 +161,9 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: 2,
+  },
+  statDesktop: {
+    flexBasis: '22%',
   },
   statValue: {
     fontSize: fontSize.largeTitle - 4,

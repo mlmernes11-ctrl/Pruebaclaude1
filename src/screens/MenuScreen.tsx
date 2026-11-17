@@ -134,7 +134,7 @@ export default function MenuScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen topSafe>
+    <Screen narrow topSafe>
       <ScrollView contentContainerStyle={styles.content}>
         <LargeTitleHeader title="Menú" />
         <View style={styles.body}>

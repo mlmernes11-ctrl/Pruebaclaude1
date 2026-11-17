@@ -42,7 +42,7 @@ export default function LargeTitleHeader({
   admin?: boolean;
 }) {
   const styles = useStyles();
-  // En la computadora la franja va con las puntas redondeadas (la columna no llega al borde).
+  // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar cobro").
   const desktop = useIsDesktop();
   return (
     <View style={[styles.band, admin && styles.bandAdmin, desktop && styles.bandDesktop, overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null]}>
@@ -66,7 +66,11 @@ export default function LargeTitleHeader({
             <Text style={styles.caption}>{caption}</Text>
           </TouchableOpacity>
         ) : null}
-        {onAdd ? (
+        {onAdd && desktop ? (
+          <TouchableOpacity onPress={onAdd} style={styles.addButton} accessibilityRole="button">
+            <Text style={styles.addButtonText}>+ {addLabel}</Text>
+          </TouchableOpacity>
+        ) : onAdd ? (
           <TouchableOpacity
             onPress={onAdd}
             style={styles.addTarget}
@@ -165,6 +169,18 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.sm,
     color: colors.onHeaderMuted,
     paddingRight: spacing.sm,
+  },
+  addButton: {
+    height: 38,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 10,
+    backgroundColor: colors.onHeader,
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.header,
   },
   addTarget: {
     width: 44,

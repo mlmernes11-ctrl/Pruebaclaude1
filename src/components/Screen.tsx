@@ -1,9 +1,8 @@
 // =====================================================================
 // Contenedor de pantalla
 // ---------------------------------------------------------------------
-// Fondo y márgenes seguros (respeta la muesca y los bordes del celular). En la computadora el
-// contenido va en una columna centrada del ancho de un celular grande, así se ve igual que en el
-// celular (mismas tarjetas y listas, sin tablas ni paneles aparte).
+// Fondo y márgenes seguros (respeta la muesca y los bordes del celular). En pantalla grande
+// el contenido va en una columna centrada: ancha para listas, angosta para formularios.
 // =====================================================================
 
 import React from 'react';
@@ -17,10 +16,13 @@ import { useIsDesktop } from '../hooks/useIsDesktop';
 export default function Screen({
   children,
   style,
+  narrow,
   topSafe,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
+  // Formularios y fichas simples: columna más angosta en pantalla grande.
+  narrow?: boolean;
   // Pantallas sin barra de arriba (las de cada pestaña): dejan libre la franja de la hora y la
   // batería del celular, para que el título no quede debajo.
   topSafe?: boolean;
@@ -33,7 +35,7 @@ export default function Screen({
       edges={topSafe ? ['top', 'left', 'right'] : ['left', 'right']}
     >
       <View
-        style={[styles.container, desktop && styles.desktop, desktop && { maxWidth: 720 }, style]}
+        style={[styles.container, desktop && styles.desktop, desktop && { maxWidth: narrow ? 720 : 1160 }, style]}
       >
         {children}
       </View>
