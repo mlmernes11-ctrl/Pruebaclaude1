@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import DialogHost from './src/components/DialogHost';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import InstallPrompt from './src/components/InstallPrompt';
 import SyncBanner from './src/components/SyncBanner';
 import UpdatePrompt from './src/components/UpdatePrompt';
 import { useEffect } from 'react';
@@ -41,6 +42,7 @@ export default function App() {
               </ErrorBoundary>
               <DialogHost />
               <UpdatePrompt />
+              <InstallPrompt />
               <ThemedStatusBar />
             </AdminProvider>
           </AuthProvider>

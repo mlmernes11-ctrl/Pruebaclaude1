@@ -34,6 +34,7 @@ Cargo (lo que se debe por un concepto y un mes) · Cobro (lo que se recibió) ·
 ## Publicación
 
 - **Web**: Vercel publica cada cambio (`vercel.json`).
+- **Web instalable (PWA)**: `public/manifest.webmanifest`, `public/icons/`, `public/index.html` (la página base con los enlaces) y `public/sw.js` (el ayudante; se registra en `src/lib/pwa.ts`). El cartel «Instalá Locatia» (`src/components/InstallPrompt.tsx`) sale solo al abrir la web en el navegador.
 - **APK**: GitHub › Actions › «Armar APK». Lo arma Expo (EAS, `eas.json`); el enlace queda en expo.dev › Builds o en «Estado del APK».
 - **Link para descargar el APK**: `/descargar` (por ejemplo, gestion-alquileres-sero0.vercel.app/descargar) lleva al último APK. Cuando se arma uno nuevo, se cambia su destino en `vercel.json` por el enlace que muestra «Estado del APK».
 - **Manual de uso**: `public/manual.html` (gestion-alquileres-sero0.vercel.app/manual.html), con capturas en `public/manual/`. En la app, Menú › Ayuda.
