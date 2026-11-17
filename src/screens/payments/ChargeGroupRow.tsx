@@ -15,7 +15,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Animated, Easing, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Easing, LayoutAnimation, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { CONCEPT_LABEL } from '../../constants';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
@@ -52,6 +52,18 @@ const CLOSE_MS = 220;
 const LIFT = 12;
 const EASING = Easing.out(Easing.cubic);
 const useNative = Platform.OS !== 'web';
+
+// En el celular, lo que cambia de tamaño (el alto del recibo, la separación entre tarjetas) lo
+// anima el propio sistema en el próximo dibujo: no depende de que la app esté libre cuadro por
+// cuadro, que en Android hacía que la animación se trabara o saltara al final.
+function animateLayout(duration: number) {
+  LayoutAnimation.configureNext({
+    duration,
+    update: { type: LayoutAnimation.Types.easeOut },
+    create: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.opacity },
+    delete: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.opacity },
+  });
+}
 
 // ── Datos ─────────────────────────────────────────────────────────────
 
@@ -186,8 +198,8 @@ export default function ChargeGroupRow({
   const prevOpen = useIsOpen(openGroup, prevKey);
   const nextOpen = useIsOpen(openGroup, nextKey);
 
-  // t: 0 cerrada → 1 abierta (íconos, nombre, textos). height: alto del recibo (no puede ir por el
-  // motor nativo, por eso va aparte, con la misma duración).
+  // t: 0 cerrada → 1 abierta (íconos, nombre, textos). height, lift y las esquinas: solo en la
+  // web (en el celular los anima el sistema, ver animateLayout).
   const t = useRef(new Animated.Value(0)).current;
   const height = useRef(new Animated.Value(0)).current;
   // Cuánto tiene que viajar cada ícono para llegar a su línea.
@@ -213,6 +225,7 @@ export default function ChargeGroupRow({
     });
   }, []);
   useEffect(() => {
+    if (useNative) return;
     const duration = open ? OPEN_MS : CLOSE_MS;
     ease(lift, open ? 1 : 0, duration);
     ease(topRadius, roundTop ? radius.lg : 0, duration);
@@ -269,6 +282,7 @@ export default function ChargeGroupRow({
         if (!finished && id === runId.current) value.setValue(end());
       };
       Animated.timing(t, { toValue: to, duration, easing: EASING, useNativeDriver: useNative }).start(settle(t, () => to));
+      if (useNative) return;
       Animated.timing(height, { toValue: to ? contentHeight.current : 0, duration, easing: EASING, useNativeDriver: false }).start(
         settle(height, () => (to ? contentHeight.current : 0)),
       );
@@ -276,19 +290,31 @@ export default function ChargeGroupRow({
     [t, height],
   );
 
-  // Al tocar, la animación arranca en el acto, antes de avisarle a la lista (que se vuelve a
-  // dibujar y en Android demoraba el arranque). Adónde va cada ícono ya está medido.
+  // Al tocar, la animación arranca en el acto. Adónde va cada ícono ya está medido. Al abrir, el
+  // detalle de los meses arranca cerrado (si quedó abierto, se cierra en el mismo movimiento).
   const toggle = () => {
     const to = target.current ? 0 : 1;
     const duration = to ? OPEN_MS : CLOSE_MS;
     run(to);
+    if (to) {
+      measure(true);
+      setExpanded(undefined);
+    }
+    if (useNative) {
+      animateLayout(duration);
+      openGroup.toggle(group.key);
+      return;
+    }
     ease(lift, to, duration);
     if (to) {
       ease(topRadius, radius.lg, duration);
       ease(bottomRadius, radius.lg, duration);
-      measure(true);
     }
     requestAnimationFrame(() => openGroup.toggle(group.key));
+  };
+  const toggleMonths = (concept: ChargeConcept) => {
+    if (useNative) animateLayout(240);
+    setExpanded((current) => (current === concept ? undefined : concept));
   };
 
   // Cuando la abre o la cierra otra cosa (por ejemplo, se abrió otra propiedad). Si ya va hacia
@@ -302,7 +328,6 @@ export default function ChargeGroupRow({
       if (to) latest.current.measure(false).then(() => latest.current.run(1));
       else latest.current.run(0);
     }
-    if (!open) setExpanded(undefined);
   }, [open, single]);
 
   // El recibo cambió de alto (se abrió el detalle de un concepto): acompaña sin saltos. Android
@@ -318,7 +343,7 @@ export default function ChargeGroupRow({
       measure(!first);
       return;
     }
-    Animated.timing(height, { toValue: next, duration: 240, easing: EASING, useNativeDriver: false }).start();
+    if (!useNative) Animated.timing(height, { toValue: next, duration: 240, easing: EASING, useNativeDriver: false }).start();
     measure(true);
   };
 
@@ -357,7 +382,9 @@ export default function ChargeGroupRow({
 
   // Sin línea arriba si es la primera o si hay un hueco arriba.
   const separator = !roundTop ? <View style={styles.separator} /> : null;
-  const space = lift.interpolate({ inputRange: [0, 1], outputRange: [0, LIFT] });
+  const space = useNative ? (open ? LIFT : 0) : lift.interpolate({ inputRange: [0, 1], outputRange: [0, LIFT] });
+  const top = useNative ? (roundTop ? radius.lg : 0) : topRadius;
+  const bottom = useNative ? (roundBottom ? radius.lg : 0) : bottomRadius;
   const card = (children: React.ReactNode) => (
     <Animated.View
       style={[
@@ -365,10 +392,10 @@ export default function ChargeGroupRow({
         {
           marginTop: isFirst ? 0 : space,
           marginBottom: isLast ? 0 : space,
-          borderTopLeftRadius: topRadius,
-          borderTopRightRadius: topRadius,
-          borderBottomLeftRadius: bottomRadius,
-          borderBottomRightRadius: bottomRadius,
+          borderTopLeftRadius: top,
+          borderTopRightRadius: top,
+          borderBottomLeftRadius: bottom,
+          borderBottomRightRadius: bottom,
         },
       ]}
     >
@@ -432,7 +459,7 @@ export default function ChargeGroupRow({
       </Pressable>
 
       {/* El recibo: siempre armado (para saber adónde va cada ícono), alto 0 mientras está cerrada. */}
-      <Animated.View style={[styles.receiptBox, { height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
+      <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? undefined : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
         <View style={styles.receiptContent} onLayout={onContentLayout}>
           <View style={[styles.receipt, { borderColor: colors.border }]}>
             {lines.map((line, i) => {
@@ -442,7 +469,7 @@ export default function ChargeGroupRow({
                 <View key={line.concept}>
                   <TouchableOpacity
                     style={styles.line}
-                    onPress={() => (many ? setExpanded(showMonths ? undefined : line.concept) : onOpenCharge(line.items[0].charge.id))}
+                    onPress={() => (many ? toggleMonths(line.concept) : onOpenCharge(line.items[0].charge.id))}
                     accessibilityRole="button"
                     accessibilityLabel={`${CONCEPT_LABEL[line.concept]}, ${line.months}, ${line.amount}`}
                   >
