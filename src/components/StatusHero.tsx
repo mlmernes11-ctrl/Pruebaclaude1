@@ -2,8 +2,9 @@
 // Bloque de estado grande
 // =====================================================================
 
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleProp, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { fontSize, radius, spacing } from '../theme';
 import StatusDot, { DotTone } from './StatusDot';
@@ -12,6 +13,7 @@ import StatusDot, { DotTone } from './StatusDot';
 
 // Bloque grande de arriba de una pantalla: una etiqueta, un número grande y una línea de detalle.
 // Con "tone" la etiqueta lleva el punto de color del semáforo; sin "tone" es un total neutro.
+// Con "onPress" se puede tocar para desplegar algo (una flechita a la derecha muestra si está abierto).
 export default function StatusHero({
   tone,
   label,
@@ -20,6 +22,9 @@ export default function StatusHero({
   danger,
   style,
   children,
+  onPress,
+  open,
+  accessibilityLabel,
 }: {
   tone?: DotTone;
   label: string;
@@ -29,22 +34,34 @@ export default function StatusHero({
   danger?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
+  onPress?: () => void;
+  open?: boolean;
+  accessibilityLabel?: string;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const toneColor = tone
     ? { danger: colors.danger, warning: colors.warning, success: colors.success, empty: colors.textMuted }[tone]
     : colors.textMuted;
+  const Box = onPress ? Pressable : View;
   return (
-    <View style={[styles.hero, style]}>
+    <Box
+      style={[styles.hero, style]}
+      {...(onPress
+        ? { onPress, accessibilityRole: 'button' as const, accessibilityState: { expanded: Boolean(open) }, accessibilityLabel }
+        : null)}
+    >
       <View style={styles.labelRow}>
         {tone ? <StatusDot tone={tone} halo /> : null}
         <Text style={[styles.label, { color: toneColor }]}>{label}</Text>
+        {onPress ? (
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.chevron} style={styles.chevron} />
+        ) : null}
       </View>
       <Text style={[styles.value, (danger || tone === 'danger') && { color: colors.danger }]}>{value}</Text>
       {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       {children}
-    </View>
+    </Box>
   );
 }
 
@@ -61,6 +78,9 @@ const useStyles = makeStyles((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  chevron: {
+    marginLeft: 'auto',
   },
   label: {
     fontSize: fontSize.sm,

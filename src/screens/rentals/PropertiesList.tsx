@@ -28,7 +28,7 @@ import { trackAction } from '../../lib/usage';
 // ── Filtros y orden ───────────────────────────────────────────────────
 
 export type PropertyFilterKey = 'todas' | 'alquiladas' | 'disponibles' | 'mora';
-export type PropertySortKey = 'nombre' | 'barrio' | 'alquiler' | 'fin';
+export type PropertySortKey = 'nombre' | 'barrio' | 'alquiler' | 'deuda' | 'fin';
 
 export function matchesFilter(summary: PropertySummary, filter: PropertyFilterKey): boolean {
   if (filter === 'alquiladas') return Boolean(summary.activeContract);
@@ -41,16 +41,23 @@ const SORTS: MenuOption<PropertySortKey>[] = [
   { value: 'nombre', label: 'Nombre' },
   { value: 'barrio', label: 'Barrio' },
   { value: 'alquiler', label: 'Alquiler más alto primero' },
+  { value: 'deuda', label: 'Deuda más alta primero' },
   { value: 'fin', label: 'Contrato que termina antes' },
 ];
 
-// Las libres van al final cuando se ordena por alquiler o por fin de contrato.
-export function sortSummaries(summaries: PropertySummary[], sort: PropertySortKey, toPesos: (s: PropertySummary) => number) {
+// Las libres van al final cuando se ordena por alquiler o por fin de contrato; las que no deben
+// nada, al final cuando se ordena por deuda. Alquiler y deuda se comparan pasados a pesos.
+export function sortSummaries(
+  summaries: PropertySummary[],
+  sort: PropertySortKey,
+  inPesos: { rent: (s: PropertySummary) => number; debt: (s: PropertySummary) => number },
+) {
   const byName = (a: PropertySummary, b: PropertySummary) => compareTitles(a.property.title, b.property.title);
   const compare: Record<PropertySortKey, (a: PropertySummary, b: PropertySummary) => number> = {
     nombre: byName,
     barrio: (a, b) => (a.property.neighborhood ?? '').localeCompare(b.property.neighborhood ?? '', 'es') || byName(a, b),
-    alquiler: (a, b) => toPesos(b) - toPesos(a) || byName(a, b),
+    alquiler: (a, b) => inPesos.rent(b) - inPesos.rent(a) || byName(a, b),
+    deuda: (a, b) => inPesos.debt(b) - inPesos.debt(a) || byName(a, b),
     fin: (a, b) =>
       (a.activeContract?.endDate ?? '9999').localeCompare(b.activeContract?.endDate ?? '9999') || byName(a, b),
   };

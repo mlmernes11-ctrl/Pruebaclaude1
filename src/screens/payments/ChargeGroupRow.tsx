@@ -56,7 +56,7 @@ const useNative = Platform.OS !== 'web';
 // En el celular, lo que cambia de tamaño (el alto del recibo, la separación entre tarjetas) lo
 // anima el propio sistema en el próximo dibujo: no depende de que la app esté libre cuadro por
 // cuadro, que en Android hacía que la animación se trabara o saltara al final.
-function animateLayout(duration: number) {
+export function animateLayout(duration: number) {
   LayoutAnimation.configureNext({
     duration,
     update: { type: LayoutAnimation.Types.easeOut },
@@ -110,8 +110,8 @@ function groupSubtitle(items: ChargeView[]): string {
   return days === 0 ? 'Venció hoy' : days === 1 ? 'Hace 1 día' : `Hace ${days} días`;
 }
 
-// Una línea del recibo por concepto.
-interface ConceptLine {
+// Una línea del recibo por concepto (también la usa el detalle de la deuda en la ficha).
+export interface ConceptLine {
   concept: ChargeConcept;
   items: ChargeView[];
   months: string;
@@ -119,7 +119,7 @@ interface ConceptLine {
   amount: string;
 }
 
-function conceptLines(items: ChargeView[]): ConceptLine[] {
+export function conceptLines(items: ChargeView[]): ConceptLine[] {
   return CONCEPT_ORDER.flatMap((concept) => {
     const mine = sortOldestFirst(items.filter((i) => i.charge.concept === concept));
     if (!mine.length) return [];
@@ -458,8 +458,9 @@ export default function ChargeGroupRow({
         </Animated.View>
       </Pressable>
 
-      {/* El recibo: siempre armado (para saber adónde va cada ícono), alto 0 mientras está cerrada. */}
-      <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? undefined : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
+      {/* El recibo: siempre armado (para saber adónde va cada ícono), alto 0 mientras está cerrada.
+          En el celular, abierta va con alto 'auto' (con "sin alto" Android dejaba el 0 y no se abría). */}
+      <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? 'auto' : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
         <View style={styles.receiptContent} onLayout={onContentLayout}>
           <View style={[styles.receipt, { borderColor: colors.border }]}>
             {lines.map((line, i) => {

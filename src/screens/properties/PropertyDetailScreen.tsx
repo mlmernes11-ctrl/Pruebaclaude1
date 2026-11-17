@@ -6,8 +6,8 @@
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLayoutEffect } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useLayoutEffect, useState } from 'react';
+import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/Button';
 import HeaderTextButton from '../../components/HeaderTextButton';
 import ListRow from '../../components/ListRow';
@@ -26,6 +26,8 @@ import { isOutstanding } from '../../utils/ledger';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
 import { plural } from '../../utils/text';
 import { trackAction } from '../../lib/usage';
+import { animateLayout } from '../payments/ChargeGroupRow';
+import DebtBreakdown from './DebtBreakdown';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -91,6 +93,8 @@ export default function PropertyDetailScreen() {
 // lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
 export function PropertyDetail({ propertyId, embedded }: { propertyId: string; embedded?: boolean }) {
   const styles = useStyles();
+  // El detalle de la deuda (bloque "Vencido"), cerrado al entrar.
+  const [debtOpen, setDebtOpen] = useState(false);
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const {
@@ -155,6 +159,12 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
     };
   });
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
+  // Lo vencido de la propiedad (lo mismo que suma el bloque "Vencido"), para su detalle.
+  const overdueCharges = propertyCharges.filter((v) => v.status === 'vencido');
+  const toggleDebt = () => {
+    if (Platform.OS !== 'web') animateLayout(240);
+    setDebtOpen((current) => !current);
+  };
   // Abre la pestaña Cobros ya filtrada por esta propiedad (todos sus cargos o todos sus cobros).
   const openPayments = (mode: 'cargos' | 'cobros') =>
     navigation.navigate('PaymentsTab', {
@@ -177,7 +187,22 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <Text style={styles.address}>{[property.address, property.neighborhood].filter(Boolean).join(' · ')}</Text>
       </View>
 
-      <StatusHero tone={hero.tone} label={hero.label} value={hero.value} detail={hero.detail}>
+      <StatusHero
+        tone={hero.tone}
+        label={hero.label}
+        value={hero.value}
+        detail={hero.detail}
+        // Con deuda, se toca para ver de qué es (ver DebtBreakdown).
+        onPress={overdueCharges.length ? toggleDebt : undefined}
+        open={debtOpen}
+        accessibilityLabel={`${hero.label}: ${hero.value}, ${hero.detail}. Tocá para ver el detalle`}
+      >
+        {debtOpen && overdueCharges.length ? (
+          <DebtBreakdown
+            items={overdueCharges}
+            onOpenCharge={(chargeId) => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId })}
+          />
+        ) : null}
         {summary.collection === 'deuda' && summary.pending.count ? (
           <View style={styles.heroExtra}>
             <View style={styles.heroExtraRow}>

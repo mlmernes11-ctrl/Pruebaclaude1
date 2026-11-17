@@ -44,7 +44,10 @@ export default function RentalsScreen() {
   const all = properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
   const rentInPesos = (s: PropertySummary) =>
     s.activeContract ? (toPesos(s.activeContract.rentAmount, s.activeContract.currency) ?? 0) : -1;
-  const visible = sortSummaries(all.filter((s) => matchesFilter(s, filter)), sort, rentInPesos);
+  // Lo vencido que se debe, en pesos (los dólares, a la cotización del día).
+  const debtInPesos = (s: PropertySummary) =>
+    (toPesos(s.overdue.totals.ARS, 'ARS') ?? 0) + (toPesos(s.overdue.totals.USD, 'USD') ?? 0);
+  const visible = sortSummaries(all.filter((s) => matchesFilter(s, filter)), sort, { rent: rentInPesos, debt: debtInPesos });
   const rented = all.filter((s) => s.activeContract).length;
   // Pantalla grande: si no se eligió nada (o lo elegido ya no está en la lista), la primera.
   const selectedId = visible.some((s) => s.property.id === selected) ? selected : visible[0]?.property.id;
