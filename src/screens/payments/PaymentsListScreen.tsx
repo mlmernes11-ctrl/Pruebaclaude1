@@ -2,7 +2,7 @@
 // Pantalla: Cobros
 // ---------------------------------------------------------------------
 // Lo importante primero, en una sola lista: lo vencido, lo que está por vencer y lo cobrado
-// este mes, cada bloque con su total. En el celular, lo vencido y lo que está por vencer van
+// este mes, cada bloque con su total. Lo vencido y lo que está por vencer van
 // agrupados por propiedad, en una fila que se despliega (ver ChargeGroupRow). Arriba solo el buscador (busca propiedad, inquilino,
 // importe, mes…) y "Filtrar", que abre lo demás: ver todos los cargos o todos los cobros,
 // por estado o por mes, y el orden. Abajo, el historial por mes.
@@ -287,7 +287,7 @@ export default function PaymentsListScreen() {
   const activeFilters = Number(mode !== 'resumen') + Number(sort !== 'reciente');
 
   // — Partes de la lista —
-  // En el celular, sin buscar: una fila por propiedad que se despliega.
+  // Sin buscar: una fila por propiedad que se despliega.
   const groupedList = (list: typeof searchedCharges, block: string, tone: 'danger' | 'warning') => {
     const groups = groupByContract(
       list.map(({ item }) => item),
@@ -315,8 +315,10 @@ export default function PaymentsListScreen() {
     );
   };
 
+  // Lo vencido y lo que está por vencer, sin buscar: agrupado por propiedad (celular y
+  // computadora). Lo demás: tabla en la computadora y lista en el celular.
   const chargeList = (list: typeof searchedCharges, block?: { name: string; tone: 'danger' | 'warning' }) =>
-    !desktop && block && !words.length ? (
+    block && !words.length ? (
       groupedList(list, block.name, block.tone)
     ) : desktop ? (
       <DataTable
