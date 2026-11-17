@@ -14,7 +14,7 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Animated, Easing, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { CONCEPT_LABEL } from '../../constants';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
@@ -119,31 +119,56 @@ function conceptLines(items: ChargeView[]): ConceptLine[] {
   });
 }
 
+// ── Cuál está abierta ─────────────────────────────────────────────────
+// Una sola por vez. Se guarda acá y no en la pantalla, así al tocar una fila solo se vuelven a
+// dibujar las filas que cambian y no toda la pantalla (en Android eso demoraba la animación).
+
+export function createOpenGroup() {
+  let current: string | undefined;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => current,
+    toggle: (key: string) => {
+      current = current === key ? undefined : key;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+export type OpenGroup = ReturnType<typeof createOpenGroup>;
+
+function useIsOpen(openGroup: OpenGroup, key: string | undefined) {
+  return useSyncExternalStore(openGroup.subscribe, () => key !== undefined && openGroup.get() === key);
+}
+
 // ── Componente ────────────────────────────────────────────────────────
 
 export default function ChargeGroupRow({
   group,
   tone,
-  open,
+  openGroup,
   isFirst,
   isLast,
-  prevOpen,
-  nextOpen,
-  onToggle,
+  prevKey,
+  nextKey,
   onOpenCharge,
   onCollect,
   onRemind,
 }: {
   group: ChargeGroup;
   tone: 'danger' | 'warning';
-  open: boolean;
-  // Primera y última fila del bloque, y si la de arriba o la de abajo está abierta: definen qué
-  // esquinas van redondeadas (las que quedan contra un hueco o contra el borde del bloque).
+  openGroup: OpenGroup;
+  // Primera y última fila del bloque, y las filas de arriba y de abajo: si están abiertas, definen
+  // qué esquinas van redondeadas (las que quedan contra un hueco o contra el borde del bloque).
   isFirst?: boolean;
   isLast?: boolean;
-  prevOpen?: boolean;
-  nextOpen?: boolean;
-  onToggle: () => void;
+  prevKey?: string;
+  nextKey?: string;
   onOpenCharge: (chargeId: string) => void;
   onCollect: () => void;
   onRemind: () => void;
@@ -157,6 +182,9 @@ export default function ChargeGroupRow({
   const totals = useMemo(() => formatTotals(totalsOf(group.items)), [group.items]);
   const single = group.items.length === 1 ? group.items[0] : undefined;
   const stackWidth = STACK_WIDTH;
+  const open = useIsOpen(openGroup, group.key);
+  const prevOpen = useIsOpen(openGroup, prevKey);
+  const nextOpen = useIsOpen(openGroup, nextKey);
 
   // t: 0 cerrada → 1 abierta (íconos, nombre, textos). height: alto del recibo (no puede ir por el
   // motor nativo, por eso va aparte, con la misma duración).
@@ -174,15 +202,22 @@ export default function ChargeGroupRow({
   const lift = useRef(new Animated.Value(0)).current;
   const topRadius = useRef(new Animated.Value(roundTop ? radius.lg : 0)).current;
   const bottomRadius = useRef(new Animated.Value(roundBottom ? radius.lg : 0)).current;
+  // Cada valor se anima una sola vez hacia cada destino (el toque ya lo arranca; cuando llega el
+  // aviso de la lista no se vuelve a empezar), y si algo lo corta, termina en su lugar.
+  const targets = useRef(new Map<Animated.Value, number>());
+  const ease = useCallback((value: Animated.Value, to: number, duration: number) => {
+    if (targets.current.get(value) === to) return;
+    targets.current.set(value, to);
+    Animated.timing(value, { toValue: to, duration, easing: EASING, useNativeDriver: false }).start(({ finished }) => {
+      if (!finished && targets.current.get(value) === to) value.setValue(to);
+    });
+  }, []);
   useEffect(() => {
-    const go = (value: Animated.Value, to: number) =>
-      Animated.timing(value, { toValue: to, duration: open ? OPEN_MS : CLOSE_MS, easing: EASING, useNativeDriver: false });
-    Animated.parallel([
-      go(lift, open ? 1 : 0),
-      go(topRadius, roundTop ? radius.lg : 0),
-      go(bottomRadius, roundBottom ? radius.lg : 0),
-    ]).start();
-  }, [open, roundTop, roundBottom, lift, topRadius, bottomRadius]);
+    const duration = open ? OPEN_MS : CLOSE_MS;
+    ease(lift, open ? 1 : 0, duration);
+    ease(topRadius, roundTop ? radius.lg : 0, duration);
+    ease(bottomRadius, roundBottom ? radius.lg : 0, duration);
+  }, [open, roundTop, roundBottom, lift, topRadius, bottomRadius, ease]);
 
   // Mide dónde está cada lugar de destino respecto de su ícono en la pila.
   const measure = useCallback(
@@ -223,9 +258,12 @@ export default function ChargeGroupRow({
   // íconos sigue), y si igual las corta algo que no es otro abrir/cerrar, terminan en su lugar:
   // nunca queda a mitad de camino (pasaba en Android).
   const runId = useRef(0);
+  // Hacia dónde va (o fue) la última animación.
+  const target = useRef<0 | 1>(0);
   const run = useCallback(
     (to: 0 | 1) => {
       const id = ++runId.current;
+      target.current = to;
       const duration = to ? OPEN_MS : CLOSE_MS;
       const settle = (value: Animated.Value, end: () => number) => ({ finished }: { finished: boolean }) => {
         if (!finished && id === runId.current) value.setValue(end());
@@ -238,16 +276,33 @@ export default function ChargeGroupRow({
     [t, height],
   );
 
-  // Solo cuando se abre o se cierra (no en cada dibujo de la lista, que reiniciaba la animación).
+  // Al tocar, la animación arranca en el acto, antes de avisarle a la lista (que se vuelve a
+  // dibujar y en Android demoraba el arranque). Adónde va cada ícono ya está medido.
+  const toggle = () => {
+    const to = target.current ? 0 : 1;
+    const duration = to ? OPEN_MS : CLOSE_MS;
+    run(to);
+    ease(lift, to, duration);
+    if (to) {
+      ease(topRadius, radius.lg, duration);
+      ease(bottomRadius, radius.lg, duration);
+      measure(true);
+    }
+    requestAnimationFrame(() => openGroup.toggle(group.key));
+  };
+
+  // Cuando la abre o la cierra otra cosa (por ejemplo, se abrió otra propiedad). Si ya va hacia
+  // ahí porque se tocó, no se vuelve a empezar.
   const latest = useRef({ measure, run });
   latest.current = { measure, run };
   useEffect(() => {
     if (single) return;
-    if (open) latest.current.measure(false).then(() => latest.current.run(1));
-    else {
-      latest.current.run(0);
-      setExpanded(undefined);
+    const to = open ? 1 : 0;
+    if (target.current !== to) {
+      if (to) latest.current.measure(false).then(() => latest.current.run(1));
+      else latest.current.run(0);
     }
+    if (!open) setExpanded(undefined);
   }, [open, single]);
 
   // El recibo cambió de alto (se abrió el detalle de un concepto): acompaña sin saltos. Android
@@ -255,8 +310,14 @@ export default function ChargeGroupRow({
   const onContentLayout = (e: LayoutChangeEvent) => {
     const next = e.nativeEvent.layout.height;
     if (Math.abs(next - contentHeight.current) < 1) return;
+    const first = contentHeight.current === 0;
     contentHeight.current = next;
-    if (!open) return;
+    // Cerrada: se mide ya adónde va cada ícono, así al tocarla arranca sin esperar (la primera vez
+    // de una; después, acompañando, por si los íconos todavía vuelven a la pila).
+    if (!target.current) {
+      measure(!first);
+      return;
+    }
     Animated.timing(height, { toValue: next, duration: 240, easing: EASING, useNativeDriver: false }).start();
     measure(true);
   };
@@ -340,7 +401,7 @@ export default function ChargeGroupRow({
     <>
       <Pressable
         style={[styles.row, styles.raised]}
-        onPress={onToggle}
+        onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={label}

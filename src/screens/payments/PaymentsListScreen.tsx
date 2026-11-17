@@ -50,7 +50,7 @@ import { capitalize, compareTitles, plural } from '../../utils/text';
 import { keepSwipeInside } from '../../navigation/swipeTabs';
 import { trackAction } from '../../lib/usage';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
-import ChargeGroupRow, { ChargeGroup, groupByContract } from './ChargeGroupRow';
+import ChargeGroupRow, { ChargeGroup, createOpenGroup, groupByContract } from './ChargeGroupRow';
 
 // ── Constantes ────────────────────────────────────────────────────────
 
@@ -132,8 +132,8 @@ export default function PaymentsListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [propertyId, setPropertyId] = useState<string>();
   const [query, setQuery] = useState('');
-  // La fila agrupada que está abierta (una sola por vez).
-  const [openGroup, setOpenGroup] = useState<string>();
+  // La fila agrupada que está abierta (una sola por vez; ver ChargeGroupRow).
+  const [openGroup] = useState(createOpenGroup);
   const words = useMemo(() => searchWords(query), [query]);
 
   // Otras pantallas la abren ya filtrada (por ejemplo, los cobros de una propiedad desde su ficha).
@@ -301,12 +301,11 @@ export default function PaymentsListScreen() {
             key={group.key}
             group={group}
             tone={tone}
-            open={openGroup === group.key}
+            openGroup={openGroup}
             isFirst={index === 0}
             isLast={index === groups.length - 1}
-            prevOpen={openGroup === groups[index - 1]?.key}
-            nextOpen={openGroup === groups[index + 1]?.key}
-            onToggle={() => setOpenGroup((current) => (current === group.key ? undefined : group.key))}
+            prevKey={groups[index - 1]?.key}
+            nextKey={groups[index + 1]?.key}
             onOpenCharge={openCharge}
             onCollect={() => collect(group.contractId)}
             onRemind={() => remind(group)}
