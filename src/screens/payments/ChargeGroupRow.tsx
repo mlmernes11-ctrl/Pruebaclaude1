@@ -45,7 +45,9 @@ const STACK_WIDTH = TILE + (CONCEPT_COUNT - 1) * STEP;
 const GAP = spacing.md;
 // El nombre crece un poco al abrir.
 const TITLE_GROW = 1.12;
-const DURATION = 460;
+// Abrir dura un poco más que cerrar: lo que se abre se mira, lo que se cierra ya se vio.
+const OPEN_MS = 280;
+const CLOSE_MS = 220;
 // Separación de la tarjeta abierta con las filas de arriba y abajo.
 const LIFT = 12;
 const EASING = Easing.out(Easing.cubic);
@@ -174,7 +176,7 @@ export default function ChargeGroupRow({
   const bottomRadius = useRef(new Animated.Value(roundBottom ? radius.lg : 0)).current;
   useEffect(() => {
     const go = (value: Animated.Value, to: number) =>
-      Animated.timing(value, { toValue: to, duration: DURATION, easing: EASING, useNativeDriver: false });
+      Animated.timing(value, { toValue: to, duration: open ? OPEN_MS : CLOSE_MS, easing: EASING, useNativeDriver: false });
     Animated.parallel([
       go(lift, open ? 1 : 0),
       go(topRadius, roundTop ? radius.lg : 0),
@@ -224,11 +226,12 @@ export default function ChargeGroupRow({
   const run = useCallback(
     (to: 0 | 1) => {
       const id = ++runId.current;
+      const duration = to ? OPEN_MS : CLOSE_MS;
       const settle = (value: Animated.Value, end: () => number) => ({ finished }: { finished: boolean }) => {
         if (!finished && id === runId.current) value.setValue(end());
       };
-      Animated.timing(t, { toValue: to, duration: DURATION, easing: EASING, useNativeDriver: useNative }).start(settle(t, () => to));
-      Animated.timing(height, { toValue: to ? contentHeight.current : 0, duration: DURATION, easing: EASING, useNativeDriver: false }).start(
+      Animated.timing(t, { toValue: to, duration, easing: EASING, useNativeDriver: useNative }).start(settle(t, () => to));
+      Animated.timing(height, { toValue: to ? contentHeight.current : 0, duration, easing: EASING, useNativeDriver: false }).start(
         settle(height, () => (to ? contentHeight.current : 0)),
       );
     },
@@ -261,14 +264,14 @@ export default function ChargeGroupRow({
   // — Partes — (armadas una sola vez: rearmarlas en cada dibujo frena la animación en Android)
   const { fadeOut, fadeIn, titleShift, titleScale, chevronTurn, iconSteps } = useMemo(
     () => ({
-      fadeOut: t.interpolate({ inputRange: [0, 0.35], outputRange: [1, 0], extrapolate: 'clamp' }),
-      fadeIn: t.interpolate({ inputRange: [0.35, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+      fadeOut: t.interpolate({ inputRange: [0, 0.3], outputRange: [1, 0], extrapolate: 'clamp' }),
+      fadeIn: t.interpolate({ inputRange: [0.3, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
       titleShift: t.interpolate({ inputRange: [0, 1], outputRange: [0, -(stackWidth + GAP)] }),
       titleScale: t.interpolate({ inputRange: [0, 1], outputRange: [1, TITLE_GROW] }),
       chevronTurn: t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }),
       // Escalonados: cada ícono sale un poquito después del anterior.
       iconSteps: CONCEPT_ORDER.map((_, i) => {
-        const mine = t.interpolate({ inputRange: [i * 0.1, 0.8 + i * 0.1], outputRange: [0, 1], extrapolate: 'clamp' });
+        const mine = t.interpolate({ inputRange: [i * 0.06, 0.88 + i * 0.06], outputRange: [0, 1], extrapolate: 'clamp' });
         return [{ translateX: Animated.multiply(mine, moves[i].x) }, { translateY: Animated.multiply(mine, moves[i].y) }];
       }),
     }),
