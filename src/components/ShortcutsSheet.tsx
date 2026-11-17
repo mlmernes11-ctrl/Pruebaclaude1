@@ -117,8 +117,10 @@ export default function ShortcutsSheet({
   }, [editing, wiggle, strength]);
 
   // Lo que el arrastre necesita leer al momento (los gestos se arman una sola vez).
-  const latest = useRef({ draft, gridWidth, drag, editing, onOpen, onSave, onClose });
-  latest.current = { draft, gridWidth, drag, editing, onOpen, onSave, onClose };
+  // Computadora con mouse: se arrastra directo, sin mantener apretado antes.
+  const mouse = desktop && Platform.OS === 'web';
+  const latest = useRef({ draft, gridWidth, drag, editing, mouse, onOpen, onSave, onClose });
+  latest.current = { draft, gridWidth, drag, editing, mouse, onOpen, onSave, onClose };
 
   const measure = () => gridRef.current?.measureInWindow((x, y) => (origin.current = { x, y }));
 
@@ -182,8 +184,8 @@ export default function ShortcutsSheet({
         if (!gesture.active) {
           if (Math.abs(g.dx) > TAP_TOLERANCE || Math.abs(g.dy) > TAP_TOLERANCE) {
             clearTimeout(gesture.timer);
-            // Ordenando, se arrastra enseguida, sin volver a esperar.
-            if (latest.current.editing && !gesture.cancelled) startDrag(g.x0, g.y0);
+            // Ordenando (o con el mouse), se arrastra enseguida, sin esperar.
+            if ((latest.current.editing || latest.current.mouse) && !gesture.cancelled) startDrag(g.x0, g.y0);
             else gesture.cancelled = true;
           }
           if (!gesture.active) return;
@@ -269,7 +271,7 @@ export default function ShortcutsSheet({
             ref={gridRef}
             // En la web, el foco va a la grilla al apretarla; si no, el cambio de foco corta el gesto.
             focusable={Platform.OS === 'web'}
-            style={[styles.grid, { height: rows * CELL_HEIGHT }, Platform.OS === 'web' && styles.noSelect]}
+            style={[styles.grid, { height: rows * CELL_HEIGHT }, Platform.OS === 'web' && styles.noSelect, mouse && (drag ? styles.grabbing : styles.grab)]}
             onLayout={(e) => {
               setGridWidth(e.nativeEvent.layout.width);
               measure();
@@ -368,6 +370,13 @@ const useStyles = makeStyles((colors) => ({
   noSelect: {
     // En la web, mantener apretado no tiene que seleccionar el texto.
     userSelect: 'none',
+  } as object,
+  // Con el mouse, la manito avisa que se puede agarrar y arrastrar.
+  grab: {
+    cursor: 'grab',
+  } as object,
+  grabbing: {
+    cursor: 'grabbing',
   } as object,
   homeRow: {
     position: 'absolute',
