@@ -37,7 +37,7 @@ export default function PaymentDetailScreen() {
 
   if (!payment) {
     return (
-      <Screen narrow>
+      <Screen>
         <Text style={styles.notFound}>Este cobro ya no existe.</Text>
       </Screen>
     );
@@ -65,7 +65,7 @@ export default function PaymentDetailScreen() {
   };
 
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <StatusHero
           label={`${CONCEPT_LABEL[payment.concept]} · ${formatDate(payment.date)}`}

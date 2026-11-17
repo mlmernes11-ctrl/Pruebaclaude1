@@ -122,7 +122,7 @@ export default function PropertyFormScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <FormField label="Nombre" value={title} onChangeText={setTitle} placeholder="Ej: Carpeta 102" required />
         <FormField label="Dirección" value={address} onChangeText={setAddress} placeholder="Calle, número y piso" required />

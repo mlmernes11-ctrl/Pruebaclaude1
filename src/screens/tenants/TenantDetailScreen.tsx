@@ -50,9 +50,8 @@ export default function TenantDetailScreen() {
   );
 }
 
-// Contenido de la ficha. En pantalla grande también se muestra como panel al costado de la
-// lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
-export function TenantDetail({ tenantId, embedded }: { tenantId: string; embedded?: boolean }) {
+// Contenido de la ficha.
+export function TenantDetail({ tenantId }: { tenantId: string }) {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const { getTenantById, contractsForTenant, getPropertyById } = useData();
@@ -65,11 +64,6 @@ export function TenantDetail({ tenantId, embedded }: { tenantId: string; embedde
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      {embedded ? (
-        <View style={styles.embeddedBar}>
-          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('TenantForm', { tenantId })} />
-        </View>
-      ) : null}
       <View style={styles.titleBlock}>
         <Text style={styles.title} accessibilityRole="header">
           {tenant.name}
@@ -146,10 +140,6 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
-  },
-  embeddedBar: {
-    alignItems: 'flex-end',
-    marginBottom: -spacing.sm,
   },
   notFound: {
     padding: spacing.lg,

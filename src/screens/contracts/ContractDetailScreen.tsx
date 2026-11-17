@@ -52,9 +52,8 @@ export default function ContractDetailScreen() {
   );
 }
 
-// Contenido de la ficha. En pantalla grande también se muestra como panel al costado de la
-// lista ("embedded"); ahí no hay barra de arriba, así que el botón Editar va dentro.
-export function ContractDetail({ contractId, embedded }: { contractId: string; embedded?: boolean }) {
+// Contenido de la ficha.
+export function ContractDetail({ contractId }: { contractId: string }) {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const {
@@ -78,11 +77,6 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      {embedded ? (
-        <View style={styles.embeddedBar}>
-          <HeaderTextButton inline label="Editar" onPress={() => navigation.navigate('ContractForm', { contractId })} />
-        </View>
-      ) : null}
       <View style={styles.titleBlock}>
         <Text style={styles.title} accessibilityRole="header">
           {property?.title ?? 'Propiedad'}
@@ -181,7 +175,7 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
           variant="dangerOutline"
           onPress={() =>
             confirmDeleteContract(contract, deleteContract, () => {
-              if (!embedded) navigation.goBack();
+              navigation.goBack();
             })
           }
         />
@@ -196,10 +190,6 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
-  },
-  embeddedBar: {
-    alignItems: 'flex-end',
-    marginBottom: -spacing.sm,
   },
   notFound: {
     padding: spacing.lg,

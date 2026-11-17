@@ -173,7 +173,7 @@ export default function ChargeFormScreen() {
 
   // — Dibujo de la pantalla: resumen arriba (si ya existe) y formulario abajo —
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {existing && charge ? (
           <Card style={styles.summary}>

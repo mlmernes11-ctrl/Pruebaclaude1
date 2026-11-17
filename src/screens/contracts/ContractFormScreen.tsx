@@ -338,7 +338,7 @@ export default function ContractFormScreen() {
     .map((t) => ({ id: t.id, label: t.name, subtitle: t.phone }));
 
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {renewFrom ? (
           <Text style={styles.renewNote}>

@@ -215,7 +215,7 @@ export default function ImportsScreen() {
 
   // — Dibujo —
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.monthRow}>
           <TouchableOpacity style={styles.monthButton} onPress={() => goMonth(-1)} accessibilityLabel="Mes anterior">

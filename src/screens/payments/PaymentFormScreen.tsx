@@ -283,7 +283,7 @@ export default function PaymentFormScreen() {
   if (step === 'listo') {
     const stillOwed = contractId ? chargeViewsForContract(contractId).filter(isOutstanding) : [];
     return (
-      <Screen narrow>
+      <Screen>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.done}>
             <Ionicons name="checkmark-circle" size={64} color={colors.success} />
@@ -312,7 +312,7 @@ export default function PaymentFormScreen() {
   // ── Paso 2: confirmar ───────────────────────────────────────────────
   if (step === 'confirmar' && plan) {
     return (
-      <Screen narrow>
+      <Screen>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.summary}>
             <Text style={styles.summaryLabel}>Total a cobrar</Text>
@@ -369,7 +369,7 @@ export default function PaymentFormScreen() {
 
   // ── Paso 1: importe ─────────────────────────────────────────────────
   return (
-    <Screen narrow>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {presetContractId && contract ? (
           <View style={styles.who}>

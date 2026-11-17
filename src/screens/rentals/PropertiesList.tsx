@@ -82,7 +82,6 @@ function monthYear(iso: string): string {
 
 // ── Lista ─────────────────────────────────────────────────────────────
 
-// En pantalla grande, "onSelect" muestra la ficha al costado en vez de abrir otra pantalla.
 export default function PropertiesList({
   summaries,
   allSummaries,
@@ -90,8 +89,6 @@ export default function PropertiesList({
   onFilter,
   sort,
   onSort,
-  onSelect,
-  selectedId,
 }: {
   // Las que se ven (ya filtradas y ordenadas) y todas (para contar cada filtro).
   summaries: PropertySummary[];
@@ -100,8 +97,6 @@ export default function PropertiesList({
   onFilter: (filter: PropertyFilterKey) => void;
   sort: PropertySortKey;
   onSort: (sort: PropertySortKey) => void;
-  onSelect?: (id: string) => void;
-  selectedId?: string;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -179,17 +174,14 @@ export default function PropertiesList({
           {summaries.map((s) => {
             const right = rightOf(s);
             const badge = collectionBadge(s, today);
-            const selected = s.property.id === selectedId;
             const tenant = s.activeContract ? s.tenant : undefined;
             const phone = tenant?.phone?.trim();
             return (
-              <View key={s.property.id} style={[styles.card, selected && styles.cardSelected]}>
+              <View key={s.property.id} style={styles.card}>
                 <TouchableOpacity
                   activeOpacity={0.6}
                   style={styles.top}
-                  onPress={() =>
-                    onSelect ? onSelect(s.property.id) : navigation.navigate('PropertyDetail', { propertyId: s.property.id })
-                  }
+                  onPress={() => navigation.navigate('PropertyDetail', { propertyId: s.property.id })}
                   accessibilityRole="button"
                   accessibilityLabel={`${s.property.title}, ${badge.label}`}
                 >
@@ -308,9 +300,6 @@ const useStyles = makeStyles((colors) => ({
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
-  },
-  cardSelected: {
-    borderColor: colors.primary,
   },
   top: {
     flexDirection: 'row',

@@ -2,7 +2,7 @@
 // Pantalla: Cobros
 // ---------------------------------------------------------------------
 // Lo importante primero, en una sola lista: lo vencido, lo que está por vencer y lo cobrado
-// este mes, cada bloque con su total. En el celular, lo vencido y lo que está por vencer van
+// este mes, cada bloque con su total. Lo vencido y lo que está por vencer van
 // agrupados por propiedad, en una fila que se despliega (ver ChargeGroupRow). Arriba solo el buscador (busca propiedad, inquilino,
 // importe, mes…) y "Filtrar", que abre lo demás: ver todos los cargos o todos los cobros,
 // por estado o por mes, y el orden. Abajo, el historial por mes.
@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import DataTable, { Column } from '../../components/DataTable';
 import EmptyState from '../../components/EmptyState';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
 import ListRow from '../../components/ListRow';
@@ -26,7 +25,6 @@ import { CONCEPT_LABEL } from '../../constants';
 import { useData } from '../../context/DataContext';
 import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
-import { useIsDesktop } from '../../hooks/useIsDesktop';
 import { useRefresh } from '../../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals, Payment } from '../../types';
@@ -46,7 +44,7 @@ import {
 import { ChargeView, unallocatedAmount } from '../../utils/ledger';
 import { matchRow, SearchField, searchWords } from '../../utils/search';
 import { CHARGE_STATUS_DOT, CHARGE_STATUS_LABEL, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
-import { capitalize, compareTitles, plural } from '../../utils/text';
+import { compareTitles, plural } from '../../utils/text';
 import { keepSwipeInside } from '../../navigation/swipeTabs';
 import { trackAction } from '../../lib/usage';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
@@ -83,24 +81,6 @@ const SORT_OPTIONS: SortOption<SortValue>[] = [
   { value: 'importe', label: 'Mayor importe' },
 ];
 
-// Columnas de las tablas en pantalla grande.
-const CHARGE_COLUMNS: Column[] = [
-  { key: 'property', label: 'Propiedad', flex: 1.3 },
-  { key: 'tenant', label: 'Inquilino', flex: 1.5 },
-  { key: 'concept', label: 'Concepto', flex: 1 },
-  { key: 'period', label: 'Mes', flex: 0.9 },
-  { key: 'status', label: 'Estado', flex: 2 },
-  { key: 'amount', label: 'Importe', flex: 1.1, align: 'right' },
-];
-const PAYMENT_COLUMNS: Column[] = [
-  { key: 'property', label: 'Propiedad', flex: 1.3 },
-  { key: 'tenant', label: 'Inquilino', flex: 1.5 },
-  { key: 'concept', label: 'Concepto', flex: 1 },
-  { key: 'date', label: 'Fecha', flex: 1 },
-  { key: 'method', label: 'Medio de pago', flex: 1.8 },
-  { key: 'amount', label: 'Importe', flex: 1.1, align: 'right' },
-];
-
 // Lo que muestra una fila, más campos que solo mira el buscador.
 interface Row {
   title: string;
@@ -118,7 +98,6 @@ export default function PaymentsListScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const desktop = useIsDesktop();
   const { refreshing, onRefresh } = useRefresh();
   const { toPesos, rate } = useExchangeRate();
   const { chargeViews: allChargeViews, payments: allPayments, contracts, getContractById, getPropertyById, getTenantById } =
@@ -287,7 +266,7 @@ export default function PaymentsListScreen() {
   const activeFilters = Number(mode !== 'resumen') + Number(sort !== 'reciente');
 
   // — Partes de la lista —
-  // En el celular, sin buscar: una fila por propiedad que se despliega.
+  // Sin buscar: una fila por propiedad que se despliega.
   const groupedList = (list: typeof searchedCharges, block: string, tone: 'danger' | 'warning') => {
     const groups = groupByContract(
       list.map(({ item }) => item),
@@ -315,33 +294,11 @@ export default function PaymentsListScreen() {
     );
   };
 
+  // Lo vencido y lo que está por vencer: agrupado por propiedad, igual en el celular y en la
+  // computadora (buscando, o en "Todos los cargos", va la lista de siempre).
   const chargeList = (list: typeof searchedCharges, block?: { name: string; tone: 'danger' | 'warning' }) =>
-    !desktop && block && !words.length ? (
+    block && !words.length ? (
       groupedList(list, block.name, block.tone)
-    ) : desktop ? (
-      <DataTable
-        highlight={words}
-        columns={CHARGE_COLUMNS}
-        rows={list.map(({ item }) => {
-          const { property, tenant } = describeContract(item.charge.contractId);
-          return {
-            key: item.charge.id,
-            onPress: () => openCharge(item.charge.id),
-            cells: {
-              property: { text: property, tone: 'strong', dot: CHARGE_STATUS_DOT[item.status] },
-              tenant: { text: tenant },
-              concept: { text: CONCEPT_LABEL[item.charge.concept] },
-              period: { text: formatPeriodShort(item.charge.period) },
-              status: { text: capitalize(chargeProgress(item)), tone: item.status === 'vencido' ? 'danger' : 'muted' },
-              amount: {
-                text: formatMoney(chargeShownAmount(item), item.charge.currency),
-                tone: item.status === 'vencido' ? 'danger' : item.status === 'pagado' ? 'muted' : 'strong',
-                amount: true,
-              },
-            },
-          };
-        })}
-      />
     ) : (
       <ListSection>
         {list.map(({ item, row }) => (
@@ -360,48 +317,21 @@ export default function PaymentsListScreen() {
       </ListSection>
     );
 
-  const paymentList = (list: typeof searchedPayments) =>
-    desktop ? (
-      <DataTable
-        highlight={words}
-        columns={PAYMENT_COLUMNS}
-        rows={list.map(({ item }) => {
-          const { property, tenant } = describeContract(item.contractId);
-          const extra = [
-            item.paidAmount ? `${formatMoney(item.paidAmount, item.paidCurrency ?? 'ARS')} en pesos` : '',
-            unallocatedAmount(item) > 0 ? 'saldo a favor' : '',
-          ]
-            .filter(Boolean)
-            .join(' · ');
-          return {
-            key: item.id,
-            onPress: () => openPayment(item.id),
-            cells: {
-              property: { text: property, tone: 'strong' },
-              tenant: { text: tenant },
-              concept: { text: CONCEPT_LABEL[item.concept] },
-              date: { text: formatDate(item.date) },
-              method: { text: [item.method ?? '', extra].filter(Boolean).join(' · '), tone: 'muted' },
-              amount: { text: formatMoney(item.amount, item.currency), tone: 'strong', amount: true },
-            },
-          };
-        })}
-      />
-    ) : (
-      <ListSection>
-        {list.map(({ item, row }) => (
-          <ListRow
-            key={item.id}
-            title={row.title}
-            subtitle={row.subtitle}
-            value={row.value}
-            detail={row.detail}
-            highlight={words}
-            onPress={() => openPayment(item.id)}
-          />
-        ))}
-      </ListSection>
-    );
+  const paymentList = (list: typeof searchedPayments) => (
+    <ListSection>
+      {list.map(({ item, row }) => (
+        <ListRow
+          key={item.id}
+          title={row.title}
+          subtitle={row.subtitle}
+          value={row.value}
+          detail={row.detail}
+          highlight={words}
+          onPress={() => openPayment(item.id)}
+        />
+      ))}
+    </ListSection>
+  );
 
   // Encabezado de cada bloque: nombre, cantidad y total.
   const blockHeader = (label: string, count: number, totals: MoneyTotals, danger = false) => (
