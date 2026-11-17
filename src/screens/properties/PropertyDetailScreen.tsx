@@ -159,8 +159,11 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
     };
   });
   const paymentCount = payments.filter((p) => contractIds.has(p.contractId)).length;
-  // Lo vencido de la propiedad (lo mismo que suma el bloque "Vencido"), para su detalle.
+  // Lo vencido y lo que está por vencer de la propiedad (lo mismo que suma el bloque de arriba), para su detalle.
   const overdueCharges = propertyCharges.filter((v) => v.status === 'vencido');
+  const pendingCharges = propertyCharges.filter((v) => v.status === 'pendiente');
+  const canOpen = overdueCharges.length > 0 || (summary.collection === 'por-vencer' && pendingCharges.length > 0);
+  const openCharge = (chargeId: string) => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId });
   const toggleDebt = () => {
     if (Platform.OS !== 'web') animateLayout(240);
     setDebtOpen((current) => !current);
@@ -192,16 +195,14 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         label={hero.label}
         value={hero.value}
         detail={hero.detail}
-        // Con deuda, se toca para ver de qué es (ver DebtBreakdown).
-        onPress={overdueCharges.length ? toggleDebt : undefined}
+        // Con deuda o algo por vencer, se toca para ver de qué es (ver DebtBreakdown).
+        onPress={canOpen ? toggleDebt : undefined}
         open={debtOpen}
         accessibilityLabel={`${hero.label}: ${hero.value}, ${hero.detail}. Tocá para ver el detalle`}
       >
-        {debtOpen && overdueCharges.length ? (
-          <DebtBreakdown
-            items={overdueCharges}
-            onOpenCharge={(chargeId) => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId })}
-          />
+        {debtOpen && overdueCharges.length ? <DebtBreakdown items={overdueCharges} onOpenCharge={openCharge} /> : null}
+        {debtOpen && summary.collection === 'por-vencer' && pendingCharges.length ? (
+          <DebtBreakdown items={pendingCharges} tone="warning" onOpenCharge={openCharge} />
         ) : null}
         {summary.collection === 'deuda' && summary.pending.count ? (
           <View style={styles.heroExtra}>
@@ -210,6 +211,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
               <Text style={styles.heroExtraValue}>{formatTotals(summary.pending.totals)}</Text>
             </View>
             <Text style={styles.heroExtraNote}>Vence el {formatDate(summary.nextDueDate)}</Text>
+            {debtOpen && pendingCharges.length ? <DebtBreakdown items={pendingCharges} tone="warning" onOpenCharge={openCharge} /> : null}
           </View>
         ) : null}
       </StatusHero>

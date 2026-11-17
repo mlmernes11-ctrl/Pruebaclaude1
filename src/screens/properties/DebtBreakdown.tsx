@@ -1,7 +1,7 @@
 // =====================================================================
 // Detalle de la deuda en la ficha de la propiedad
 // ---------------------------------------------------------------------
-// Lo que se ve al tocar el bloque "Vencido" de la ficha: una línea por concepto (alquiler,
+// Lo que se ve al tocar el bloque "Vencido" (o "A vencer") de la ficha: una línea por concepto (alquiler,
 // expensas, servicios) con sus meses y su monto, igual que el recibo de la pestaña Cobros. Si un
 // concepto tiene varios meses, tocar su línea muestra cada mes; tocar un mes (o un concepto de un
 // solo mes) abre ese cargo.
@@ -21,9 +21,20 @@ import { animateLayout, CONCEPT_ICON, conceptLines } from '../payments/ChargeGro
 
 const TILE = 30;
 
-export default function DebtBreakdown({ items, onOpenCharge }: { items: ChargeView[]; onOpenCharge: (chargeId: string) => void }) {
+export default function DebtBreakdown({
+  items,
+  tone = 'danger',
+  onOpenCharge,
+}: {
+  items: ChargeView[];
+  // Rojo para lo vencido; naranja para lo que está por vencer.
+  tone?: 'danger' | 'warning';
+  onOpenCharge: (chargeId: string) => void;
+}) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const color = tone === 'danger' ? colors.danger : colors.warning;
+  const tint = tone === 'danger' ? colors.dangerMuted : colors.warningMuted;
   const [expanded, setExpanded] = useState<ChargeConcept>();
   const lines = conceptLines(items);
 
@@ -46,8 +57,8 @@ export default function DebtBreakdown({ items, onOpenCharge }: { items: ChargeVi
               accessibilityRole="button"
               accessibilityLabel={`${CONCEPT_LABEL[line.concept]}, ${line.months}, ${line.amount}`}
             >
-              <View style={[styles.tile, { backgroundColor: colors.dangerMuted }]}>
-                <Ionicons name={CONCEPT_ICON[line.concept]} size={17} color={colors.danger} />
+              <View style={[styles.tile, { backgroundColor: tint }]}>
+                <Ionicons name={CONCEPT_ICON[line.concept]} size={17} color={color} />
               </View>
               <View style={styles.lineText}>
                 <Text style={styles.lineTitle} numberOfLines={1}>
@@ -58,7 +69,7 @@ export default function DebtBreakdown({ items, onOpenCharge }: { items: ChargeVi
                   {line.months} · {line.when}
                 </Text>
               </View>
-              <Text style={[styles.amount, { color: colors.danger }]}>{line.amount}</Text>
+              <Text style={[styles.amount, { color }]}>{line.amount}</Text>
               <Ionicons
                 name={many ? (showMonths ? 'chevron-up' : 'chevron-down') : 'chevron-forward'}
                 size={16}
@@ -69,9 +80,9 @@ export default function DebtBreakdown({ items, onOpenCharge }: { items: ChargeVi
               ? line.items.map((item) => (
                   <TouchableOpacity key={item.charge.id} style={styles.month} onPress={() => onOpenCharge(item.charge.id)} accessibilityRole="button">
                     <Text style={styles.monthText}>
-                      {formatPeriod(item.charge.period)} · venció el {formatDayMonth(item.charge.dueDate)}
+                      {formatPeriod(item.charge.period)} · {item.status === 'vencido' ? 'venció' : 'vence'} el {formatDayMonth(item.charge.dueDate)}
                     </Text>
-                    <Text style={[styles.monthAmount, { color: colors.danger }]}>
+                    <Text style={[styles.monthAmount, { color }]}>
                       {formatMoney(chargeShownAmount(item), item.charge.currency)}
                     </Text>
                   </TouchableOpacity>
