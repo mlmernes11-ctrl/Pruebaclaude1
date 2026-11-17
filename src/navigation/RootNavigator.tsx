@@ -48,9 +48,10 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
-// Pantallas de Inicio que ocupan todo (sin la barra de abajo, como la «Actividad» de las apps de
-// pagos): el historial de cobros y lo que se abre desde ahí. Se vuelve con la flecha o con «atrás».
-const FULL_SCREEN = new Set(['TodosCobros', 'PaymentDetail', 'ChargeForm', 'History', 'MonthDetail']);
+// La barra de abajo se ve solo en las pantallas principales de cada pestaña. Lo demás (fichas,
+// formularios, historial…) ocupa toda la pantalla y se vuelve con la flecha o con «atrás».
+// (En la computadora, la barra del costado queda siempre.)
+const MAIN_SCREENS = new Set(['Dashboard', 'Rentals', 'Menu']);
 const RentalsStack = createNativeStackNavigator();
 const MenuStack = createNativeStackNavigator();
 
@@ -330,7 +331,8 @@ export default function RootNavigator() {
             height: 64 + insets.bottom,
             paddingTop: 4,
             paddingBottom: Math.max(insets.bottom, 6),
-            ...(!desktop && route.name === 'DashboardTab' && FULL_SCREEN.has(getFocusedRouteNameFromRoute(route) ?? '')
+            // Sin nombre todavía = la primera pantalla de la pestaña (la principal).
+            ...(!desktop && !MAIN_SCREENS.has(getFocusedRouteNameFromRoute(route) ?? 'Dashboard')
               ? { display: 'none' as const }
               : null),
           },
