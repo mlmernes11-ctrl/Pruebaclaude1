@@ -1,13 +1,13 @@
 {
  "propiedad": {
-  "duration": 26.075,
+  "duration": 28.425,
   "steps": [
    {
     "t": 1.02,
     "box": {
-     "x": 25,
+     "x": 33.33,
      "y": 93.01,
-     "w": 25,
+     "w": 33.33,
      "h": 6.28
     },
     "text": "Las propiedades se cargan en Alquileres: tocá esa pestaña, abajo.",
@@ -16,16 +16,27 @@
    {
     "t": 3.54,
     "box": {
-     "x": 85.64,
-     "y": 5.21,
-     "w": 11.28,
-     "h": 5.21
+     "x": 81.54,
+     "y": 83.89,
+     "w": 14.36,
+     "h": 6.64
     },
-    "text": "Tocá el + de arriba para cargar una propiedad.",
+    "text": "Tocá el + de abajo a la derecha.",
     "kind": "tap"
    },
    {
-    "t": 6.06,
+    "t": 5.89,
+    "box": {
+     "x": 41.57,
+     "y": 77.78,
+     "w": 37.91,
+     "h": 3.67
+    },
+    "text": "Elegí Nueva propiedad.",
+    "kind": "tap"
+   },
+   {
+    "t": 8.41,
     "box": {
      "x": 4.1,
      "y": 12.09,
@@ -36,7 +47,7 @@
     "kind": "type"
    },
    {
-    "t": 8.54,
+    "t": 10.89,
     "box": {
      "x": 4.1,
      "y": 22.27,
@@ -47,7 +58,7 @@
     "kind": "type"
    },
    {
-    "t": 11.32,
+    "t": 13.67,
     "box": {
      "x": 4.1,
      "y": 32.46,
@@ -58,7 +69,7 @@
     "kind": "type"
    },
    {
-    "t": 13.65,
+    "t": 16,
     "box": {
      "x": 7.69,
      "y": 43.66,
@@ -69,7 +80,7 @@
     "kind": "tap"
    },
    {
-    "t": 16,
+    "t": 18.35,
     "box": {
      "x": 4.1,
      "y": 56.64,
@@ -80,7 +91,7 @@
     "kind": "type"
    },
    {
-    "t": 18.255,
+    "t": 20.605,
     "box": {
      "x": 32.9,
      "y": 80.69,
@@ -91,7 +102,7 @@
     "kind": "tap"
    },
    {
-    "t": 20.775,
+    "t": 23.125,
     "box": {
      "x": 20.95,
      "y": 54.38,
@@ -102,7 +113,7 @@
     "kind": "tap"
    },
    {
-    "t": 23.595,
+    "t": 25.945,
     "box": null,
     "text": "¡Listo! Carpeta 150 ya está en Alquileres, como disponible.",
     "kind": "done"
@@ -363,32 +374,43 @@
   ]
  },
  "cobro": {
-  "duration": 25.32,
+  "duration": 27.67,
   "steps": [
    {
     "t": 1.02,
     "box": {
-     "x": 50,
+     "x": 33.33,
      "y": 93.01,
-     "w": 25,
+     "w": 33.33,
      "h": 6.28
     },
-    "text": "Los cobros se registran en Cobros: tocá esa pestaña, abajo.",
+    "text": "Los cobros se registran desde Alquileres: tocá esa pestaña, abajo.",
     "kind": "tap"
    },
    {
     "t": 3.54,
     "box": {
-     "x": 85.64,
-     "y": 1.18,
-     "w": 11.28,
-     "h": 5.21
+     "x": 81.54,
+     "y": 83.89,
+     "w": 14.36,
+     "h": 6.64
     },
-    "text": "Tocá el + de arriba para registrar un cobro.",
+    "text": "Tocá el + de abajo a la derecha.",
     "kind": "tap"
    },
    {
-    "t": 6.06,
+    "t": 5.89,
+    "box": {
+     "x": 44.75,
+     "y": 56.46,
+     "w": 34.74,
+     "h": 3.67
+    },
+    "text": "Elegí Registrar cobro.",
+    "kind": "tap"
+   },
+   {
+    "t": 8.41,
     "box": {
      "x": 8.21,
      "y": 13.74,
@@ -399,7 +421,7 @@
     "kind": "tap"
    },
    {
-    "t": 8.48,
+    "t": 10.83,
     "box": {
      "x": 4.1,
      "y": 62.8,
@@ -410,7 +432,7 @@
     "kind": "tap"
    },
    {
-    "t": 11.9,
+    "t": 14.25,
     "box": {
      "x": 17.18,
      "y": 37.09,
@@ -421,7 +443,7 @@
     "kind": "tap"
    },
    {
-    "t": 14.25,
+    "t": 16.6,
     "box": {
      "x": 7.69,
      "y": 67.83,
@@ -432,7 +454,7 @@
     "kind": "tap"
    },
    {
-    "t": 16.6,
+    "t": 18.95,
     "box": {
      "x": 39.61,
      "y": 90.05,
@@ -443,7 +465,7 @@
     "kind": "tap"
    },
    {
-    "t": 20.32,
+    "t": 22.67,
     "box": {
      "x": 32.68,
      "y": 76.9,
@@ -454,7 +476,7 @@
     "kind": "tap"
    },
    {
-    "t": 22.84,
+    "t": 25.19,
     "box": null,
     "text": "¡Listo! Desde acá podés mandarle el recibo por WhatsApp.",
     "kind": "done"

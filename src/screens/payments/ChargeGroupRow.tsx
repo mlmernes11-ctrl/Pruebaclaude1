@@ -14,7 +14,7 @@
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { Animated, Easing, LayoutAnimation, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { CONCEPT_LABEL } from '../../constants';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
@@ -94,6 +94,12 @@ const totalsOf = (items: ChargeView[]) => {
 const daysSince = (iso: string) => Math.max(0, Math.round((Date.now() - parseLocalDate(iso).getTime()) / 86400000));
 
 // "Oct y nov", "Oct, nov y dic".
+// "Octubre" (y el año solo si no es el actual: "Diciembre 2025"), para que el renglón entre en una línea.
+function monthName(period: string): string {
+  const text = formatPeriod(period);
+  return period.slice(0, 4) === String(new Date().getFullYear()) ? text.split(' ')[0] : text;
+}
+
 function monthsText(periods: string[]): string {
   const names = periods.map((p) => MONTHS[Number(p.slice(5, 7)) - 1] ?? p);
   const text = names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}` : names[0];
@@ -158,6 +164,9 @@ function useIsOpen(openGroup: OpenGroup, key: string | undefined) {
   return useSyncExternalStore(openGroup.subscribe, () => key !== undefined && openGroup.get() === key);
 }
 
+// El verde de WhatsApp, un poco más oscuro que el de la marca para que la letra blanca se lea bien.
+const WHATSAPP_GREEN = '#178A43';
+
 // ── Componente ────────────────────────────────────────────────────────
 
 export default function ChargeGroupRow({
@@ -171,6 +180,8 @@ export default function ChargeGroupRow({
   onOpenCharge,
   onCollect,
   onRemind,
+  tenant,
+  onOpenProperty,
 }: {
   group: ChargeGroup;
   tone: 'danger' | 'warning';
@@ -184,6 +195,10 @@ export default function ChargeGroupRow({
   onOpenCharge: (chargeId: string) => void;
   onCollect: () => void;
   onRemind: () => void;
+  // El inquilino: va al lado del estado y, con la tarjeta abierta, completo debajo del nombre.
+  tenant?: string;
+  // Con la tarjeta abierta, «Ver la ficha de …» abajo de los botones.
+  onOpenProperty?: () => void;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -207,7 +222,6 @@ export default function ChargeGroupRow({
   const stackRef = useRef<View>(null);
   const slotRefs = useRef<(View | null)[]>([]);
   const contentHeight = useRef(0);
-  const [expanded, setExpanded] = useState<ChargeConcept>();
   // La tarjeta: separación (lift) y esquinas de arriba y de abajo.
   const roundTop = Boolean(isFirst || prevOpen || open);
   const roundBottom = Boolean(isLast || nextOpen || open);
@@ -296,10 +310,7 @@ export default function ChargeGroupRow({
     const to = target.current ? 0 : 1;
     const duration = to ? OPEN_MS : CLOSE_MS;
     run(to);
-    if (to) {
-      measure(true);
-      setExpanded(undefined);
-    }
+    if (to) measure(true);
     if (useNative) {
       animateLayout(duration);
       openGroup.toggle(group.key);
@@ -311,10 +322,6 @@ export default function ChargeGroupRow({
       ease(bottomRadius, radius.lg, duration);
     }
     requestAnimationFrame(() => openGroup.toggle(group.key));
-  };
-  const toggleMonths = (concept: ChargeConcept) => {
-    if (useNative) animateLayout(240);
-    setExpanded((current) => (current === concept ? undefined : concept));
   };
 
   // Cuando la abre o la cierra otra cosa (por ejemplo, se abrió otra propiedad). Si ya va hacia
@@ -414,9 +421,14 @@ export default function ChargeGroupRow({
           <Text style={styles.title} numberOfLines={1}>
             {group.title}
           </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {`${CONCEPT_LABEL[single.charge.concept]} ${monthsText([single.charge.period]).toLowerCase()} · ${groupSubtitle(group.items).toLowerCase()}`}
-          </Text>
+          <View style={styles.subRow}>
+            <Text style={[styles.status, { color }]} numberOfLines={1}>
+              {groupSubtitle(group.items)}
+            </Text>
+            <Text style={[styles.subtitle, styles.shrink]} numberOfLines={1}>
+              {`· ${[CONCEPT_LABEL[single.charge.concept], tenant].filter(Boolean).join(' · ')}`}
+            </Text>
+          </View>
         </View>
         <Text style={[styles.amount, { color }]}>{totals}</Text>
         <Ionicons name="chevron-forward" size={18} color={colors.chevron} />
@@ -442,9 +454,27 @@ export default function ChargeGroupRow({
           >
             {group.title}
           </Animated.Text>
-          <Animated.Text style={[styles.subtitle, { opacity: fadeOut }]} numberOfLines={1}>
-            {groupSubtitle(group.items)}
-          </Animated.Text>
+          {/* Cerrada: el estado en su color y el inquilino. */}
+          <Animated.View style={[styles.subRow, { opacity: fadeOut }]}>
+            <Text style={[styles.status, { color }]} numberOfLines={1}>
+              {groupSubtitle(group.items)}
+            </Text>
+            {tenant ? (
+              <Text style={[styles.subtitle, styles.shrink]} numberOfLines={1}>
+                {`· ${tenant}`}
+              </Text>
+            ) : null}
+          </Animated.View>
+          {/* Abierta: el inquilino completo, donde estaba el estado (que ya se ve en el recibo). */}
+          {tenant ? (
+            <Animated.Text
+              pointerEvents="none"
+              style={[styles.subtitle, styles.openLead, { opacity: fadeIn, transform: [{ translateX: titleShift }] }]}
+              numberOfLines={1}
+            >
+              {tenant}
+            </Animated.Text>
+          ) : null}
         </View>
         <Animated.View style={[styles.end, { opacity: fadeOut }]}>
           {totals.split(' + ').map((part) => (
@@ -463,15 +493,16 @@ export default function ChargeGroupRow({
       <Animated.View style={[styles.receiptBox, { height: useNative ? (open ? 'auto' : 0) : height }]} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
         <View style={styles.receiptContent} onLayout={onContentLayout}>
           <View style={[styles.receipt, { borderColor: colors.border }]}>
+            {/* Todo lo que debe, de una: cada concepto y, si son varios meses, cada mes debajo. */}
             {lines.map((line, i) => {
               const many = line.items.length > 1;
-              const showMonths = expanded === line.concept;
               return (
                 <View key={line.concept}>
                   <TouchableOpacity
                     style={styles.line}
-                    onPress={() => (many ? toggleMonths(line.concept) : onOpenCharge(line.items[0].charge.id))}
-                    accessibilityRole="button"
+                    disabled={many}
+                    onPress={() => onOpenCharge(line.items[0].charge.id)}
+                    accessibilityRole={many ? undefined : 'button'}
                     accessibilityLabel={`${CONCEPT_LABEL[line.concept]}, ${line.months}, ${line.amount}`}
                   >
                     {/* Lugar al que baja el ícono de la pila. */}
@@ -483,16 +514,15 @@ export default function ChargeGroupRow({
                         {CONCEPT_LABEL[line.concept]}
                         {many ? ` · ${new Set(line.items.map((x) => x.charge.period)).size} meses` : ''}
                       </Text>
-                      <Text style={styles.subtitle} numberOfLines={1}>
-                        {line.months} · {line.when}
-                      </Text>
+                      {many ? null : (
+                        <Text style={styles.subtitle} numberOfLines={1}>
+                          {line.months} · {line.when}
+                        </Text>
+                      )}
                     </Animated.View>
                     <Animated.Text style={[styles.lineAmount, { color, opacity: fadeIn }]}>{line.amount}</Animated.Text>
-                    {many ? (
-                      <Ionicons name={showMonths ? 'chevron-up' : 'chevron-down'} size={16} color={colors.chevron} />
-                    ) : null}
                   </TouchableOpacity>
-                  {showMonths
+                  {many
                     ? line.items.map((item) => (
                         <TouchableOpacity
                           key={item.charge.id}
@@ -500,13 +530,13 @@ export default function ChargeGroupRow({
                           onPress={() => onOpenCharge(item.charge.id)}
                           accessibilityRole="button"
                         >
-                          <Text style={styles.monthText}>
-                            {formatPeriod(item.charge.period)} · {item.status === 'vencido' ? 'venció' : 'vence'} el{' '}
+                          <Animated.Text style={[styles.monthText, { opacity: fadeIn }]}>
+                            {monthName(item.charge.period)} · {item.status === 'vencido' ? 'venció' : 'vence'} el{' '}
                             {formatDayMonth(item.charge.dueDate)}
-                          </Text>
-                          <Text style={[styles.monthAmount, { color }]}>
+                          </Animated.Text>
+                          <Animated.Text style={[styles.monthAmount, { color, opacity: fadeIn }]}>
                             {formatMoney(chargeShownAmount(item), item.charge.currency)}
-                          </Text>
+                          </Animated.Text>
                         </TouchableOpacity>
                       ))
                     : null}
@@ -521,11 +551,20 @@ export default function ChargeGroupRow({
               <TouchableOpacity style={[styles.button, { backgroundColor: colors.primarySolid }]} onPress={onCollect} accessibilityRole="button">
                 <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>Cobrar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, { backgroundColor: colors.primaryMuted }]} onPress={onRemind} accessibilityRole="button">
-                <Ionicons name="logo-whatsapp" size={16} color={colors.primary} />
-                <Text style={[styles.buttonText, { color: colors.primary }]}>WhatsApp</Text>
+              <TouchableOpacity style={[styles.button, { backgroundColor: WHATSAPP_GREEN }]} onPress={onRemind} accessibilityRole="button">
+                <Ionicons name="logo-whatsapp" size={17} color="#FFFFFF" />
+                <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>WhatsApp</Text>
               </TouchableOpacity>
             </Animated.View>
+            {onOpenProperty ? (
+              <Animated.View style={{ opacity: fadeIn }}>
+                <TouchableOpacity style={[styles.fichaLink, { borderTopColor: colors.border }]} onPress={onOpenProperty} accessibilityRole="link">
+                  <Ionicons name="home-outline" size={16} color={colors.primary} />
+                  <Text style={styles.fichaLinkText}>{`Ver la ficha de ${group.title}`}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </Animated.View>
+            ) : null}
           </View>
         </View>
       </Animated.View>
@@ -599,6 +638,28 @@ const useStyles = makeStyles((colors) => ({
     fontSize: fontSize.md,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
+  },
+  subRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  // El estado escrito en su color.
+  status: {
+    flexShrink: 0,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  openLead: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  shrink: {
+    flexShrink: 1,
+    marginTop: 0,
   },
   receiptBox: {
     overflow: 'hidden',
@@ -697,5 +758,20 @@ const useStyles = makeStyles((colors) => ({
   buttonText: {
     fontSize: fontSize.md,
     fontWeight: '700',
+  },
+  fichaLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minHeight: 40,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+  },
+  fichaLinkText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.primary,
   },
 }));

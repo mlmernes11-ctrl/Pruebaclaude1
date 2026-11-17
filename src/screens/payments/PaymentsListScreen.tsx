@@ -1,7 +1,8 @@
 // =====================================================================
-// Pantalla: Cobros
+// Pantalla: historial de cobros y cargos
 // ---------------------------------------------------------------------
-// Lo importante primero, en una sola lista: lo vencido, lo que está por vencer y lo cobrado
+// Se abre desde Inicio («Ver todo el historial», a pantalla completa) y desde cada ficha (sus
+// cargos o sus cobros), siempre debajo de la pantalla que la abrió. En «Lo importante», en una lista: lo vencido, lo que está por vencer y lo cobrado
 // este mes, cada bloque con su total. Lo vencido y lo que está por vencer van
 // agrupados por propiedad, en una fila que se despliega (ver ChargeGroupRow). Arriba solo el buscador (busca propiedad, inquilino,
 // importe, mes…) y "Filtrar", que abre lo demás: ver todos los cargos o todos los cobros,
@@ -11,7 +12,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import DataTable, { Column } from '../../components/DataTable';
 import EmptyState from '../../components/EmptyState';
@@ -135,6 +136,16 @@ export default function PaymentsListScreen() {
   // La fila agrupada que está abierta (una sola por vez; ver ChargeGroupRow).
   const [openGroup] = useState(createOpenGroup);
   const words = useMemo(() => searchWords(query), [query]);
+
+  // Abierta desde otra pantalla (Inicio o una ficha): sin el título grande ni el chip de la
+  // propiedad; la barra de arriba dice qué es y «atrás» vuelve a donde estabas.
+  const inFicha = Boolean(route.params?.inFicha || route.params?.pushed);
+  useLayoutEffect(() => {
+    if (!inFicha) return;
+    if (route.params?.title) return navigation.setOptions({ title: route.params.title });
+    const title = getPropertyById(route.params?.propertyId)?.title ?? 'Propiedad';
+    navigation.setOptions({ title: `${route.params?.mode === 'cobros' ? 'Cobros' : 'Cargos'} · ${title}` });
+  }, [inFicha, navigation, route.params, getPropertyById]);
 
   // Otras pantallas la abren ya filtrada (por ejemplo, los cobros de una propiedad desde su ficha).
   useEffect(() => {
@@ -489,8 +500,8 @@ export default function PaymentsListScreen() {
 
   // — Dibujo de la pantalla —
   return (
-    <Screen topSafe>
-      <LargeTitleHeader title="Cobros" onAdd={registerPayment} addLabel="Registrar cobro" />
+    <Screen topSafe={!inFicha}>
+      {inFicha ? null : <LargeTitleHeader title="Cobros" onAdd={registerPayment} addLabel="Registrar cobro" />}
 
       <View style={styles.searchRow}>
         <SearchBar
@@ -510,7 +521,7 @@ export default function PaymentsListScreen() {
         </TouchableOpacity>
       </View>
 
-      {propertyId ? (
+      {propertyId && !inFicha ? (
         <TouchableOpacity style={styles.propertyChip} onPress={() => setPropertyId(undefined)} accessibilityRole="button">
           <Text style={styles.propertyChipText}>{getPropertyById(propertyId)?.title ?? 'Propiedad'}</Text>
           <Ionicons name="close-circle" size={16} color={colors.primary} />

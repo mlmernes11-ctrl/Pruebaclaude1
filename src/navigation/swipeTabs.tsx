@@ -21,7 +21,7 @@ import { Animated, Dimensions, Easing, PanResponder, Platform, View } from 'reac
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
 // Orden de las pestañas, de izquierda a derecha.
-const TAB_ORDER = ['DashboardTab', 'RentalsTab', 'PaymentsTab', 'MenuTab'];
+const TAB_ORDER = ['DashboardTab', 'RentalsTab', 'MenuTab'];
 
 // Para cambiar de pestaña: correr el dedo una cuarta parte del ancho, o soltarlo con envión.
 const SWITCH_SHARE = 0.25;

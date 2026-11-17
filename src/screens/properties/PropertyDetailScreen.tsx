@@ -20,7 +20,6 @@ import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { fontSize, radius, spacing } from '../../theme';
 import { Currency } from '../../types';
 import { addMonthsToPeriod, currentPeriod, formatDate, formatMoney, formatPeriodShort, formatTotals } from '../../utils/format';
-import { openInTab } from '../../utils/navigation';
 import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../../utils/propertySummary';
 import { isOutstanding } from '../../utils/ledger';
 import { debtReminderText, openWhatsapp } from '../../utils/whatsapp';
@@ -163,17 +162,14 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
   const overdueCharges = propertyCharges.filter((v) => v.status === 'vencido');
   const pendingCharges = propertyCharges.filter((v) => v.status === 'pendiente');
   const canOpen = overdueCharges.length > 0 || (summary.collection === 'por-vencer' && pendingCharges.length > 0);
-  const openCharge = (chargeId: string) => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId });
+  const openCharge = (chargeId: string) => navigation.navigate('ChargeForm', { chargeId });
   const toggleDebt = () => {
     if (Platform.OS !== 'web') animateLayout(240);
     setDebtOpen((current) => !current);
   };
-  // Abre la pestaña Cobros ya filtrada por esta propiedad (todos sus cargos o todos sus cobros).
+  // Todos sus cargos o todos sus cobros, dentro de Alquileres (la misma lista que Cobros).
   const openPayments = (mode: 'cargos' | 'cobros') =>
-    navigation.navigate('PaymentsTab', {
-      screen: 'PaymentsList',
-      params: { mode, propertyId: property.id },
-    });
+    navigation.navigate('PropertyPayments', { mode, propertyId: property.id, inFicha: true });
 
   // — Dibujo de la pantalla —
   return (
@@ -220,7 +216,7 @@ export function PropertyDetail({ propertyId, embedded }: { propertyId: string; e
         <View style={styles.primaryAction}>
           <Button
             label="Registrar cobro"
-            onPress={() => openInTab(navigation, 'PaymentsTab', 'PaymentForm', { contractId: collectContractId })}
+            onPress={() => navigation.navigate('PaymentForm', { contractId: collectContractId })}
           />
           {owed.length ? (
             <Button

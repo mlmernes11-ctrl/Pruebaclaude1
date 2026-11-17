@@ -1,12 +1,14 @@
 // =====================================================================
 // Navegación
 // ---------------------------------------------------------------------
-// Las 4 pestañas de abajo (Inicio, Alquileres, Cobros, Menú) y las pantallas que se abren
-// dentro de cada una. Para agregar una pantalla nueva, se registra acá.
+// Las 3 pestañas de abajo (Inicio, Alquileres, Menú) y las pantallas que se abren dentro de cada
+// una. Lo de cobros vive en Inicio («Tus alquileres», «Últimos cobros» y el historial) y en cada
+// ficha. Lo que se abre desde una pestaña se queda en ella, así «atrás» vuelve a donde estabas.
+// Para agregar una pantalla nueva, se registra acá.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import { createNavigationContainerRef, DarkTheme, DefaultTheme, NavigationContainer, StackActions } from '@react-navigation/native';
+import { createNavigationContainerRef, DarkTheme, DefaultTheme, getFocusedRouteNameFromRoute, NavigationContainer, StackActions } from '@react-navigation/native';
 import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useMemo } from 'react';
@@ -46,14 +48,15 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 const DashboardStack = createNativeStackNavigator();
+// Pantallas de Inicio que ocupan todo (sin la barra de abajo, como la «Actividad» de las apps de
+// pagos): el historial de cobros y lo que se abre desde ahí. Se vuelve con la flecha o con «atrás».
+const FULL_SCREEN = new Set(['TodosCobros', 'PaymentDetail', 'ChargeForm', 'History', 'MonthDetail']);
 const RentalsStack = createNativeStackNavigator();
-const PaymentsStack = createNativeStackNavigator();
 const MenuStack = createNativeStackNavigator();
 
 // La primera pantalla de cada pestaña vuelve a empezar al salir de ella (ver resetOnTabLeave).
 const DashboardRoot = resetOnTabLeave(DashboardScreen as any, 'DashboardTab');
 const RentalsRoot = resetOnTabLeave(RentalsScreen as any, 'RentalsTab', ['filter']);
-const PaymentsRoot = resetOnTabLeave(PaymentsListScreen as any, 'PaymentsTab', ['mode', 'status', 'month', 'propertyId']);
 const MenuRoot = resetOnTabLeave(MenuScreen as any, 'MenuTab');
 
 // Formularios: avisan antes de perder lo cargado y en la computadora se abren al frente (ver formScreen).
@@ -102,6 +105,41 @@ function DashboardStackNavigator() {
         options={{ title: 'Cotización del dólar' }}
       />
       <DashboardStack.Screen name="Imports" component={Imports} options={formScreenOptions(desktop, importsTitle())} />
+      {/* Los cobros: el historial completo (cobros y cargos, con buscador y filtros) y lo que se abre desde ahí. */}
+      <DashboardStack.Screen name="TodosCobros" component={PaymentsListScreen} options={{ title: 'Historial de cobros' }} />
+      <DashboardStack.Screen name="PaymentForm" component={PaymentForm} options={formScreenOptions(desktop, paymentFormTitle())} />
+      <DashboardStack.Screen name="PaymentDetail" component={PaymentDetailScreen} options={{ title: 'Cobro' }} />
+      <DashboardStack.Screen
+        name="ChargeForm"
+        component={ChargeForm}
+        options={({ route }: any) => formScreenOptions(desktop, chargeFormTitle(route.params))}
+      />
+      <DashboardStack.Screen name="History" component={HistoryScreen} options={{ title: 'Historial por mes' }} />
+      <DashboardStack.Screen
+        name="MonthDetail"
+        component={MonthDetailScreen}
+        options={({ route }: any) => ({ title: formatPeriod(route.params.period) })}
+      />
+      {/* La ficha (y su contrato, inquilino y cuenta corriente) abierta desde Inicio se queda en Inicio. */}
+      <DashboardStack.Screen name="PropertyDetail" component={PropertyDetailScreen} options={{ title: 'Propiedad' }} />
+      <DashboardStack.Screen
+        name="PropertyForm"
+        component={PropertyForm}
+        options={({ route }: any) => formScreenOptions(desktop, propertyFormTitle(route.params))}
+      />
+      <DashboardStack.Screen name="PropertyPayments" component={PaymentsListScreen} options={{ title: 'Cuenta corriente' }} />
+      <DashboardStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />
+      <DashboardStack.Screen
+        name="ContractForm"
+        component={ContractForm}
+        options={({ route }: any) => formScreenOptions(desktop, contractFormTitle(route.params))}
+      />
+      <DashboardStack.Screen name="TenantDetail" component={TenantDetailScreen} options={{ title: 'Inquilino' }} />
+      <DashboardStack.Screen
+        name="TenantForm"
+        component={TenantForm}
+        options={({ route }: any) => formScreenOptions(desktop, tenantFormTitle(route.params))}
+      />
     </DashboardStack.Navigator>
   );
 }
@@ -142,46 +180,16 @@ function RentalsStackNavigator() {
       />
       <RentalsStack.Screen name="ContractDetail" component={ContractDetailScreen} options={{ title: 'Contrato' }} />
       <RentalsStack.Screen name="Imports" component={Imports} options={formScreenOptions(desktop, importsTitle())} />
-    </RentalsStack.Navigator>
-  );
-}
-
-function PaymentsStackNavigator() {
-  const screenOptions = useScreenOptions();
-  const desktop = useIsDesktop();
-  return (
-    <PaymentsStack.Navigator screenOptions={screenOptions}>
-      <PaymentsStack.Screen
-        name="PaymentsList"
-        component={PaymentsRoot}
-        options={{ headerShown: false }}
-      />
-      <PaymentsStack.Screen
-        name="PaymentForm"
-        component={PaymentForm}
-        options={formScreenOptions(desktop, paymentFormTitle())}
-      />
-      <PaymentsStack.Screen
-        name="PaymentDetail"
-        component={PaymentDetailScreen}
-        options={{ title: 'Cobro' }}
-      />
-      <PaymentsStack.Screen
+      {/* Lo que se abre desde una ficha se queda en Alquileres: «atrás» vuelve a la ficha. */}
+      <RentalsStack.Screen name="PropertyPayments" component={PaymentsListScreen} options={{ title: 'Cuenta corriente' }} />
+      <RentalsStack.Screen name="PaymentForm" component={PaymentForm} options={formScreenOptions(desktop, paymentFormTitle())} />
+      <RentalsStack.Screen name="PaymentDetail" component={PaymentDetailScreen} options={{ title: 'Cobro' }} />
+      <RentalsStack.Screen
         name="ChargeForm"
         component={ChargeForm}
         options={({ route }: any) => formScreenOptions(desktop, chargeFormTitle(route.params))}
       />
-      <PaymentsStack.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{ title: 'Historial por mes' }}
-      />
-      <PaymentsStack.Screen
-        name="MonthDetail"
-        component={MonthDetailScreen}
-        options={({ route }: any) => ({ title: formatPeriod(route.params.period) })}
-      />
-    </PaymentsStack.Navigator>
+    </RentalsStack.Navigator>
   );
 }
 
@@ -207,7 +215,6 @@ function MenuStackNavigator() {
 const TAB_ICONS: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Ionicons.glyphMap]> = {
   DashboardTab: ['home', 'home-outline'],
   RentalsTab: ['business', 'business-outline'],
-  PaymentsTab: ['wallet', 'wallet-outline'],
   MenuTab: ['menu', 'menu-outline'],
 };
 
@@ -322,6 +329,9 @@ export default function RootNavigator() {
             height: 64 + insets.bottom,
             paddingTop: 4,
             paddingBottom: Math.max(insets.bottom, 6),
+            ...(!desktop && route.name === 'DashboardTab' && FULL_SCREEN.has(getFocusedRouteNameFromRoute(route) ?? '')
+              ? { display: 'none' as const }
+              : null),
           },
           tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
           tabBarIcon: ({ color, focused }) => (
@@ -331,7 +341,6 @@ export default function RootNavigator() {
       >
         <Tab.Screen name="DashboardTab" component={DashboardStackNavigator} options={{ title: 'Inicio' }} />
         <Tab.Screen name="RentalsTab" component={RentalsStackNavigator} options={{ title: 'Alquileres' }} />
-        <Tab.Screen name="PaymentsTab" component={PaymentsStackNavigator} options={{ title: 'Cobros' }} />
         <Tab.Screen name="MenuTab" component={MenuStackNavigator} options={{ title: 'Menú' }} />
       </Tab.Navigator>
     </NavigationContainer>

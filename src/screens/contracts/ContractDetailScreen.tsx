@@ -21,7 +21,6 @@ import {
   addToTotals, emptyTotals, formatDate, formatMoney, formatPeriod, formatPeriodShort, formatTotals,
 } from '../../utils/format';
 import { isOutstanding, unallocatedAmount } from '../../utils/ledger';
-import { openInTab } from '../../utils/navigation';
 import { confirmDeleteContract, confirmFinishContract } from '../../utils/contractActions';
 import { contractEndBadge } from '../../utils/propertySummary';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
@@ -73,8 +72,8 @@ export function ContractDetail({ contractId, embedded }: { contractId: string; e
   const nextAdjustment = contract.status === 'activo' ? nextAdjustmentPeriod(contract) : undefined;
   const credit = emptyTotals();
   paymentsForContract(contract.id).forEach((p) => addToTotals(credit, unallocatedAmount(p), p.currency));
-  const openPayments = (screen: string, params: object) => openInTab(navigation, 'PaymentsTab', screen, params);
-  const renew = () => openInTab(navigation, 'RentalsTab', 'ContractForm', { renewFromId: contract.id });
+  const openPayments = (screen: string, params: object) => navigation.navigate(screen, params);
+  const renew = () => navigation.navigate('ContractForm', { renewFromId: contract.id });
 
   return (
     <ScrollView contentContainerStyle={styles.content}>

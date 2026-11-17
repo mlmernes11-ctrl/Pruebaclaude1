@@ -130,7 +130,7 @@ export default function ChargeFormScreen() {
     const save = () => {
       if (charge) updateCharge(charge.id, payload);
       else addCharge(payload);
-      smartGoBack(navigation, 'PaymentsList');
+      smartGoBack(navigation, 'DashboardTab');
     };
 
     const duplicate = chargeViews.find(
@@ -166,7 +166,7 @@ export default function ChargeFormScreen() {
       destructive: true,
       onConfirm: () => {
         voidCharge(charge.id);
-        smartGoBack(navigation, 'PaymentsList');
+        smartGoBack(navigation, 'DashboardTab');
       },
     });
   };

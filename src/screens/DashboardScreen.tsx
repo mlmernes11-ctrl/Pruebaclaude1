@@ -3,10 +3,11 @@
 // ---------------------------------------------------------------------
 // Responde «¿qué hago hoy?». Franja azul con la fecha y el dólar; encima, los accesos
 // directos: los tres primeros del orden elegido y «Más», que abre todos y deja ordenarlos.
-// Debajo, «Tus alquileres»: quién debe y quién tiene un vencimiento cerca, con nombre, monto y
-// fecha, y cuántas propiedades están al día o sin alquilar. Al final, los otros pendientes
-// (importes por revisar, contratos por renovar o ajustar). La cartera completa vive en
-// Alquileres.
+// Debajo, «Tus alquileres»: quién debe y quién tiene un vencimiento cerca, en tarjetas que se
+// abren con el detalle, «Cobrar» y «WhatsApp» (HomeCollections). Después, los otros pendientes
+// (importes por revisar, contratos por renovar o ajustar) y los últimos cobros, con el acceso al
+// historial completo. Lo que se abre desde acá (fichas, contratos, cobros) se queda en Inicio, así
+// «atrás» vuelve acá. La cartera completa vive en Alquileres.
 // =====================================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import Card from '../components/Card';
 import LargeTitleHeader, { HeaderChip } from '../components/LargeTitleHeader';
 import Screen from '../components/Screen';
 import SectionHeader from '../components/SectionHeader';
+import HomeCollections, { RecentPayments } from './HomeCollections';
 import ShortcutsSheet from '../components/ShortcutsSheet';
 import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
@@ -25,17 +27,14 @@ import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useRefresh } from '../hooks/useRefresh';
 import { fontSize, radius, spacing } from '../theme';
 import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
-import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, formatTotals, parseLocalDate } from '../utils/format';
-import { openInTab } from '../utils/navigation';
-import { contractEndBadge, daysUntil, PropertySummary, summarizeProperty } from '../utils/propertySummary';
+import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, parseLocalDate } from '../utils/format';
+import { contractEndBadge, daysUntil, summarizeProperty } from '../utils/propertySummary';
 import { SHORTCUT_CATALOG, ShortcutId, SHORTCUTS_ON_HOME, useShortcuts } from '../utils/shortcuts';
-import { capitalize, compareTitles, initials, plural } from '../utils/text';
+import { capitalize } from '../utils/text';
 import { pendingImportsCount } from './imports/importsLogic';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
-// Cuántas personas de cada grupo (vencidos, a vencer) se muestran antes de «Ver todos».
-const MAX_PER_GROUP = 3;
 
 // Alto de la franja que queda debajo de la tarjeta de accesos.
 const SHORTCUTS_OVERLAP = 36;
@@ -68,28 +67,9 @@ export default function DashboardScreen() {
 
   const period = today.slice(0, 7);
   const summaries = properties.map((p) => summarizeProperty(p, contracts, chargeViews, tenants));
-  const openProperty = (propertyId: string) => openInTab(navigation, 'RentalsTab', 'PropertyDetail', { propertyId });
-
-  // — Tus alquileres: primero los que deben (el atraso más viejo arriba), después los que vencen —
-  const inDebt = summaries
-    .filter((s) => s.collection === 'deuda')
-    .sort((a, b) => (a.oldestOverdueDate ?? '').localeCompare(b.oldestOverdueDate ?? '') || compareTitles(a.property.title, b.property.title));
-  const dueSoon = summaries
-    .filter((s) => s.collection === 'por-vencer')
-    .sort((a, b) => (a.nextDueDate ?? '').localeCompare(b.nextDueDate ?? '') || compareTitles(a.property.title, b.property.title));
-  const upToDate = summaries.filter((s) => s.collection === 'al-dia').length;
-  const unrented = summaries.filter((s) => s.collection === 'sin-contrato' || s.collection === 'mantenimiento').length;
-  const shown = [...inDebt.slice(0, MAX_PER_GROUP), ...dueSoon.slice(0, MAX_PER_GROUP)];
-  const hidden = inDebt.length + dueSoon.length - shown.length;
-
-  // Monto y cuándo, en rojo si debe y en naranja si le vence pronto.
-  const amountOf = (s: PropertySummary) => {
-    if (s.collection === 'deuda') {
-      const days = Math.max(1, -daysUntil(s.oldestOverdueDate ?? today));
-      return { color: colors.danger, bg: colors.dangerMuted, main: formatTotals(s.overdue.totals), when: `hace ${plural(days, 'día', 'días')}` };
-    }
-    return { color: colors.warning, bg: colors.warningMuted, main: formatTotals(s.pending.totals), when: `vence el ${formatDayMonth(s.nextDueDate)}` };
-  };
+  const openProperty = (propertyId: string) => navigation.navigate('PropertyDetail', { propertyId });
+  // Los que deben: si es uno solo, «Recordar deuda» abre su ficha.
+  const inDebt = summaries.filter((s) => s.collection === 'deuda');
 
   // — Otros pendientes: importes por cargar y contratos que terminan o se ajustan —
   const pendingImports = pendingImportsCount(chargeViews, period);
@@ -109,7 +89,7 @@ export default function DashboardScreen() {
     .filter((c) => c.status === 'activo')
     .forEach((contract) => {
       const title = properties.find((p) => p.id === contract.propertyId)?.title ?? 'la propiedad';
-      const open = () => openInTab(navigation, 'RentalsTab', 'ContractDetail', { contractId: contract.id });
+      const open = () => navigation.navigate('ContractDetail', { contractId: contract.id });
       if (contractEndBadge(contract)) {
         const ended = daysUntil(contract.endDate) < 0;
         pending.push({
@@ -142,14 +122,14 @@ export default function DashboardScreen() {
       ? openProperty(inDebt[0].property.id)
       : navigation.navigate('RentalsTab', { screen: 'Rentals', params: { filter: 'mora' } });
   const SHORTCUT_ACTIONS: Record<ShortcutId, () => void> = {
-    cobro: () => openInTab(navigation, 'PaymentsTab', 'PaymentForm'),
+    cobro: () => navigation.navigate('PaymentForm'),
     deuda: remind,
-    contrato: () => openInTab(navigation, 'RentalsTab', 'ContractForm'),
-    cargo: () => openInTab(navigation, 'PaymentsTab', 'ChargeForm'),
-    propiedad: () => openInTab(navigation, 'RentalsTab', 'PropertyForm'),
+    contrato: () => navigation.navigate('ContractForm'),
+    cargo: () => navigation.navigate('ChargeForm'),
+    propiedad: () => navigation.navigate('PropertyForm'),
     masiva: () => navigation.navigate('Imports'),
     dolar: () => navigation.navigate('ExchangeRate'),
-    historial: () => openInTab(navigation, 'PaymentsTab', 'History'),
+    historial: () => navigation.navigate('History'),
   };
   const [shortcutOrder, setShortcutOrder] = useShortcuts();
   const [showingMore, setShowingMore] = useState(false);
@@ -190,7 +170,7 @@ export default function DashboardScreen() {
                 Cargá la propiedad y después su contrato con el inquilino. Desde ahí la app genera sola los cargos de
                 cada mes.
               </Text>
-              <Button label="Agregar propiedad" onPress={() => openInTab(navigation, 'RentalsTab', 'PropertyForm')} />
+              <Button label="Agregar propiedad" onPress={() => navigation.navigate('PropertyForm')} />
             </Card>
           ) : isEmpty ? (
             <Card style={styles.welcome}>
@@ -230,68 +210,8 @@ export default function DashboardScreen() {
                 onClose={() => setShowingMore(false)}
               />
 
-              {/* Tus alquileres: quién debe y quién vence, con monto y fecha. */}
-              {summaries.length ? (
-                <View style={styles.card}>
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>Tus alquileres</Text>
-                    <Text style={styles.cardSummary}>
-                      <Text style={{ color: colors.success, fontWeight: '700' }}>{upToDate}</Text> al día ·{' '}
-                      <Text style={{ fontWeight: '700' }}>{unrented}</Text> sin alquilar
-                    </Text>
-                  </View>
-                  {shown.length ? (
-                    shown.map((s, index) => {
-                      const amount = amountOf(s);
-                      const place = [s.property.title, s.property.neighborhood].filter(Boolean).join(' · ');
-                      return (
-                        <TouchableOpacity
-                          key={s.property.id}
-                          activeOpacity={0.6}
-                          style={[styles.row, index > 0 && styles.separator]}
-                          onPress={() => openProperty(s.property.id)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${s.tenant?.name ?? s.property.title}, ${amount.main}, ${amount.when}`}
-                        >
-                          <View style={[styles.avatar, { backgroundColor: amount.bg }]}>
-                            <Text style={[styles.avatarText, { color: amount.color }]}>{initials(s.tenant?.name)}</Text>
-                          </View>
-                          <View style={styles.texts}>
-                            <View style={styles.line}>
-                              <Text style={styles.title} numberOfLines={1}>
-                                {s.tenant?.name ?? s.property.title}
-                              </Text>
-                              <Text style={[styles.amount, { color: amount.color }]} numberOfLines={1}>
-                                {amount.main}
-                              </Text>
-                            </View>
-                            <View style={styles.line}>
-                              <Text style={styles.subtitle} numberOfLines={1}>
-                                {place}
-                              </Text>
-                              <Text style={[styles.when, { color: amount.color }]}>{amount.when}</Text>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })
-                  ) : (
-                    <View style={[styles.row, styles.calm]}>
-                      <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-                      <Text style={styles.calmText}>Nadie debe y no hay vencimientos cerca.</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={[styles.footer, styles.separator]}
-                    onPress={() => navigation.navigate('RentalsTab', { screen: 'Rentals' })}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.footerText}>
-                      {hidden > 0 ? `Ver los otros ${hidden} en Alquileres` : 'Ver todos los alquileres'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
+              {/* Tus alquileres: lo que se debe y lo que vence, en tarjetas que se abren. */}
+              {summaries.length ? <HomeCollections /> : null}
 
               {/* Otros pendientes. */}
               {pending.length ? (
@@ -323,6 +243,9 @@ export default function DashboardScreen() {
                   </View>
                 </>
               ) : null}
+
+              {/* Últimos cobros y el acceso al historial completo. */}
+              {summaries.length ? <RecentPayments /> : null}
             </>
           )}
         </View>
@@ -395,24 +318,6 @@ const useStyles = makeStyles((colors) => ({
     overflow: 'hidden',
     marginBottom: spacing.xl,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md + 2,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  cardSummary: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -424,17 +329,6 @@ const useStyles = makeStyles((colors) => ({
   separator: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: '700',
   },
   square: {
     width: 36,
@@ -448,51 +342,15 @@ const useStyles = makeStyles((colors) => ({
     minWidth: 0,
     gap: 2,
   },
-  line: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
   title: {
     flexShrink: 1,
     fontSize: fontSize.lg - 1,
     fontWeight: '600',
     color: colors.text,
   },
-  amount: {
-    flexShrink: 0,
-    maxWidth: '62%',
-    fontSize: fontSize.sm + 1,
-    fontWeight: '700',
-    textAlign: 'right',
-    fontVariant: ['tabular-nums'],
-  },
   subtitle: {
     flexShrink: 1,
     fontSize: fontSize.sm,
     color: colors.textMuted,
-  },
-  when: {
-    flexShrink: 0,
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-  },
-  calm: {
-    gap: spacing.sm,
-  },
-  calmText: {
-    flex: 1,
-    fontSize: fontSize.md,
-    color: colors.textMuted,
-  },
-  footer: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md + 2,
-  },
-  footerText: {
-    fontSize: fontSize.sm + 1,
-    fontWeight: '700',
-    color: colors.primary,
   },
 }));

@@ -18,7 +18,6 @@ import { fontSize, spacing } from '../../theme';
 import { MoneyTotals } from '../../types';
 import { describeTotals, formatMoney } from '../../utils/format';
 import { buildPeriodRow } from '../../utils/history';
-import { openInTab } from '../../utils/navigation';
 import { CHARGE_STATUS_DOT, CHARGE_VALUE_TONE, chargeProgress, chargeShownAmount } from '../../utils/status';
 import { compareTitles, plural } from '../../utils/text';
 
@@ -82,7 +81,7 @@ export default function MonthDetailScreen() {
                     subtitle={`${tenantName} · ${CONCEPT_LABEL[charge.concept]} · ${chargeProgress(view)}`}
                     value={formatMoney(chargeShownAmount(view), charge.currency)}
                     valueTone={CHARGE_VALUE_TONE[status]}
-                    onPress={() => openInTab(navigation, 'PaymentsTab', 'ChargeForm', { chargeId: charge.id })}
+                    onPress={() => navigation.navigate('ChargeForm', { chargeId: charge.id })}
                   />
                 );
               })}

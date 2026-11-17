@@ -4,12 +4,14 @@
 // La cartera: una tarjeta por propiedad con su estado de pago, el alquiler, hasta cuándo va el
 // contrato y el inquilino con su contacto. Buscador y "Filtrar y ordenar" arriba. Los contratos
 // y los inquilinos viven dentro de cada propiedad; el buscador los encuentra igual.
-// En pantalla grande: la lista a la izquierda y la ficha de la propiedad a la derecha.
+// El «+» agrega un cobro, un cargo, un contrato o una propiedad (en el celular, botón redondo
+// abajo a la derecha). En pantalla grande: la lista a la izquierda y la ficha a la derecha.
 // =====================================================================
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import AddMenu, { AddFab, AddOption } from '../../components/AddMenu';
 import LargeTitleHeader from '../../components/LargeTitleHeader';
 import Screen from '../../components/Screen';
 import { useData } from '../../context/DataContext';
@@ -34,6 +36,16 @@ export default function RentalsScreen() {
   const [filter, setFilter] = useState<PropertyFilterKey>('todas');
   const [sort, setSort] = useState<PropertySortKey>('nombre');
   const [selected, setSelected] = useState<string>();
+  // El «+»: en el celular, un botón redondo abajo a la derecha; en la compu, «+ Agregar» arriba.
+  // Los dos abren lo que se puede agregar (AddMenu).
+  const fab = !desktop;
+  const [adding, setAdding] = useState(false);
+  const addOptions: AddOption[] = [
+    { id: 'cobro', label: 'Registrar cobro', detail: 'Lo que te pagó un inquilino', icon: 'cash-outline', onPress: () => navigation.navigate('PaymentForm') },
+    { id: 'cargo', label: 'Agregar cargo', detail: 'Algo puntual que debe pagar el inquilino', icon: 'add-circle-outline', onPress: () => navigation.navigate('ChargeForm') },
+    { id: 'contrato', label: 'Nuevo contrato', detail: 'Con su inquilino y condiciones', icon: 'document-text-outline', onPress: () => navigation.navigate('ContractForm') },
+    { id: 'propiedad', label: 'Nueva propiedad', detail: 'Cargar una propiedad', icon: 'business-outline', onPress: () => navigation.navigate('PropertyForm') },
+  ];
 
   // El Inicio puede abrir la lista con un filtro (por ejemplo, las vencidas).
   useEffect(() => {
@@ -70,8 +82,8 @@ export default function RentalsScreen() {
       <LargeTitleHeader
         title="Alquileres"
         eyebrow={all.length ? `${plural(all.length, 'propiedad', 'propiedades')} · ${plural(rented, 'alquilada', 'alquiladas')}` : undefined}
-        onAdd={() => navigation.navigate('PropertyForm')}
-        addLabel="Nueva propiedad"
+        onAdd={fab ? undefined : () => setAdding(true)}
+        addLabel="Agregar"
       />
       {desktop ? (
         <View style={styles.split}>
@@ -83,6 +95,8 @@ export default function RentalsScreen() {
       ) : (
         list
       )}
+      {fab && !adding ? <AddFab onPress={() => setAdding(true)} /> : null}
+      <AddMenu visible={adding} options={addOptions} onClose={() => setAdding(false)} />
     </Screen>
   );
 }

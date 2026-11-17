@@ -59,7 +59,7 @@ export default function PaymentDetailScreen() {
       destructive: true,
       onConfirm: () => {
         deletePayment(payment.id);
-        smartGoBack(navigation, 'PaymentsList');
+        smartGoBack(navigation, 'DashboardTab');
       },
     });
   };

@@ -144,12 +144,14 @@ export const ACTION_LABELS: Record<string, string> = {
   abrir: 'Abrió la app',
 };
 
-// Pantallas de la app de siempre (nombres de RootNavigator).
+// Pantallas de la app de siempre (nombres de RootNavigator). «PaymentsList» era la pestaña Cobros,
+// que ya no está: queda con su nombre para leer los registros viejos.
 export const SCREEN_LABELS: Record<string, string> = {
   Dashboard: 'Inicio',
   Rentals: 'Alquileres',
-  PaymentsList: 'Cobros',
   Menu: 'Menú',
+  TodosCobros: 'Historial de cobros',
+  PropertyPayments: 'Cuenta corriente',
   PropertyDetail: 'Ficha de propiedad',
   PropertyForm: 'Formulario de propiedad',
   ContractDetail: 'Ficha de contrato',
@@ -165,6 +167,8 @@ export const SCREEN_LABELS: Record<string, string> = {
   History: 'Historial por mes',
   MonthDetail: 'Detalle del mes',
 };
+// Solo para nombrar registros viejos (no cuenta como pantalla «que nadie abrió»).
+const OLD_SCREEN_LABELS: Record<string, string> = { PaymentsList: 'Cobros (pestaña vieja)' };
 
 export const PLATFORM_LABELS: Record<string, string> = {
   android: 'Android',
@@ -175,7 +179,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export const actionLabel = (name: string) => ACTION_LABELS[name] ?? name;
-export const screenLabel = (name: string) => SCREEN_LABELS[name] ?? name;
+export const screenLabel = (name: string) => SCREEN_LABELS[name] ?? OLD_SCREEN_LABELS[name] ?? name;
 export const platformLabel = (name: string) => PLATFORM_LABELS[name] ?? name;
 
 // «hace 5 min», «hace 3 h», «ayer», «hace 12 días».
