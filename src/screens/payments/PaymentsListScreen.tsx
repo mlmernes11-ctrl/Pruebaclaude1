@@ -586,25 +586,31 @@ const useStyles = makeStyles((colors) => ({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
   },
+  // Buscador y «Filtrar»: mismo alto y mismas esquinas, con el mismo aire arriba (debajo de la
+  // barra) que entre los bloques de abajo.
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
   search: {
     flex: 1,
     marginHorizontal: 0,
+    marginBottom: 0,
+    minHeight: 44,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
-    minHeight: 38,
-    borderRadius: radius.round,
+    minHeight: 44,
+    borderRadius: 10,
     backgroundColor: colors.surface,
-    marginBottom: spacing.md,
   },
   filterButtonActive: {
     backgroundColor: colors.primaryMuted,
@@ -674,7 +680,7 @@ const useStyles = makeStyles((colors) => ({
     fontVariant: ['tabular-nums'],
   },
   total: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   // Las filas agrupadas por propiedad (cada una es su propia tarjeta, ver ChargeGroupRow).
   groups: {
