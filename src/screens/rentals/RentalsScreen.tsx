@@ -73,6 +73,7 @@ export default function RentalsScreen() {
       sort={sort}
       onSort={setSort}
       onSelect={desktop ? setSelected : undefined}
+      bandTail={!desktop}
       selectedId={desktop ? selectedId : undefined}
     />
   );
@@ -84,6 +85,7 @@ export default function RentalsScreen() {
         eyebrow={all.length ? `${plural(all.length, 'propiedad', 'propiedades')} · ${plural(rented, 'alquilada', 'alquiladas')}` : undefined}
         onAdd={fab ? undefined : () => setAdding(true)}
         addLabel="Agregar"
+        tail={!desktop}
       />
       {desktop ? (
         <View style={styles.split}>

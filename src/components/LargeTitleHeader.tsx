@@ -13,6 +13,11 @@ import { fontSize, radius, spacing } from '../theme';
 
 // ── Componente ────────────────────────────────────────────────────────
 
+// Cuánto se monta el primer bloque de cada pestaña sobre la franja (los accesos de Inicio, el
+// buscador de Alquileres, la primera tarjeta de Menú): así en las tres el azul termina a la misma
+// altura y lo de abajo arranca a la misma altura.
+export const BAND_OVERLAP = 36;
+
 export default function LargeTitleHeader({
   title,
   eyebrow,
@@ -24,6 +29,7 @@ export default function LargeTitleHeader({
   middle,
   overlap = 0,
   admin,
+  tail,
 }: {
   title: string;
   // Texto chico arriba a la izquierda (por ejemplo, la fecha del día).
@@ -40,13 +46,24 @@ export default function LargeTitleHeader({
   overlap?: number;
   // Modo admin: franja azul noche con la etiqueta ADMIN al lado del título.
   admin?: boolean;
+  // El azul de más lo pone la lista de abajo (Alquileres, porque la franja queda fija arriba).
+  tail?: boolean;
 }) {
   const styles = useStyles();
   // En pantalla grande el "+" pasa a ser un botón con texto ("+ Registrar cobro").
   const desktop = useIsDesktop();
   return (
-    <View style={[styles.band, admin && styles.bandAdmin, desktop && styles.bandDesktop, overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null]}>
-      {eyebrow || right ? (
+    <View
+      style={[
+        styles.band,
+        admin && styles.bandAdmin,
+        desktop && styles.bandDesktop,
+        overlap ? { paddingBottom: spacing.lg + overlap, marginBottom: 0 } : null,
+        tail ? { marginBottom: 0 } : null,
+      ]}
+    >
+      {/* Con lo de abajo montado, el renglón de arriba va siempre: así el título queda a la misma altura. */}
+      {eyebrow || right || overlap || tail ? (
         <View style={styles.topRow}>
           <Text style={styles.eyebrow} numberOfLines={1}>
             {eyebrow}

@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { Linking, Platform, ScrollView, Text, View } from 'react-native';
 import { showAlert, showConfirm } from '../components/DialogHost';
-import LargeTitleHeader from '../components/LargeTitleHeader';
+import LargeTitleHeader, { BAND_OVERLAP } from '../components/LargeTitleHeader';
 import ListRow from '../components/ListRow';
 import ListSection from '../components/ListSection';
 import Screen from '../components/Screen';
@@ -24,6 +24,7 @@ import { openWhatsapp } from '../utils/whatsapp';
 import { pendingImportsCount } from './imports/importsLogic';
 import { trackAction } from '../lib/usage';
 import { useAdmin } from '../context/AdminContext';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
@@ -43,6 +44,7 @@ export default function MenuScreen() {
   const styles = useStyles();
   const { preference, setPreference } = useTheme();
   const navigation = useNavigation<any>();
+  const desktop = useIsDesktop();
   const { mode, properties, tenants, contracts, payments, loadSampleData, clearAllData, chargeViews } = useData();
   const pendingImports = pendingImportsCount(chargeViews);
   const { email, signOut, deleteAccount } = useAuth();
@@ -136,8 +138,9 @@ export default function MenuScreen() {
   return (
     <Screen narrow topSafe>
       <ScrollView contentContainerStyle={styles.content}>
-        <LargeTitleHeader title="Menú" />
-        <View style={styles.body}>
+        {/* En el celular la primera tarjeta se monta sobre la franja, igual que en Inicio y Alquileres. */}
+        <LargeTitleHeader title="Menú" overlap={desktop ? 0 : BAND_OVERLAP} />
+        <View style={[styles.body, !desktop && { marginTop: -BAND_OVERLAP }]}>
           {mode === 'remote' ? (
             <View style={styles.account}>
               <View style={styles.avatar}>

@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import LargeTitleHeader, { HeaderChip } from '../components/LargeTitleHeader';
+import LargeTitleHeader, { BAND_OVERLAP, HeaderChip } from '../components/LargeTitleHeader';
 import Screen from '../components/Screen';
 import SectionHeader from '../components/SectionHeader';
 import HomeCollections, { RecentPayments } from './HomeCollections';
@@ -35,9 +35,6 @@ import { pendingImportsCount } from './imports/importsLogic';
 
 // ── Constantes y funciones auxiliares ─────────────────────────────────
 
-
-// Alto de la franja que queda debajo de la tarjeta de accesos.
-const SHORTCUTS_OVERLAP = 36;
 
 // "Jueves 12 de noviembre".
 function longDate(iso: string): string {
@@ -152,7 +149,7 @@ export default function DashboardScreen() {
         <LargeTitleHeader
           title="Inicio"
           eyebrow={longDate(today)}
-          overlap={isEmpty ? 0 : SHORTCUTS_OVERLAP}
+          overlap={isEmpty ? 0 : BAND_OVERLAP}
           right={
             <HeaderChip
               label={rate ? `${RATE_SOURCE_LABEL[source]} ${formatMoney(rate, 'ARS')}` : 'Dólar'}
@@ -280,7 +277,7 @@ const useStyles = makeStyles((colors) => ({
   },
   shortcuts: {
     flexDirection: 'row',
-    marginTop: -SHORTCUTS_OVERLAP,
+    marginTop: -BAND_OVERLAP,
     marginBottom: spacing.lg,
     paddingVertical: spacing.md + 2,
     paddingHorizontal: spacing.xs,

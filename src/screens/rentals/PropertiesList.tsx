@@ -12,6 +12,7 @@ import { Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } fro
 import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import FilterSortMenu, { MenuOption } from '../../components/FilterSortMenu';
+import { BAND_OVERLAP } from '../../components/LargeTitleHeader';
 import SearchLauncher from '../../components/SearchSheet';
 import { PROPERTY_TYPE_ICON } from '../../constants';
 import { useData } from '../../context/DataContext';
@@ -98,6 +99,7 @@ export default function PropertiesList({
   sort,
   onSort,
   onSelect,
+  bandTail,
   selectedId,
 }: {
   // Las que se ven (ya filtradas y ordenadas) y todas (para contar cada filtro).
@@ -108,6 +110,8 @@ export default function PropertiesList({
   sort: PropertySortKey;
   onSort: (sort: PropertySortKey) => void;
   onSelect?: (id: string) => void;
+  // Celular: el azul de la franja sigue debajo del buscador (ver BAND_OVERLAP).
+  bandTail?: boolean;
   selectedId?: string;
 }) {
   const styles = useStyles();
@@ -161,8 +165,10 @@ export default function PropertiesList({
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
     >
+      {/* En el celular el azul de la franja sigue un poco y el buscador va en una tarjeta montada encima. */}
+      {bandTail ? <View style={[styles.bandTail, { backgroundColor: colors.header }]} /> : null}
       {properties.length ? (
-        <View style={styles.tools}>
+        <View style={[styles.tools, bandTail && styles.toolsCard]}>
           <SearchLauncher scope="propiedades" style={styles.search} />
           <FilterSortMenu filters={filters} filter={filter} onFilter={onFilter} sorts={SORTS} sort={sort} onSort={onSort} />
         </View>
@@ -278,6 +284,24 @@ const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  bandTail: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: BAND_OVERLAP,
+  },
+  toolsCard: {
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg + 4,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   tools: {
     flexDirection: 'row',
