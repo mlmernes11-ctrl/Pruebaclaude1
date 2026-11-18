@@ -197,7 +197,7 @@ export default function ChargeGroupRow({
   const styles = useStyles();
   const { colors } = useTheme();
   const color = tone === 'danger' ? colors.danger : colors.warning;
-  const tint = tone === 'danger' ? colors.dangerMuted : colors.warningMuted;
+  const tint = tone === 'danger' ? colors.dangerTile : colors.warningMuted;
 
   const lines = useMemo(() => conceptLines(group.items), [group.items]);
   const totals = useMemo(() => formatTotals(totalsOf(group.items)), [group.items]);

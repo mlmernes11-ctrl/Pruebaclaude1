@@ -26,6 +26,8 @@ export const lightColors = {
   danger: '#D70015',
   dangerSolid: '#D70015',
   dangerMuted: '#FDE7E9',
+  // Fondo de los circulitos de las tarjetas con deuda (Inicio y la ficha).
+  dangerTile: '#FDE7E9',
   info: '#0066CC',
   infoMuted: '#E2EEFB',
   // Puntos de estado: rojo = en mora, ámbar = por vencer, verde = al día.
@@ -83,6 +85,8 @@ export const darkColors: Palette = {
   danger: '#FF6961',
   dangerSolid: '#D70015',
   dangerMuted: '#3A1416',
+  // Más claro que dangerMuted: sobre la tarjeta gris el rojo casi negro no se distinguía.
+  dangerTile: '#5C2124',
   info: '#409CFF',
   infoMuted: '#0F2A47',
   dotDanger: '#FF453A',

@@ -32,7 +32,7 @@ export default function DebtBreakdown({
   const styles = useStyles();
   const { colors } = useTheme();
   const color = tone === 'danger' ? colors.danger : colors.warning;
-  const tint = tone === 'danger' ? colors.dangerMuted : colors.warningMuted;
+  const tint = tone === 'danger' ? colors.dangerTile : colors.warningMuted;
   const lines = conceptLines(items);
 
   return (
