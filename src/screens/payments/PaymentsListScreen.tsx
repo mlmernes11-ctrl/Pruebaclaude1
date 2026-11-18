@@ -28,6 +28,7 @@ import { useExchangeRate } from '../../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
 import { useIsDesktop } from '../../hooks/useIsDesktop';
 import { useRefresh } from '../../hooks/useRefresh';
+import { RevealProvider, useRevealScroll } from '../../hooks/useRevealScroll';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeStatus, Currency, MoneyTotals, Payment } from '../../types';
 import {
@@ -114,6 +115,8 @@ const byDate = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function PaymentsListScreen() {
+  // Al abrir una tarjeta, la pantalla se corre para que se vea entera.
+  const revealer = useRevealScroll();
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -529,10 +532,13 @@ export default function PaymentsListScreen() {
       ) : null}
 
       <ScrollView
+        ref={revealer.ref}
+        onScroll={revealer.onScroll}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
       >
-        {body}
+        <RevealProvider value={revealer.reveal}>{body}</RevealProvider>
         {hasMoney(totalsOf(searchedCharges)) || searchedPayments.length ? (
           <ListSection>
             <ListRow

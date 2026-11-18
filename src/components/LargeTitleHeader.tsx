@@ -160,7 +160,9 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: 'space-between',
     gap: spacing.md,
     paddingRight: spacing.sm,
-    minHeight: 30,
+    // Alto fijo (no mínimo): con la pastilla del dólar, en Android este renglón quedaba un poco más
+    // alto en Inicio y al deslizar entre pestañas se veía un escalón en la franja.
+    height: 30,
   },
   eyebrow: {
     flexShrink: 1,
@@ -220,8 +222,9 @@ const useStyles = makeStyles((colors) => ({
     fontWeight: '400',
   },
   chip: {
+    height: 28,
+    justifyContent: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 6,
     borderRadius: 14,
     backgroundColor: colors.headerChip,
   },

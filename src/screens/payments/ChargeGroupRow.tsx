@@ -18,6 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExtern
 import { Animated, Easing, LayoutAnimation, LayoutChangeEvent, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { CONCEPT_LABEL } from '../../constants';
 import { makeStyles, useTheme } from '../../context/ThemeContext';
+import { useReveal } from '../../hooks/useRevealScroll';
 import { fontSize, radius, spacing } from '../../theme';
 import { ChargeConcept } from '../../types';
 import { addToTotals, emptyTotals, formatDayMonth, formatMoney, formatTotals, monthLabel, parseLocalDate } from '../../utils/format';
@@ -204,6 +205,8 @@ export default function ChargeGroupRow({
   const single = group.items.length === 1 ? group.items[0] : undefined;
   const stackWidth = STACK_WIDTH;
   const open = useIsOpen(openGroup, group.key);
+  const reveal = useReveal();
+  const cardRef = useRef<View>(null);
   const prevOpen = useIsOpen(openGroup, prevKey);
   const nextOpen = useIsOpen(openGroup, nextKey);
 
@@ -307,6 +310,8 @@ export default function ChargeGroupRow({
     const duration = to ? OPEN_MS : CLOSE_MS;
     run(to);
     if (to) measure(true);
+    // Ya abierta (y cerrada la que estaba abierta), la pantalla se corre para que se vea entera.
+    if (to && reveal) setTimeout(() => reveal(cardRef.current), OPEN_MS + 40);
     if (useNative) {
       animateLayout(duration);
       openGroup.toggle(group.key);
@@ -391,6 +396,7 @@ export default function ChargeGroupRow({
   const bottom = useNative ? (roundBottom ? radius.lg : 0) : bottomRadius;
   const card = (children: React.ReactNode) => (
     <Animated.View
+      ref={cardRef}
       style={[
         styles.card,
         {

@@ -4,7 +4,7 @@
 // «Tus alquileres»: una sola lista con lo que se debe (primero) y lo que vence pronto. Cada
 // tarjeta dice el estado en su color («2 meses vencidos», «Vence el 05/12») y el inquilino; al
 // tocarla se abre con todo lo adeudado mes por mes, «Cobrar», «WhatsApp» y el enlace a la ficha.
-// Se ven las primeras cuatro y «Ver más» despliega el resto ahí mismo.
+// Se ven las primeras cinco y «Ver más» despliega el resto ahí mismo.
 // «Últimos cobros»: los tres más recientes y «Ver todo el historial», que abre la lista completa
 // de cobros y cargos (con buscador y filtros) a pantalla completa.
 // =====================================================================
@@ -23,7 +23,7 @@ import { debtReminderText, openWhatsapp } from '../utils/whatsapp';
 import ChargeGroupRow, { ChargeGroup, createOpenGroup, groupByContract } from './payments/ChargeGroupRow';
 
 // Cuántas tarjetas se ven antes de «Ver más».
-const FIRST = 4;
+const FIRST = 5;
 // Cuántos cobros muestra «Últimos cobros».
 const RECENT = 3;
 

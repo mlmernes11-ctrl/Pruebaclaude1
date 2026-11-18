@@ -25,6 +25,7 @@ import { useData } from '../context/DataContext';
 import { RATE_SOURCE_LABEL, useExchangeRate } from '../context/ExchangeRateContext';
 import { makeStyles, useTheme } from '../context/ThemeContext';
 import { useRefresh } from '../hooks/useRefresh';
+import { RevealProvider, useRevealScroll } from '../hooks/useRevealScroll';
 import { fontSize, radius, spacing } from '../theme';
 import { describeAdjustment, nextAdjustmentPeriod } from '../utils/adjustments';
 import { addMonthsToPeriod, formatDayMonth, formatMoney, formatPeriod, parseLocalDate } from '../utils/format';
@@ -54,6 +55,8 @@ interface PendingItem {
 // ── Pantalla ──────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
+  // Al abrir una tarjeta de «Tus alquileres», la pantalla se corre para que se vea entera.
+  const revealer = useRevealScroll();
   const styles = useStyles();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -142,10 +145,14 @@ export default function DashboardScreen() {
   return (
     <Screen topSafe>
       <ScrollView
+        ref={revealer.ref}
+        onScroll={revealer.onScroll}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textMuted} />}
       >
+        <RevealProvider value={revealer.reveal}>
         <LargeTitleHeader
           title="Inicio"
           eyebrow={longDate(today)}
@@ -246,6 +253,7 @@ export default function DashboardScreen() {
             </>
           )}
         </View>
+        </RevealProvider>
       </ScrollView>
     </Screen>
   );
